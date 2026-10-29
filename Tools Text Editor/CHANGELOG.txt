@@ -1,0 +1,95 @@
+HoovyTools - Changelog
+======================
+SFM -> Blender session pipeline. Versions newest first.
+Terms are Source-native: session, film clip, shot, track group, game sound,
+DmeSoundClip, rest pose, root transform, usermod.
+
+
+1.3.1
+-----
+Session Sounds
+  - Import is ~100x faster. The DMX reader was doing an O(n^2) id-collision
+    check (list scan per element) on every element in the session - ~17k
+    elements meant ~140M UUID compares, ~38 s. Load now uses an O(1) id index
+    scoped to the import call; a full session parses in ~0.3 s. The shared SST
+    datamodel is left untouched - other tools read DMX exactly as before.
+  - Track lookup no longer walks the whole element graph. It reads the Sound
+    track group's DmeTrack children directly.
+  - Global Offset (seconds) added. Shifts every placed game sound on the
+    timeline; entered in seconds, applied as whole Blender frames at scene fps
+    (+1.0 s in a 30 fps scene = +30 frames). Default 0. For lining a session's
+    audio up with an animation that does not start on frame 0.
+  - Post-import readout now points at the Sequencer editor (the sequence-strip
+    editor-type) and the sound strips on its channels, one per shot's game
+    sound.
+
+Tools Text Editor
+  - New folder. Text-Editor-runnable versions of the tools for hot-reloading a
+    single tool (Alt+P) without reinstalling the addon. Includes a Session
+    Sounds runner and a generic template. Each tool update lands here too.
+
+
+1.3.0
+-----
+Session Sounds
+  - New "6 Session Sounds" import step. Reads every DmeSoundClip from a session
+    .dmx and lays each game sound into the Video Sequencer as a trimmed sound
+    strip at its shot time. No settings popup - pick the session .dmx.
+  - FPS transpose: clip times are authored in the session's frame rate (from
+    movieSettings override, else renderSettings.frameRate) and re-timed to the
+    current Blender scene fps, so wall-clock timing is preserved.
+  - Trim: DmeSoundClip offset drives the strip in-point, duration the visible
+    window. Sound paths resolve under the usermod sound/ tree (and tf/hl2
+    sibling mounts), case-insensitively.
+  - Turns on A/V sync + audio scrubbing so game sounds are audible while
+    scrubbing shots.
+  - Sits next to the numbered session steps 1-5 in the Import tab and the
+    File > Import submenu, with its own icon.
+
+
+1.2.2
+-----
+Anim Set editor
+  - Remove All Animation now fully clears a rig back to its pre-animation
+    state: strips the bone action AND shape-key (flex) animation on its meshes,
+    resets flex sliders to rest, and re-runs the Rig Fixer to restore rest
+    poses from the reference DMX. Folders recolor white last so the scene reads
+    as model-only afterward.
+
+
+1.2.1
+-----
+Anim Set editor
+  - Remove All Animation no longer rotates rigs 90 deg on re-import. Unparenting
+    from the root/axis transform now preserves the armature's local transform
+    instead of baking the +90 deg X (SFM Y-up -> Blender Z-up) correction into
+    the rig. Strip -> re-import is now idempotent: the axis correction is
+    applied once, not stacked.
+
+
+1.2.0
+-----
+Sidebar (N-panel)
+  - New HoovyTools sidebar with three tabs: Anim Set, Import, Tutorial.
+  - Anim Set editor: live per-rig status board - orange (model imported),
+    yellow (has animation), green (has shape-key/flex animation) - plus
+    cleanup: remove model-only rigs, remove all animation.
+  - Import tab mirrors the File > Import entries (session steps, standalone
+    importers, Source Engine utils).
+  - Tutorial tab shows the current usermod path and whether SourceIO is
+    installed (green/red ticks) alongside the workflow steps.
+
+DMX Animation
+  - Animation Scale option on DMX Animation and Animations (Folder): multiplies
+    location keys (bones + root transform) to fit a rescaled model. Rotations
+    left untouched.
+
+
+Notes
+-----
+- The bundled SST datamodel is the DMX read/write library the whole addon
+  shares. Tool-specific speedups (like the Session Sounds id-index) are applied
+  around a load call and reverted, never written into SST.
+- Rig orientation throughout the pipeline depends on the axis empty carrying
+  the SFM Y-up -> Blender Z-up +90 deg X correction. Tools that unparent rigs
+  keep the armature's local transform so that correction is never doubled.
