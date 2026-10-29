@@ -3868,7 +3868,7 @@ _CREDITS = (
 )
 
 LINKS = {
-    "patreon": ("Patreon", 'FUND', "https://www.patreon.com/HoovyTube",
+    "patreon": ("Patreon", 'FUND', "https://www.patreon.com/HoovyTube308",
                 "HoovyTube on Patreon"),
     "website": ("Website", 'WORLD', "https://hoovytube.com",
                 "HoovyTube's website"),

@@ -135,7 +135,7 @@ from your own SFM install.
 
 ## Credits
 
-Made by **HoovyTube** - [Patreon](https://www.patreon.com/HoovyTube) - [Website](https://hoovytube.com) -
+Made by **HoovyTube** - [Patreon](https://www.patreon.com/HoovyTube308) - [Website](https://hoovytube.com) -
 [GitHub](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender), the source of truth for new
 versions.
 
