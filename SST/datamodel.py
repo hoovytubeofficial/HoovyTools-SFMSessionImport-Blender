@@ -91,7 +91,23 @@ def get_str(file):
 		b = file.read(1)
 		if b == b'\x00': break
 		out += b
-	return out.decode() if len(out) else None
+	if not len(out):
+		return None
+	# HOOVYTOOLS PATCH (2026-08-27): SFM writes DMX strings in the WINDOWS
+	# SYSTEM CODEPAGE, not UTF-8. A session with Polish names ("SZTURM",
+	# byte 0xF3 = latin "o with acute") killed the strict decode on the
+	# very first string-table entry, which killed the whole load - and a
+	# load that dies makes every downstream step quietly fall back to
+	# stale files. Try UTF-8 first (correct for our own extracts), then
+	# cp1252 (what SFM actually writes on this machine), then replace -
+	# a mangled label beats a dead session.
+	try:
+		return out.decode()
+	except UnicodeDecodeError:
+		try:
+			return out.decode('cp1252')
+		except UnicodeDecodeError:
+			return out.decode('utf-8', errors='replace')
 
 def _get_kv2_repr(var):
 	t = type(var)
@@ -569,6 +585,10 @@ class DataModel:
 		self.format_ver = format_ver
 		
 		self.__elements = []
+		# HoovyTools: id -> element map used by validate_element.
+		# See _element_by_id() for why it is maintained lazily.
+		self.__element_index = {}
+		self.__element_indexed = 0
 		self.__prefix_attributes = Element(self,"")
 		self.root = None
 		self.allow_random_ids = True
@@ -576,15 +596,48 @@ class DataModel:
 	def __repr__(self):
 		return "<Datamodel 0x{}{}>".format(id(self)," (root == \"{}\")".format(self.root.name) if self.root else "")
 
+	def _element_by_id(self,eid):
+		"""
+		First element carrying *eid*, or None.  HoovyTools addition.
+
+		WHY THIS EXISTS
+		---------------
+		validate_element used to ask self.elements.index(elem) - a linear scan
+		with a UUID comparison at every step, run once per element added. That
+		is O(n^2) over a file, and it dominated load time completely.
+		Profiling a 391 KB session showed 568,711 Element.__eq__ calls making
+		up 88% of the run; a 2.4 MB session took 55 seconds, essentially all
+		of it here.
+
+		The map fills LAZILY from the tail of the list rather than being
+		written by every caller, because elements are appended in two places
+		(add_element, and Element's own registration into a second datamodel).
+		A map depending on callers to register would go stale in silence;
+		catching up on demand stays correct no matter who appends.
+
+		setdefault preserves the original semantics: .index() returned the
+		FIRST match, so an id appearing twice - a placeholder later satisfied
+		by a real element - still resolves to the placeholder.
+		"""
+		els = self.__elements
+		n = self.__element_indexed
+		if n != len(els):
+			if n > len(els):          # list shrank; rebuild from scratch
+				self.__element_index.clear()
+				n = 0
+			for i in range(n,len(els)):
+				self.__element_index.setdefault(els[i].id,els[i])
+			self.__element_indexed = len(els)
+		return self.__element_index.get(eid)
+
 	def validate_element(self,elem):
 		if elem._is_placeholder:
 			return
 
-		try:
-			collision = self.elements[self.elements.index(elem)]
-		except ValueError:
+		collision = self._element_by_id(elem.id)
+		if collision is None or collision is elem:
 			return # no match
-		
+
 		if not collision._is_placeholder:
 			raise IDCollisionError("{} invalid for {}: ID collision with {}. ID is {}.".format(elem, self, collision, elem.id))
 		

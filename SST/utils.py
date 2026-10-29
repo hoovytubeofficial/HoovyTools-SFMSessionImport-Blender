@@ -614,15 +614,41 @@ class Logger:
 		return round(time.time() - self.startTime, 1)
 
 	def errorReport(self,message):
+		#  HOOVYTOOLS: THIS USED TO CALL popup_menu() DIRECTLY.
+		#
+		#  Upstream Blender Source Tools raises a blocking "Source Tools Error
+		#  Report" dialog whenever an import logs a warning, and the commonest
+		#  warning by far is "<model> contains N bones not present in <model>"
+		#  - which a session import produces once per FILE. The owner was
+		#  clicking away one dialog per model to get through an import.
+		#
+		#  Constitution rule 10: never call popup_menu() directly, use
+		#  Report_UI.report(). It guards bpy.app.background, obeys the per-
+		#  report off switch, always prints, writes to _Logs, and collects
+		#  instead of blocking inside a batch. The `smd_warnings` key ships
+		#  OFF, so this is console-and-log only unless somebody turns it on.
+		#
+		#  Falls back to the original behaviour if Report_UI cannot be
+		#  imported - SST is meant to survive being used on its own.
 		if len(self.log_errors) or len(self.log_warnings):
 			message += get_id("exporter_report_suffix",True).format(len(self.log_errors),len(self.log_warnings))
-			if not bpy.app.background:
-				bpy.context.window_manager.popup_menu(self.list_errors,title=get_id("exporter_report_menu"))
-			
-			print("{} Errors and {} Warnings".format(len(self.log_errors),len(self.log_warnings)))
-			for msg in self.log_errors: print("Error:",msg)
-			for msg in self.log_warnings: print("Warning:",msg)
-		
+
+			lines = ["Error: " + m for m in self.log_errors]
+			lines += ["Warning: " + m for m in self.log_warnings]
+			try:
+				from ..core import Report_UI
+				Report_UI.report(
+					None, "smd_warnings", get_id("exporter_report_menu"),
+					lines,
+					level=('ERROR' if self.log_errors else 'WARNING'),
+					prefix="SMD",
+					summary="{} error(s), {} warning(s) from Source Tools".format(
+						len(self.log_errors), len(self.log_warnings)))
+			except Exception:
+				print("{} Errors and {} Warnings".format(len(self.log_errors),len(self.log_warnings)))
+				for msg in self.log_errors: print("Error:",msg)
+				for msg in self.log_warnings: print("Warning:",msg)
+
 		self.report({'INFO'},message)
 		print(message)
 

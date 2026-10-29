@@ -34,27 +34,49 @@ _datamodel_cache = None
 
 def get_datamodel():
     """
-    Return the datamodel module.
+    Return the datamodel module — ALWAYS our own bundled copy.
 
-    Priority:
-      1. Already loaded in sys.modules (BST is present) — free reuse.
-      2. Previously cached load of our bundled copy.
-      3. Load our bundled HoovyTools/SST/datamodel.py fresh.
+    WHY NOT REUSE WHATEVER IS LOADED
+    ================================
+    This used to scan sys.modules for anything ending in ".datamodel" that
+    had DataModel and Time, on the assumption it would find Blender Source
+    Tools. It also finds SourceIO's
+    `SourceIO-master.library.utils.datamodel`, which is a DIFFERENT
+    implementation of the same format - and SourceIO is enabled in exactly
+    the setup this addon is built for.
+
+    The consequences were quiet and bad:
+
+      * Import_DMX_Camera raised `IndexError: list index out of range` deep
+        inside SourceIO's read_string on files SST had written
+      * the O(1) element lookup added to SST/datamodel.py (a 179x speedup on
+        sessions) was bypassed entirely, because that patch lives in OUR
+        copy and SourceIO's has its own O(n^2) scan
+
+    Both disappear the moment the choice stops depending on which other
+    addons happen to be enabled. The bundled copy is the one we patch, test
+    and ship against, so it wins; sys.modules is consulted only if the
+    bundled file is missing altogether.
     """
     global _datamodel_cache
 
-    # 1. BST already loaded — reuse it at no cost
-    for name, mod in sys.modules.items():
-        if name.endswith(".datamodel") and hasattr(mod, "DataModel") and hasattr(mod, "Time"):
-            return mod
-
-    # 2. Previously loaded bundled copy
     if _datamodel_cache is not None:
         return _datamodel_cache
 
-    # 3. Load our bundled copy
     bundled = Path(__file__).parent / "datamodel.py"
     if not bundled.exists():
+        # Last resort: borrow a compatible module, but never SourceIO's -
+        # it reads the same format differently and fails on our files.
+        for name, mod in sys.modules.items():
+            if not name.endswith(".datamodel"):
+                continue
+            if "sourceio" in name.lower():
+                continue
+            if hasattr(mod, "DataModel") and hasattr(mod, "Time"):
+                print(f"[HoovyTools/SST]  bundled datamodel.py missing - "
+                      f"borrowing {name}")
+                _datamodel_cache = mod
+                return mod
         raise ImportError(
             f"[HoovyTools/SST]  datamodel.py not found at:\n  {bundled}\n"
             f"Copy datamodel.py from Blender Source Tools into HoovyTools/SST/"
@@ -128,6 +150,22 @@ def ensure_smd_importer():
     _sst_utils.State.update_scene = classmethod(lambda cls, scene=None: None)
     _sst_utils.State.hook_events  = classmethod(lambda cls: None)
     _sst_utils.State.unhook_events = classmethod(lambda cls: None)
+
+    #  SAY WHAT TO FEED IT, WITHOUT EDITING THE VENDORED FILE. Every other
+    #  button in the add-on now opens its tooltip with the input it wants.
+    #  This one is Blender Source Tools' own operator and import_smd.py has
+    #  to stay byte-identical to upstream, so the description is set HERE,
+    #  the same way the State methods above are patched. bl_description is
+    #  baked into the RNA at register time, so it must happen BEFORE
+    #  register_class - setting it afterwards changes nothing.
+    _import_smd_mod.SmdImporter.bl_description = (
+        "PICK  .smd / .vta / .dmx / .qc  (UNCOMPILED model source)  -  "
+        "multi-select allowed\n"
+        "\n"
+        "Blender Source Tools' own importer, bundled. This is the "
+        "UNCOMPILED side - the files a model is built FROM. For a "
+        "COMPILED .mdl use Import MDL instead."
+    )
 
     try:
         bpy.utils.register_class(_import_smd_mod.SmdImporter)

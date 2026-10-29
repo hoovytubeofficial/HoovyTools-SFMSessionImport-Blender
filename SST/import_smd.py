@@ -1,4 +1,4 @@
-﻿#  Copyright (c) 2014 Tom Edwards contact@steamreview.org
+#  Copyright (c) 2014 Tom Edwards contact@steamreview.org
 #
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
@@ -25,7 +25,7 @@ from bpy.props import StringProperty, CollectionProperty, BoolProperty, EnumProp
 from mathutils import Quaternion, Euler
 from .utils import *
 from . import datamodel, ordered_set, flex
-from ..anim_compat import get_channelbag, iter_fcurves
+from ..core.anim_compat import get_channelbag, iter_fcurves
 
 class SmdImporter(bpy.types.Operator, Logger):
 	bl_idname = "ht.import_smd"
@@ -505,8 +505,21 @@ class SmdImporter(bpy.types.Operator, Logger):
 			if 'ActLib' in dir(bpy.types):
 				bpy.context.scene.use_preview_range = bpy.context.scene.use_preview_range_action_lock = True
 			else:
-				bpy.context.scene.frame_start = 0
-				bpy.context.scene.frame_end = num_frames - 1		
+				#  HOOVYTOOLS: EXTEND, DO NOT SET.
+				#
+				#  Upstream Blender Source Tools owns the scene's frame range,
+				#  because upstream you are importing one animation into an
+				#  empty file. Here it runs ONCE PER MODEL inside step 3, so
+				#  the last rig imported decided the range for the whole
+				#  scene - and it reset frame_start to 0 every time, which
+				#  silently undid the range the chosen shot had just set.
+				#
+				#  `Session_Steps.apply_shot_frame_range()` is the one place
+				#  that SETS the range, from the shot. Everything else may
+				#  only push the end out. Same rule as the axis: two writers
+				#  for one value means whichever ran last wins.
+				if num_frames - 1 > bpy.context.scene.frame_end:
+					bpy.context.scene.frame_end = num_frames - 1
 			
 			for bone in smd.a.pose.bones:
 				bone.rotation_mode = smd.rotMode

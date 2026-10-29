@@ -1,0 +1,40 @@
+# HoovyTools - what never reaches the repository.
+#
+# THE CONVENTION, enforced here rather than remembered:
+#     name      required. The add-on does not start without it.
+#     _name     optional. Shipped, but the add-on runs if you delete it.
+#     __name    development only. Never shipped.  <-- this file's job
+#
+# So a single rule covers it: anything whose name starts with two
+# underscores, except the package marker itself.
+
+__*/
+!__init__.py
+
+__pycache__/
+*.py[cod]
+*.blend1
+
+# Runtime state, not shipped content: the folders a USER added, with their
+# absolute paths in them. `_config` follows the underscore convention (the
+# add-on runs without it) but nothing in it belongs in the repository.
+_config/
+
+# Reports written at runtime. This folder is `_Logs` and NOT `__Logs` so that
+# a user told "check the log" finds it where they look. That choice costs the
+# automatic exclusion - `__*/` above does not reach one underscore - so this
+# line is the only thing keeping every run's output out of the repository.
+# Delete it and the logs start getting committed. See core/paths.py.
+_Logs/
+
+# `images/` is REQUIRED and IS shipped - it lost its underscore on
+# 2026-08-24 because the panel is built around it and an install without
+# it is a degraded install, not a normal one.
+
+# 3.0.0: the QCs written from imported models (core/mdl_flex.py) - runtime output, rewritten by the next import.
+_QC Face Data/_Generated/
+*.qc.tmp
+
+# Windows writes this when a folder gets a custom icon.
+desktop.ini
+Thumbs.db
