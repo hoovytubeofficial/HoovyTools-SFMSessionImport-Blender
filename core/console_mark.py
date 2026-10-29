@@ -30,8 +30,8 @@ import sys
 MARK = "[SFM Session Importer]"
 PACKAGE = (__package__ or "").split(".")[0]
 
-#  Read by every print wrapper in the family: a frame whose module says this is
-#  skipped while looking for the real caller.
+# read by every print wrapper in the family: a frame whose module says this is
+# skipped while looking for the real caller
 __print_wrapper__ = True
 
 _prev = None        # the print this wrapper hands on to

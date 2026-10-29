@@ -65,9 +65,9 @@ import struct
 
 import bpy
 
-MAX_SIZE = 64                       # px - the proxy is the largest mip at or under this
-SAMPLES = 4                         # 1.25.0: blocks (pixels) a side averaged into a proxy pixel when no mip is that small
-IMAGE_KEY = "ht_proxy_vtf"          # 1.25.0: the VTF (and size) an image was made from - one image per VTF
+MAX_SIZE = 64                       #px - the proxy is the largest mip at or under this
+SAMPLES = 4                         #1.25.0: blocks (pixels) a side averaged into a proxy pixel when no mip is that small
+IMAGE_KEY = "ht_proxy_vtf"          #1.25.0: the VTF (and size) an image was made from - one image per VTF
 GREY = (0.5, 0.5, 0.5, 1.0)
 _BPP = {0: 4, 1: 4, 2: 3, 3: 3, 5: 1, 6: 2, 8: 1, 11: 4, 12: 4, 16: 4}
 _DXT = {13: 8, 14: 16, 15: 16, 20: 8}
@@ -143,19 +143,19 @@ def _dxt_blocks(blk, kind):
     four = (c0 > c1) | (kind != 13 and kind != 20)
     p2 = np.where(four[:, None], (2 * p0 + p1) / 3, (p0 + p1) / 2)
     p3 = np.where(four[:, None], (p0 + 2 * p1) / 3, 0)
-    pal = np.stack([p0, p1, p2, p3], 1)                                   # (N, 4, 3)
+    pal = np.stack([p0, p1, p2, p3], 1)                                   #(N, 4, 3)
     a_pal = np.full((len(blk), 4), 255.0, np.float32)
     if kind in (13, 20):
         a_pal[:, 3] = np.where(four, 255.0, 0.0)
     bits = col[:, 4].astype(np.uint32) | (col[:, 5].astype(np.uint32) << 8) | \
         (col[:, 6].astype(np.uint32) << 16) | (col[:, 7].astype(np.uint32) << 24)
     idx = np.stack([(bits >> (2 * i)) & 3 for i in range(16)], 1)        # (N, 16)
-    rgbv = np.take_along_axis(pal, idx[:, :, None].repeat(3, 2), 1)       # (N, 16, 3)
+    rgbv = np.take_along_axis(pal, idx[:, :, None].repeat(3, 2), 1)       #(N, 16, 3)
     alpha = np.take_along_axis(a_pal, idx, 1)
     if kind == 14:                                                       # DXT3: explicit 4-bit alpha
         a = blk[:, :8]
         alpha = np.stack([((a[:, i // 2] >> (4 * (i % 2))) & 15) * 17 for i in range(16)], 1).astype(np.float32)
-    elif kind == 15:                                                     # DXT5: interpolated alpha
+    elif kind == 15:                                                     #DXT5: interpolated alpha
         a0, a1 = blk[:, 0].astype(np.float32), blk[:, 1].astype(np.float32)
         ab = np.zeros(len(blk), np.uint64)
         for i in range(6):
@@ -195,7 +195,7 @@ def _decode_raw(data, w, h, fmt):
         return np.stack([a[..., 0]] * 3 + [one], -1)
     if fmt == 6:
         return np.stack([a[..., 0]] * 3 + [a[..., 1]], -1)
-    return np.stack([one * 0.5] * 3 + [a[..., 0]], -1)                   # A8
+    return np.stack([one * 0.5] * 3 + [a[..., 0]], -1)                   # a8
 
 
 def _spots(n_src, n_out, k):
@@ -348,8 +348,8 @@ def name_proxies(objects, mode, log=print):
     for mat in _materials_of(objects):
         if mat.get("ht_proxy_of"):
             continue                                  # already one of ours (taken from an earlier import)
-        #  the VMT: its full path (before a '#': an eye's own material per model copy carries an id there), else
-        #  the material's name (no .001, no "[...]" note, no folders) - in the VMT's own spelling
+        #the VMT: its full path (before a '#': an eye's own material per model copy carries an id there), else
+        #the material's name (no .001, no "[...]" note, no folders) - in the VMT's own spelling
         fp = str(mat.get("full_path", "") or "").replace("\\", "/")
         base = fp.split("#", 1)[0] if fp else re.sub(r"\s*\[.*\]$", "", re.sub(r"\.\d{3}$", "", mat.name))
         shown = base.replace("\\", "/").rstrip("/").split("/")[-1] or _strip(mat.name)

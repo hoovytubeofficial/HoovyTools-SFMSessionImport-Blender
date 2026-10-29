@@ -1,9 +1,9 @@
 # ═════════════════════════════════════════════════════════════════════════════
-#  DEPENDENCIES
-#    bpy                            the scene, its actions, sequencer, markers
-#    numpy                          ships with Blender - keys moved in bulk
-#    core/anim_compat.py            layered (5.x) and legacy actions alike
-#  Drawn by ui/Panel.py, Tools tab > Cleanup. Added in 1.17.0.
+# DEPENDENCIES
+# bpy                            the scene, its actions, sequencer, markers
+# numpy                          ships with Blender - keys moved in bulk
+# core/anim_compat.py            layered (5.x) and legacy actions alike
+# Drawn by ui/Panel.py, Tools tab > Cleanup. Added in 1.17.0
 # ═════════════════════════════════════════════════════════════════════════════
 """
 Scene_Offset - OFFSET EVERYTHING: the whole scene moves in time, together.
@@ -51,7 +51,7 @@ except Exception:                                             # noqa: BLE001
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  What holds animation
+# What holds animation
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _ad_owners(scene):
@@ -77,7 +77,7 @@ def _ad_owners(scene):
         data = getattr(ob, "data", None)
         add(data)
         add(getattr(data, "shape_keys", None))
-        add(getattr(data, "node_tree", None))          # lights' shader trees
+        add(getattr(data, "node_tree", None))          #lights' shader trees
         for slot in getattr(ob, "material_slots", []):
             mat = slot.material
             add(mat)
@@ -113,7 +113,7 @@ def _other_scene_actions(scene):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Moving
+# Moving
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _shift_fcurve(fc, d):
@@ -149,13 +149,13 @@ def _shift_nla(owners, d):
         if ad is None:
             continue
         for tr in ad.nla_tracks:
-            #  Later strips first when moving later (and earlier first when
-            #  moving earlier), so no strip is ever pushed into its neighbour.
+            # later strips first when moving later (and earlier first when
+            # moving earlier), so no strip is ever pushed into its neighbour
             strips = sorted(tr.strips, key=lambda s: s.frame_start, reverse=d > 0)
             for st in strips:
                 length = st.frame_end - st.frame_start
-                #  frame_start_ui MOVES a strip (3.3+); frame_start alone
-                #  would resize it.
+                # frame_start_ui MOVES a strip (3.3+); frame_start alone
+                # would resize it.
                 if hasattr(st, "frame_start_ui"):
                     st.frame_start_ui = st.frame_start_ui + d
                 elif d > 0:
@@ -165,9 +165,9 @@ def _shift_nla(owners, d):
                     st.frame_start = st.frame_start + d
                     st.frame_end = st.frame_end + d
                 if st.action is not None:
-                    #  The keys inside moved by d as well - keep the window on
-                    #  the same keys (end first when moving later, so the
-                    #  window never turns inside out).
+                    #the keys inside moved by d as well - keep the window on
+                    #the same keys (end first when moving later, so the
+                    #window never turns inside out).
                     if d > 0:
                         st.action_frame_end = st.action_frame_end + d
                         st.action_frame_start = st.action_frame_start + d
@@ -184,8 +184,8 @@ def _top_strips(scene):
     se = scene.sequence_editor
     if se is None:
         return []
-    #  5.x renamed `sequences` to `strips`; an EMPTY collection is falsy, so
-    #  pick by attribute, never with `or`.
+    # 5.x renamed `sequences` to `strips`; an EMPTY collection is falsy, so
+    # pick by attribute, never with `or`
     return list(se.strips if hasattr(se, "strips") else getattr(se, "sequences", []))
 
 
@@ -220,8 +220,8 @@ def offset_everything(scene, delta, whole_file=False):
         for a in bpy.data.actions:
             acts.setdefault(a.as_pointer(), a)
     else:
-        #  Parked takes - actions nothing (or only their fake user) holds -
-        #  travel with the scene; an action another SCENE uses does not.
+        # Parked takes - actions nothing (or only their fake user) holds -
+        # travel with the scene; an action another SCENE uses does not
         others = _other_scene_actions(scene)
         for a in bpy.data.actions:
             if a.as_pointer() in acts or a.as_pointer() in others:
@@ -264,8 +264,8 @@ def offset_everything(scene, delta, whole_file=False):
             except Exception:                                 # noqa: BLE001
                 pass
 
-    #  THE RANGE LAST, and in the safe order: Blender refuses an end before
-    #  the start, and clamps a start below 0.
+    # THE RANGE last, and in the safe order: Blender refuses an end before
+    # the start, and clamps a start below 0
     s0, e0 = scene.frame_start, scene.frame_end
     want_s, want_e = s0 + d, e0 + d
     if d > 0:
@@ -312,7 +312,7 @@ def report_lines(r):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The operator
+# The operator
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_offset_everything(bpy.types.Operator):

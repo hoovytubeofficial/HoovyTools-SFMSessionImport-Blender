@@ -28,7 +28,7 @@ from bpy_extras.io_utils import ImportHelper
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -40,7 +40,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR — FIX EYE CONSTRAINTS
+# operator — fix eye constraints
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_FixEyeConstraints(Operator):
@@ -81,7 +81,7 @@ not create them, it reports why rather than failing silently"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR — FIX RIG  (singular, manual ref DMX picker)
+# OPERATOR — FIX RIG  (singular, manual ref DMX picker)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _faulty_rigs_dir() -> str:
@@ -144,8 +144,8 @@ THIS FEATURE WAS ADDED IN VERSION 1.24.0 AND IS IN EXPERIMENTAL STAGE."""
 
     filename_ext = ".dmx"
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})
-    #  a script may still name the reference outright (reference=<path>); the
-    #  browser does not show it
+    # a script may still name the reference outright (reference=<path>); the
+    # browser does not show it
     reference: EnumProperty(  # type: ignore
         name="Reference", items=_reference_items, options={"HIDDEN"},
         description="The reference DMX whose rest pose the rig takes")
@@ -189,7 +189,7 @@ THIS FEATURE WAS ADDED IN VERSION 1.24.0 AND IS IN EXPERIMENTAL STAGE."""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU
+# menu
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_MT_utils_mdl_submenu(bpy.types.Menu):
@@ -219,7 +219,7 @@ def draw_utils_mdl_entry(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (

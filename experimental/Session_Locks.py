@@ -73,17 +73,17 @@ import collections
 from bpy.types import Operator
 
 
-#  Operator types that are ordinary session plumbing, not attachments.
+# operator types that are ordinary session plumbing, not attachments
 BORING_OPERATORS = {
     "DmeExpressionOperator",
     "DmePackColorOperator",
     "DmeGlobalFlexControllerOperator",
 }
 
-#  Substrings that mark an element type as constraint-shaped. Kept as
-#  substrings rather than an exact list because SFM's constraint family is
-#  larger than the handful anyone remembers, and a type we have not seen
-#  before is exactly what we want reported rather than skipped.
+#substrings that mark an element type as constraint-shaped. Kept as
+#substrings rather than an exact list bc SFM's constraint family is
+#larger than the handful anyone remembers, and a type we have not seen
+#before is exactly what we want reported rather than skipped
 CONSTRAINT_MARKERS = ("constraint", "rig")
 
 
@@ -155,7 +155,7 @@ def scan_locks(session_path, report=print):
 
     types = collections.Counter((e.type or "?") for e in model.elements)
 
-    # ── 1 / 3  operators that are not ordinary plumbing ──────────────────────
+    #── 1 / 3  operators that are not ordinary plumbing ──────────────────────
     constraints, unknown_ops = [], []
     sets = [e for e in model.elements if e.type == "DmeAnimationSet"]
     for aset in sets:
@@ -171,20 +171,20 @@ def scan_locks(session_path, report=print):
             else:
                 unknown_ops.append(rec)
 
-    # ── 2  a game model parented under something other than the scene ────────
+    #── 2  a game model parented under something other than the scene ────────
     dag_attached = []
     for aset in sets:
         gm = aset.get("gameModel")
         if gm is None:
             continue
         chain = _chain_names(gm, parents)
-        #  Normal is  <model>_GameModel -> <set> -> scene. Anything longer, or
-        #  anything whose path does not end at `scene` through its own set, is
-        #  hanging off something else - which is an attachment.
+        # normal is  <model>_GameModel -> <set> -> scene. Anything longer, or
+        # anything whose path does not end at `scene` thru its own set, is
+        # hanging off something else - which is an attachment
         if len(chain) > 3 or (len(chain) >= 2 and chain[-1] != "scene"):
             dag_attached.append({"set": aset.name, "chain": chain})
 
-    # ── loose constraint-shaped elements anywhere in the file ────────────────
+    #── loose constraint-shaped elements anywhere in the file ────────────────
     loose = [t for t in types
              if any(k in t.lower() for k in CONSTRAINT_MARKERS)
              and t not in BORING_OPERATORS]
@@ -298,7 +298,7 @@ def report_lines(info):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operator
+# Operator
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_session_locks(Operator):

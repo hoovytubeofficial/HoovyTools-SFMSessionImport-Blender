@@ -116,7 +116,7 @@ UNMAPPED = (
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Helpers
+# Helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _srgb_to_linear(c):
@@ -149,18 +149,18 @@ def _light_collections():
     if outer is None:
         outer = bpy.data.collections.new(COLLECTION)
         bpy.context.scene.collection.children.link(outer)
-    #  UNCONDITIONALLY, not only on create - a collection surviving from an
-    #  import made before the colour changed would keep the old colour for
-    #  ever, and "the colour code updated except for my scene" reads as a
-    #  broken colour code. Same lesson as the camera collections.
+    # UNCONDITIONALLY, not only on create - a collection surviving from an
+    # import made before the colour changed would keep the old colour for
+    # ever, and "the colour code updated except for my scene" reads as a
+    # broken colour code. Same lesson as the camera collections.
     outer.color_tag = COLLECTION_COLOR
 
     inner = bpy.data.collections.get(COLLECTION_PORT)
     if inner is None:
         inner = bpy.data.collections.new(COLLECTION_PORT)
-    #  MEMBERSHIP ENFORCED EVERY CALL (the get-or-create rule): the inner
-    #  collection hangs under the outer one and nowhere else - an organizer
-    #  pass or an old scene may have left it at the scene root.
+    # MEMBERSHIP ENFORCED EVERY CALL (the get-or-create rule): the inner
+    # collection hangs under the outer one and nowhere else - an organizer
+    # pass or an old scene may have left it at the scene root
     for parent in bpy.data.collections:
         if parent is not inner and inner.name in parent.children:
             if parent is not outer:
@@ -236,9 +236,9 @@ def attenuation_weights(triple):
 
 
 UBERLIGHT_GROUP = "HT SFM Uberlight"
-#  Bumped whenever the group's INTERNALS change while its sockets do not.
-#      1  first build (caller normalized the triple)
-#      2  normalization moved inside; raw SFM values may be linked in
+#bumped whenever the group's INTERNALS change while its sockets don't.
+#1  first build (caller normalized the triple)
+#2  normalization moved inside; raw SFM values may be linked in
 UBERLIGHT_BUILD = 2
 
 
@@ -261,12 +261,12 @@ def _uberlight_group():
     if ng is not None:
         have = sorted(s.name for s in ng.interface.items_tree
                       if getattr(s, "in_out", "") == 'INPUT')
-        #  A BUILD STAMP, NOT JUST THE SOCKET SET. The sockets did not
-        #  change when normalization moved INSIDE this group - so a .blend
-        #  holding the older build would have been reused unchanged and fed
-        #  raw slider values into a formula expecting normalized ones (the
-        #  1500x dimming, back again, silently). Any internal change bumps
-        #  the stamp.
+        # A BUILD STAMP, not JUST THE SOCKET SET. The sockets did not
+        # change when normalization moved INSIDE this group - so a .blend
+        # holding the older build would have been reused unchanged and fed
+        # raw slider values into a formula expecting normalized ones (the
+        # 1500x dimming, back again, silently). Any internal change bumps
+        # the stamp
         if have == sorted(inputs) and ng.get("ht_build") == UBERLIGHT_BUILD:
             return ng
         bpy.data.node_groups.remove(ng)
@@ -306,7 +306,7 @@ def _uberlight_group():
         m.inputs["To Max"].default_value = 1.0
         return m
 
-    #  d = Constant / Linear of a strength-1 Light Falloff (measured above).
+    # d = Constant / Linear of a strength-1 Light Falloff (measured above).
     fall = n.new("ShaderNodeLightFalloff")
     fall.location = (-1260, 320)
     fall.label = "distance source"
@@ -316,7 +316,7 @@ def _uberlight_group():
     L(fall.outputs["Constant"], dist.inputs[0])
     L(fall.outputs["Linear"], dist.inputs[1])
 
-    #  Light-space direction; z depth and unit-plane coordinates.
+    # light-space direction; z depth and unit-plane coordinates
     tc = n.new("ShaderNodeTexCoord"); tc.location = (-1260, 60)
     sep = n.new("ShaderNodeSeparateXYZ"); sep.location = (-1060, 60)
     L(tc.outputs["Normal"], sep.inputs[0])
@@ -355,14 +355,14 @@ def _uberlight_group():
     qn0 = math('DIVIDE', -520, 800, "q norm")
     L(gi.outputs["quadraticAttenuation"], qn0.inputs[0])
     L(rsafe.outputs[0], qn0.inputs[1])
-    #  NO TRIPLE AT ALL -> pure quadratic, so the light is untouched.
+    # no TRIPLE AT all -> pure quadratic, so the light is untouched
     qnm = n.new("ShaderNodeMix"); qnm.data_type = 'FLOAT'
     qnm.location = (-340, 800); qnm.label = "q norm or 1"
     _group_socket(qnm, "A_Float").default_value = 1.0
     L(thas.outputs[0], _group_socket(qnm, "Factor_Float"))
     L(qn0.outputs[0], _group_socket(qnm, "B_Float"))
 
-    #  ATTENUATION  d^2 / (c + l*d + q*d^2), guarded; all-zero triple = 1.
+    # ATTENUATION  d^2 / (c + l*d + q*d^2), guarded; all-zero triple = 1.
     d2 = math('MULTIPLY', -700, 480, "d^2")
     L(dist.outputs[0], d2.inputs[0]); L(dist.outputs[0], d2.inputs[1])
     ld = math('MULTIPLY', -700, 620, "l*d")
@@ -386,8 +386,8 @@ def _uberlight_group():
     L(thas.outputs[0], _group_socket(attm, "Factor_Float"))
     L(att.outputs[0], _group_socket(attm, "B_Float"))
 
-    #  UBER DISTANCE WINDOW  smoothstep(cutOn-nearEdge, cutOn, z)
-    #                        * (1 - smoothstep(cutOff, cutOff+farEdge, z))
+    # UBER DISTANCE WINDOW  smoothstep(cutOn-nearEdge, cutOn, z)
+    # * (1 - smoothstep(cutOff, cutOff+farEdge, z))
     on0 = math('SUBTRACT', -340, 200, "cutOn - nearEdge")
     L(gi.outputs["cutOn"], on0.inputs[0])
     L(gi.outputs["nearEdge"], on0.inputs[1])
@@ -395,9 +395,9 @@ def _uberlight_group():
     L(zdep.outputs[0], win_on.inputs["Value"])
     L(on0.outputs[0], win_on.inputs["From Min"])
     L(gi.outputs["cutOn"], win_on.inputs["From Max"])
-    #  cutOn 0 = no near clip. Without this guard the Map Range gets
-    #  From Min == From Max == 0, a degenerate window that reads 0 and
-    #  BLACKED OUT every uber light with no near clip set (render-caught).
+    # cutOn 0 = no near clip. Without this guard the Map Range gets
+    # From Min == From Max == 0, a degenerate window that reads 0 and
+    # BLACKED out every uber light with no near clip set (render-caught)
     on_has = math('GREATER_THAN', 20, 320, "cutOn set?", v1=1e-6)
     L(gi.outputs["cutOn"], on_has.inputs[0])
     onm = n.new("ShaderNodeMix"); onm.data_type = 'FLOAT'
@@ -414,7 +414,7 @@ def _uberlight_group():
     L(off1.outputs[0], win_off.inputs["From Max"])
     off_inv = math('SUBTRACT', 20, 60, "1 -", v0=1.0)
     L(win_off.outputs[0], off_inv.inputs[1])
-    #  cutOff 0 = no far clip.
+    # cutOff 0 = no far clip
     off_has = math('GREATER_THAN', 20, -60, "cutOff set?", v1=1e-6)
     L(gi.outputs["cutOff"], off_has.inputs[0])
     offm = n.new("ShaderNodeMix"); offm.data_type = 'FLOAT'
@@ -426,7 +426,7 @@ def _uberlight_group():
     L(_group_socket(onm, "Result_Float", True), zwin.inputs[0])
     L(_group_socket(offm, "Result_Float", True), zwin.inputs[1])
 
-    #  BARN DOORS  (1 - smoothstep(width, width+edgeWidth, |u|)) * same for v.
+    # BARN DOORS  (1 - smoothstep(width, width+edgeWidth, |u|)) * same for v
     wx1 = math('ADD', -340, -160, "width + edgeWidth")
     L(gi.outputs["width"], wx1.inputs[0])
     L(gi.outputs["edgeWidth"], wx1.inputs[1])
@@ -448,7 +448,7 @@ def _uberlight_group():
     doors = math('MULTIPLY', 200, -240, "doors")
     L(dx_inv.outputs[0], doors.inputs[0])
     L(dy_inv.outputs[0], doors.inputs[1])
-    #  width or height 0 = no doors (the SFM defaults).
+    # width or height 0 = no doors (the SFM defaults)
     wsum = math('MULTIPLY', 200, -400, "w*h")
     L(gi.outputs["width"], wsum.inputs[0])
     L(gi.outputs["height"], wsum.inputs[1])
@@ -460,7 +460,7 @@ def _uberlight_group():
     L(whas.outputs[0], _group_socket(doorm, "Factor_Float"))
     L(doors.outputs[0], _group_socket(doorm, "B_Float"))
 
-    #  NON-UBER WINDOW  hard-ish min/max distance clips (tight 1-unit edges).
+    #NON-UBER WINDOW  hard-ish min/max distance clips (tight 1-unit edges)
     mn1 = math('SUBTRACT', -340, -520, "min - 1", v1=1.0)
     L(gi.outputs["minDistance"], mn1.inputs[0])
     win_mn = smoothwin(-160, -520, "min clip")
@@ -486,7 +486,7 @@ def _uberlight_group():
     L(win_mn.outputs[0], mmwin.inputs[0])
     L(_group_socket(mxm, "Result_Float", True), mmwin.inputs[1])
 
-    #  UBER vs NON-UBER: uber mode uses window*doors, plain uses min/max.
+    #UBER vs NON-UBER: uber mode uses window*doors, plain uses min/max
     uber_shape = math('MULTIPLY', 560, 40, "uber shaping")
     L(zwin.outputs[0], uber_shape.inputs[0])
     L(_group_socket(doorm, "Result_Float", True), uber_shape.inputs[1])
@@ -595,23 +595,23 @@ SFM_LIGHT_ATTRS = (
 )
 
 SFM_LIGHT_DRIVERS = (
-    #  Cone: SFM's FOV is the FULL angle in degrees, which is what
-    #  spot_size means too - a straight radians(), wider axis winning
-    #  (Blender's cone is round, SFM's can be oval).
+    # cone: SFM's FOV is the FULL angle in degrees, which is what
+    # spot_size means too - a straight radians(), wider axis winning
+    # (Blender's cone is round, SFM's can be oval)
     ("spot_size", "radians(min(179.0, max(1.0, max(h, v))))",
      {"h": "horizontalFOV", "v": "verticalFOV"}),
-    #  Emitter size for soft shadows: Hammer units, times import scale.
+    # emitter size for soft shadows: Hammer units, times import scale
     ("shadow_soft_size", "max(0.0, r * {scale})", {"r": "radius"}),
-    #  EEVEE shadow blur - unitless on both sides.
+    # EEVEE shadow blur - unitless on both sides
     ("shadow_filter_radius", "max(0.0, f)", {"f": "shadowFilterSize"}),
-    #  Reach: SFM's maxDistance IS Blender's Custom Distance cutoff.
+    #reach: SFM's maxDistance IS Blender's Custom Distance cutoff
     ("cutoff_distance", "max(0.0, m * {scale})", {"m": "maxDistance"}),
-    #  Nothing nearer than this casts - the shadow buffer's near clip.
+    # nothing nearer than this casts - the shadow buffer's near clip
     ("shadow_buffer_clip_start", "max(0.001, n * {scale})",
      {"n": "minDistance"}),
-    #  Watts. The conversion chain (energy scale, world scale squared, the
-    #  taste tweak) is baked into the expression as ONE factor, so the SFM
-    #  intensity stays the number you read and turn.
+    # watts. The conversion chain (energy scale, world scale squared, the
+    # taste tweak) is baked into the expression as one factor, so the SFM
+    # intensity stays the number you read and turn
     ("energy", "i * {energy}", {"i": "intensity"}),
 )
 
@@ -677,8 +677,8 @@ def _sfm_data_group():
         panel = None
         if title:
             try:
-                #  Closed by default - the node stays compact; SFM's main
-                #  three (intensity, ambient, color) sit above the panels.
+                # closed by default - the node stays compact; SFM's main
+                # three (intensity, ambient, color) sit above the panels
                 panel = ng.interface.new_panel(title, default_closed=True)
             except Exception:                                 # noqa: BLE001
                 panel = None
@@ -686,9 +686,9 @@ def _sfm_data_group():
             sock(name, panel)
             order.append(name)
 
-    #  OUTPUTS ARE FLAT, in the same order - an output panel would only
-    #  add clicks to a side of the node nobody reads, and the pass-through
-    #  wiring below matches them by NAME, not by position.
+    # OUTPUTS are FLAT, in the same order - an output panel would only
+    # add clicks to a side of the node nobody reads, and the pass-through
+    # wiring below matches them by NAME, not by position
     for name in order:
         ng.interface.new_socket(name, in_out='OUTPUT',
                                 socket_type=_sock_type(name))
@@ -771,15 +771,15 @@ def apply_sfm_data_node(light_obj, elem):
     data = getattr(light_obj, "data", None)
     if data is None or not hasattr(data, "use_nodes"):
         return 0
-    #  Enabling use_nodes on a light makes Blender build its own default
-    #  emission tree, which renders identically to the non-nodal light - so
-    #  a light apply_attenuation_nodes left alone is safe to touch here.
+    # enabling use_nodes on a light makes Blender build its own default
+    # emission tree, which renders identically to the non-nodal light - so
+    # a light apply_attenuation_nodes left alone is safe to touch here
     data.use_nodes = True
     nt = data.node_tree
 
     grp = _build_data_node(nt, elem)
     if grp.parent is None:
-        #  Its own labelled frame, matching the uberlight/output frames.
+        # its own labelled frame, matching the uberlight/output frames
         frame = next((n for n in nt.nodes if n.bl_idname == "NodeFrame"
                       and n.label == "SFM · LIGHT DATA"), None)
         if frame is None:
@@ -879,10 +879,10 @@ def drive_from_data(light_obj, scale=1.0, energy_scale=1.0, unit_scale=52.0):
             var.name = var_name
             var.type = 'SINGLE_PROP'
             tgt = var.targets[0]
-            #  THE LIGHT DATA IS THE ID, and the path walks into its own
-            #  node tree. Targeting the node GROUP instead would make every
-            #  light read one shared value - the group is shared, the NODE
-            #  is per light.
+            # the LIGHT DATA IS the ID, and the path walks into its own
+            # node tree. Targeting the node GROUP instead would make every
+            # light read one shared value - the group is shared, the NODE
+            # is per light
             tgt.id_type = 'LIGHT'
             tgt.id = data
             tgt.data_path = (f'node_tree.nodes["{DATA_NODE_NAME}"]'
@@ -901,11 +901,11 @@ VOLUME_ANISOTROPY = 0.281364
 
 VOLUME_COLOR = (1.0, 1.0, 1.0, 1.0)
 
-#  A box whose thinnest axis is under this fraction of its thickest is opened
-#  out. See the degenerate-axis note above.
+#A box whose thinnest axis is under this fraction of its thickest is opened
+#out. See the degenerate-axis note above
 VOLUME_MIN_AXIS_RATIO = 0.1
 
-#  Blender's own default for `Light.volume_factor` is 1.0.
+# Blender's own default for `Light.volume_factor` is 1.0
 VOLUME_FACTOR_ON = 1.0
 VOLUME_FACTOR_OFF = 0.0
 
@@ -936,8 +936,8 @@ def volume_bounds(objects, multiplier=None, min_ratio=None):
     centre = Vector(((lo[i] + hi[i]) * 0.5 for i in range(3)))
     size = [(hi[i] - lo[i]) * mult for i in range(3)]
 
-    #  One light, or several at one point, has no extent in any axis. Fall
-    #  back to something a person can see rather than a zero-volume box.
+    # one light, or several at one point, has no extent in any axis. Fall
+    # back to something a person can see rather than a zero-volume box
     biggest = max(size)
     if biggest <= 0.0:
         biggest = 100.0 * mult
@@ -992,8 +992,8 @@ def _build_volume_group():
     go = n.new("NodeGroupOutput"); go.location = (500, 0)
     texco = n.new("ShaderNodeTexCoord"); texco.location = (-900, 320)
 
-    #  height factor = 1 - HeightFade * Z   (Generated Z is 0 at the box
-    #  floor, 1 at its ceiling)
+    # height factor = 1 - HeightFade * Z   (Generated Z is 0 at the box
+    # floor, 1 at its ceiling)
     sep = n.new("ShaderNodeSeparateXYZ"); sep.location = (-700, 320)
     hmul = n.new("ShaderNodeMath"); hmul.operation = 'MULTIPLY'
     hmul.location = (-520, 320)
@@ -1002,8 +1002,8 @@ def _build_volume_group():
     hsub.use_clamp = True
     hsub.location = (-340, 320)
 
-    #  noise factor = 1 + NoiseStrength * (2*Fac - 1): mean stays ~1, so
-    #  turning the knob changes the TEXTURE of the fog, not its exposure.
+    # noise factor = 1 + NoiseStrength * (2*Fac - 1): mean stays ~1, so
+    # turning the knob changes the TEXTURE of the fog, not its exposure
     noise = n.new("ShaderNodeTexNoise"); noise.location = (-700, 120)
     nmad = n.new("ShaderNodeMath"); nmad.operation = 'MULTIPLY_ADD'
     nmad.inputs[1].default_value = 2.0
@@ -1049,10 +1049,10 @@ def _build_volume_group():
     L(dmul1.outputs[0], dmul2.inputs[0])
     L(nadd.outputs[0], dmul2.inputs[1])
     L(dmul2.outputs[0], dmax.inputs[0])
-    #  BY NAME, NOT BY INDEX. Principled Volume has thirteen inputs and
-    #  Blender has reordered shader sockets between releases before; an index
-    #  that silently became "Emission Strength" would fill the scene with
-    #  light and look nothing like a density problem.
+    # BY NAME, NOT BY INDEX. Principled Volume has thirteen inputs and
+    # Blender has reordered shader sockets between releases before; an index
+    # that silently became "Emission Strength" would fill the scene with
+    # light and look nothing like a density problem
     L(dmax.outputs[0], vol.inputs["Density"])
     L(gi.outputs["Anisotropy"], vol.inputs["Anisotropy"])
     L(gi.outputs["Color"], vol.inputs["Color"])
@@ -1082,13 +1082,13 @@ def _volume_material(density=None, anisotropy=None):
     grp.width = 190
     grp.inputs["Density"].default_value = density
     grp.inputs["Anisotropy"].default_value = anisotropy
-    #  See VOLUME_COLOR: the default is grey and it dims the whole scene.
+    # See VOLUME_COLOR: the default is grey and it dims the whole scene.
     grp.inputs["Color"].default_value = VOLUME_COLOR
 
-    #  VOLUME, NOT SURFACE. A box wired to Surface is an opaque cube around
-    #  the whole scene - a much louder failure than no volume at all, and an
-    #  easy one to cause, because Surface is the socket everything else in
-    #  Blender connects to.
+    # VOLUME, not SURFACE. A box wired to Surface is an opaque cube around
+    # the whole scene - a much louder failure than no volume at all, and an
+    # easy one to cause, bc Surface is the socket everything else in
+    # Blender connects to
     nt.links.new(grp.outputs["Volume"], out.inputs["Volume"])
     return mat
 
@@ -1102,8 +1102,8 @@ def _fit_eevee_volumetrics(scene, centre, size):
     ev = getattr(scene, "eevee", None)
     if ev is None or centre is None:
         return None
-    #  Far corner measured from the origin, which is where an unmoved camera
-    #  sits and is a safe over-estimate for one that has moved into the box.
+    # far corner measured from the origin, which is where an unmoved camera
+    # sits and is a safe over-estimate for one that has moved into the box.
     reach = Vector(centre).length + Vector(size).length * 0.5
     try:
         if float(getattr(ev, "volumetric_end", 0.0)) < reach:
@@ -1173,8 +1173,8 @@ def _unit_cube(mesh):
 
 FILL_OBJECT = "HT_Fill (global)"
 FILL_STRENGTH = 0.5
-FILL_ANGLE_DEG = 180.0     # fully open: a sky, not a sun
-FILL_HEIGHT_FACTOR = 1.5   # above the top of the lights' bounding box
+FILL_ANGLE_DEG = 180.0     #fully open: a sky, not a sun
+FILL_HEIGHT_FACTOR = 1.5   #above the top of the lights' bounding box
 
 
 def fill_colour(lights):
@@ -1263,12 +1263,12 @@ def build_volume_box(lights, collection=None, density=None, anisotropy=None,
     """
     scene = scene or bpy.context.scene
 
-    #  RULE 20, IN A NEW PLACE. `matrix_world` is not valid until the
-    #  depsgraph has run, and these lights were created moments ago - so
-    #  every one of them read as (0, 0, 0) and the box came out a 1000-unit
-    #  cube at the origin instead of the 2778 x 3677 x 1356 the session
-    #  actually spans. It looked like a plausible box, which is why it would
-    #  have shipped. Measured both ways before and after this line.
+    # RULE 20, in A NEW PLACE. `matrix_world` is not valid until the
+    # depsgraph has run, and these lights were created moments ago - so
+    # every one of them read as (0, 0, 0) and the box came out a 1000-unit
+    # cube at the origin instead of the 2778 x 3677 x 1356 the session
+    # actually spans. It looked like a plausible box, which is why it would
+    # have shipped. Measured both ways before and after this line.
     try:
         bpy.context.view_layer.update()
     except Exception:
@@ -1286,8 +1286,8 @@ def build_volume_box(lights, collection=None, density=None, anisotropy=None,
         obj = bpy.data.objects.new(VOLUME_OBJECT, mesh)
         col.objects.link(obj)
     else:
-        #  Membership enforced every call - a box surviving from an import
-        #  that filed it in the Port comes home to the outer collection.
+        # membership enforced every call - a box surviving from an import
+        # that filed it in the Port comes home to the outer collection
         for c in list(obj.users_collection):
             if c is not col:
                 c.objects.unlink(obj)
@@ -1297,20 +1297,20 @@ def build_volume_box(lights, collection=None, density=None, anisotropy=None,
             except Exception:
                 pass
 
-    #  A UNIT CUBE PLUS SCALE, not vertices at the final size. The box is
-    #  thousands of units across and somebody will want to nudge it; a scale
-    #  is a thing you can read and type into, and eight vertices at +/-1838
-    #  are not.
+    #A UNIT CUBE PLUS SCALE, not vertices at the final size. The box is
+    #thousands of units across and somebody will want to nudge it; a scale
+    #is a thing you can read and type into, and eight vertices at +/-1838
+    #are not
     _unit_cube(obj.data)
     obj.location = centre
     obj.scale = (size[0] * 0.5, size[1] * 0.5, size[2] * 0.5)
     obj.rotation_euler = (0.0, 0.0, 0.0)
 
-    #  DISPLAY AS WIRE. Solid, it hides the entire scene in the viewport the
-    #  instant it appears, and the first thing anybody would do is delete it.
+    # DISPLAY AS WIRE. Solid, it hides the entire scene in the viewport the
+    # instant it appears, and the first thing anybody would do is delete it.
     obj.display_type = 'WIRE'
     obj.show_in_front = False
-    #  It must not cast a shadow of its own six faces over everything.
+    # It must not cast a shadow of its own six faces over everything.
     if hasattr(obj, "visible_shadow"):
         obj.visible_shadow = False
 
@@ -1447,7 +1447,7 @@ def shot_lights(shot):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  One light
+# One light
 # ─────────────────────────────────────────────────────────────────────────────
 
 TWEAK_BRIGHTNESS_GLOBAL = 16.0
@@ -1534,17 +1534,17 @@ def _apply_static(light_obj, elem, energy_scale, spot_blend, unit_scale=1.0,
 
     radius = elem.get("radius")
     if radius is not None:
-        #  TIMES THE IMPORT SCALE. radius is in Hammer units like everything
-        #  else in the file; at the default scale 1.0 this changes nothing,
-        #  but a 0.01905 metric import used to keep a HU-sized soft shadow.
+        # TIMES THE IMPORT SCALE. radius is in Hammer units like everything
+        # else in the file; at the default scale 1.0 this changes nothing,
+        # but a 0.01905 metric import used to keep a HU-sized soft shadow.
         data.shadow_soft_size = max(0.0, float(radius) * scale)
 
-    #  shadowFilterSize -> EEVEE's shadow filter radius. Same job on both
-    #  sides: how much the shadow map is blurred, independent of the
-    #  emitter's physical size (which radius already carries for Cycles).
-    #  Measured range in real sessions: 0.35..0.76, comfortably inside
-    #  Blender's scale for the property. hasattr-guarded - the property is
-    #  EEVEE's and builds differ.
+    # shadowFilterSize -> EEVEE's shadow filter radius. Same job on both
+    # sides: how much the shadow map is blurred, independent of the
+    # emitter's physical size (which radius already carries for Cycles)
+    # Measured range in real sessions: 0.35..0.76, comfortably inside
+    # Blender's scale for the property. hasattr-guarded - the property is
+    # EEVEE's and builds differ
     filt = elem.get("shadowFilterSize")
     if filt is not None and hasattr(data, "shadow_filter_radius"):
         try:
@@ -1552,9 +1552,9 @@ def _apply_static(light_obj, elem, energy_scale, spot_blend, unit_scale=1.0,
         except Exception:
             pass
 
-    #  minDistance -> shadow clip start, where the build has one. SFM uses
-    #  it as "nothing nearer than this casts", which is exactly what the
-    #  shadow buffer clip start means.
+    # minDistance -> shadow clip start, where the build has one. SFM uses
+    # it as "nothing nearer than this casts", which is exactly what the
+    # shadow buffer clip start means.
     near = elem.get("minDistance")
     if near is not None and float(near) > 0.0:
         for prop in ("shadow_buffer_clip_start",):
@@ -1672,11 +1672,11 @@ def _animate_transform(light_obj, elem, by_target, frame_rate, start, scale,
                     fc.keyframe_points.insert(f, loc[i], options={"FAST"})
                     keyed += 1
         elif attr == "orientation":
-            #  1.17.3: walked onto one hemisphere BEFORE keying. The camera's
-            #  formula (sfm_orientation) puts a light facing SFM yaw 0 on the
-            #  sign boundary, so neighbouring samples came out q and -q and the
-            #  keys in between spun the long way round (only the final Euler
-            #  step, when it ran, cleaned that up).
+            # 1.17.3: walked onto one hemisphere before keying. The camera's
+            # formula (sfm_orientation) puts a light facing SFM yaw 0 on the
+            # sign boundary, so neighbouring samples came out q and -q and the
+            # keys in between spun the long way round (only the final Euler
+            # step, when it ran, cleaned that up)
             from ..core import camera_resample as _CR
             rows = sorted((((float(t) + start) * frame_rate,
                             sfm_orientation(_lift_orientation(v, chain_q)))
@@ -1772,12 +1772,12 @@ def _animate(light_obj, elem, model, energy_scale, frame_rate, start,
                     options={"FAST"})
                 keyed += 1
             elif attr == "color":
-                #  Reached only by a channel that writes the light's `color`
-                #  DIRECTLY. In every session measured those carry ZERO keys -
-                #  the real animation arrives through a pack operator, handled
-                #  by _animate_color() below. Kept because a hand-built or
-                #  future session could key it here, and dropping the branch
-                #  would make that silently do nothing.
+                # reached only by a channel that writes the light's `color`
+                # DIRECTLY. In every session measured those carry ZERO keys -
+                # the real animation arrives thru a pack operator, handled
+                # by _animate_color() below. Kept because a hand-built or
+                # future session could key it here, and dropping the branch
+                # would make that silently do nothing
                 lin = desaturate((_srgb_to_linear(val[0]),
                                   _srgb_to_linear(val[1]),
                                   _srgb_to_linear(val[2])),
@@ -1794,7 +1794,7 @@ def _animate(light_obj, elem, model, energy_scale, frame_rate, start,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Public API
+# Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -1833,9 +1833,9 @@ def _animate_color(light_obj, elem, model, frame_rate, start,
     if pack is None:
         return 0
 
-    #  {channel index: [(frame, linear value)]} - r, g, b. Alpha is read and
-    #  dropped: a Blender light has no alpha and inventing one would be a
-    #  fourth curve nobody asked for.
+    #{channel index: [(frame, linear value)]} - r, g, b. Alpha is read and
+    #dropped: a Blender light has no alpha and inventing one would be a
+    #fourth curve nobody asked for.
     per_channel = {}
     for ch in model.elements:
         if (ch.type or "") != "DmeChannel":
@@ -1866,7 +1866,7 @@ def _animate_color(light_obj, elem, model, frame_rate, start,
         return 0
 
     if desaturate_factor < 1.0 - 1e-6:
-        #  Static linear colour = the fallback for a channel with no curve.
+        # static linear colour = the fallback for a channel with no curve
         static_lin = (1.0, 1.0, 1.0)
         col = elem.get("color")
         if col is not None:
@@ -1902,10 +1902,10 @@ def _animate_color(light_obj, elem, model, frame_rate, start,
             per_channel[idx] = out
 
     data = light_obj.data
-    #  REUSE THE ACTION `_animate` JUST MADE. `make_action` always creates a
-    #  NEW one and assigns it, so calling it here would throw away the
-    #  intensity and cone curves written moments ago - the colour would work
-    #  and everything else would silently vanish.
+    # REUSE the ACTION `_animate` JUST MADE. `make_action` always creates a
+    # NEW one and assigns it, so calling it here would throw away the
+    # intensity and cone curves written moments ago - the colour would work
+    # and everything else would silently vanish
     ad = getattr(data, "animation_data", None)
     action = ad.action if (ad is not None and ad.action is not None) else None
     if action is None:
@@ -1952,9 +1952,9 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
     shot_ref = None          # the shot's reference timeFrame triple, if known
     time_shot = None         # 1.17.0: the chosen shot, for its timeline shift
 
-    #  NARROW TO ONE CUT. Only when a shot was actually chosen: with no choice
-    #  the whole session is the job, which is what every earlier version did
-    #  and what a one-shot session means anyway.
+    # NARROW TO one CUT. Only when a shot was actually chosen: with no choice
+    # the whole session is the job, which is what every earlier version did
+    # and what a one-shot session means anyway
     if shot_index is not None and int(shot_index) >= 0:
         try:
             from ..session import Session_Reader as _SR, Session_Paths as _SP
@@ -1963,20 +1963,20 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
                                                name=shot_name or "")
             if shot is not None:
                 picked = shot_lights(shot)
-                #  A SHOT WITH NO LIGHT SETS KEEPS THE WHOLE FILE rather than
-                #  importing nothing. Returning [] here would turn "this cut
-                #  has no lights of its own" into "the light importer is
-                #  broken", and the two look identical from the outside.
+                #A SHOT WITH NO LIGHT SETS KEEPS the WHOLE FILE rather than
+                #importing nothing. Returning [] here would turn "this cut
+                #has no lights of its own" into "the light importer is
+                #broken", and the two look identical from the outside
                 if picked:
                     lights = picked
                     shot_used = shot.get("name")
                 else:
                     shot_note = (f"{shot.get('name')} has no light sets - "
                                  f"importing every light in the file")
-                #  The shot's elected time base - light keys must land on
-                #  the SAME timeline the extracted animation lands on, and
-                #  that timeline is per clip, not per file (Gomez: clip
-                #  bases in one film differ by up to 55.6 s).
+                # the shot's elected time base - light keys must land on
+                # the same timeline the extracted animation lands on, and
+                # that timeline is per clip, not per file (Gomez: clip
+                # bases in one film differ by up to 55.6 s)
                 try:
                     shot_ref = _SR.shot_time_base(model, shot)["clip_tf"]
                     time_shot = shot
@@ -1989,7 +1989,7 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
     if not lights:
         raise RuntimeError(f"No light elements in {dmx_path.name}")
 
-    # Frame rate for any animation, from wherever this file keeps its clip.
+    # frame rate for any animation, from wherever this file keeps its clip
     frame_rate, start = 0.0, 0.0
     clip = DMX_Analyzer.find_clip(model.root)
     if clip is not None:
@@ -1997,12 +1997,12 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
         tf = clip.get("timeFrame")
         if tf is not None:
             start = float(tf.get("start") or 0.0)
-    #  1.17.0: A SESSION'S CLIPS CARRY NO frameRate (Session_Reader's module
-    #  notes: "clip has none") - the rate lives in settings.renderSettings.
-    #  This read 24 for every session, so on the 30 fps gothic intro every
-    #  light key landed at 24/30 of its time: light2 at -258 instead of -323,
-    #  the skydome lights at -988 instead of -1235. The animation importer
-    #  reads the session rate; the lights now read the same one.
+    # 1.17.0: A SESSION'S CLIPS CARRY no frameRate (Session_Reader's module
+    # notes: "clip has none") - the rate lives in settings.renderSettings
+    # This read 24 for every session, so on the 30 fps gothic intro every
+    # light key landed at 24/30 of its time: light2 at -258 instead of -323,
+    # the skydome lights at -988 instead of -1235. The animation importer
+    # reads the session rate; the lights now read the same one.
     if not frame_rate:
         try:
             from ..session import Session_Reader as _SRf
@@ -2012,27 +2012,27 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
 
     col = _get_collection()
     axis = _axis_empty(col)
-    # NO +90 X HERE. sfm_position()/sfm_orientation() already map SFM into
+    # no +90 X HERE. sfm_position()/sfm_orientation() already map SFM into
     # Blender - they are the camera importer's conversion, world map included -
     # so a rotation on this parent applies it a SECOND time. Measured on
     # `new session.dmx`: light1 sits at (262.19, 14.46, 171.28) in the session,
     # sfm_position gives the correct (14.5, -262.2, 171.3), and the +90 X then
     # dragged it to (14.5, -171.3, -262.2) - underground, with the whole rig
     # tipped over. The empty stays as a grouping parent; aim_offset is still
-    # honoured because that is a deliberate user nudge.
+    # honoured bc that is a deliberate user nudge.
     axis.rotation_euler = tuple(aim_offset)
 
     made, failed, keyed_total = [], [], 0
-    #  Kept alongside `made` and in the same order, so `volume_lights='SFM'`
-    #  can ask each light's own element for its `volumetric` flag without
-    #  re-finding it by name - which is the lookup that goes wrong the moment
-    #  two shots both contain a light called `light1`.
+    # kept alongside `made` and in the same order, so `volume_lights='SFM'`
+    # can ask each light's own element for its `volumetric` flag without
+    # re-finding it by name - which is the lookup that goes wrong the moment
+    # two shots both contain a light called `light1`.
     made_elems = []
     atten = {}
     colour_keyed = {}
-    #  {light: {property: why it was not driven}} - a driver skipped for a
-    #  good reason (the property is animated) must not look like one that
-    #  failed silently.
+    # {light: {property: why it was not driven}} - a driver skipped for a
+    # good reason (the property is animated) must not look like one that
+    # failed silently
     driven_skips = {}
     notes = {}
     unmapped_seen = set()
@@ -2048,19 +2048,19 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
         lights = keep
     parent_map = _dag_parent_map(model)
     by_target = _channels_by_target(model)
-    #  Which channels clip holds each channel - a light's OWN clip carries
-    #  its time base, and on a multi-shot film that base is per clip.
+    #which channels clip holds each channel - a light's own clip carries
+    #its time base, and on a multi-shot film that base is per clip.
     clip_of_channel = {}
     for _cl in model.elements:
         if (_cl.type or "") == "DmeChannelsClip":
             for _ch in (_cl.get("channels") or []):
                 clip_of_channel[id(_ch)] = _cl
 
-    #  1.17.0: the shot each light is timed through. A chosen shot is the
-    #  answer; with none, MOVIE timing times each light through ITS OWN
-    #  shot (Session_Reader.element_shots) - the old global start would put
-    #  a whole film's lights on extract time while the rigs sit on movie
-    #  time.
+    #1.17.0: the shot each light is timed through. A chosen shot is the
+    #answer; with none, MOVIE timing times each light through its own
+    #shot (Session_Reader.element_shots) - the old global start would put
+    #a whole film's lights on extract time while the rigs sit on movie
+    #time
     from ..session import Session_Reader as _SRt
     _mode = _SRt.timing_mode()
     _own_shot = {}
@@ -2098,9 +2098,9 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
         return _SRt.place_shift(model, sh, mode=_mode, base=_base(sh))
 
     for _n_light, elem in enumerate(lights, 1):
-        #  The set's name first - see light_set_names(). The element name is
-        #  the fallback for a light no set points at, which a hand-edited
-        #  session can produce.
+        # the set's name first - see light_set_names(). The element name is
+        # the fallback for a light no set points at, which a hand-edited
+        # session can produce.
         name = label_of.get(id(elem)) or elem.name or "light"
         Progress.update(_n_light, len(lights), name)
         try:
@@ -2110,9 +2110,9 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
             obj.parent = axis
             obj.rotation_mode = 'QUATERNION'
 
-            #  The wrapper DAGs above this light, composed - identity for
-            #  a light whose parents all sit at the origin, which is every
-            #  session before Gomez.
+            # the wrapper DAGs above this light, composed - identity for
+            # a light whose parents all sit at the origin, which is every
+            # session before Gomez.
             chain = _parent_chain(elem, parent_map)
             chain_m = _chain_matrix(chain)
             chain_q = chain_m.to_quaternion()
@@ -2152,10 +2152,10 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
                 a = apply_attenuation_nodes(obj, elem)
                 if a is not None:
                     atten[obj.name] = a
-                #  The full SFM attribute panel on the shader. The uberlight
-                #  builder already made and LINKED this node when the light
-                #  had shaping; this is get-or-create, so a light without
-                #  shaping still gets its panel and nothing is unwired.
+                # the full SFM attribute panel on the shader. The uberlight
+                # builder already made and LINKED this node when the light
+                # had shaping; this is get-or-create, so a light w/o
+                # shaping still gets its panel and nothing is unwired
                 try:
                     apply_sfm_data_node(obj, elem)
                 except Exception as exc:                      # noqa: BLE001
@@ -2174,9 +2174,9 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
                 if n_col:
                     colour_keyed[obj.name] = n_col
 
-            #  LAST, and that ordering is the whole safety argument: the
-            #  drivers are added only to properties the animation above did
-            #  NOT key, and it has to have run to know which those are.
+            #last, and that ordering is the whole safety argument: the
+            #drivers are added only to properties the animation above did
+            #NOT key, and it has to have run to know which those are
             if attenuation_nodes and LIGHT_DRIVERS:
                 try:
                     sk = drive_from_data(obj, scale=scale,
@@ -2187,8 +2187,8 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
                 except Exception as exc:                      # noqa: BLE001
                     print(f"[LIGHTS]  {name}: drivers failed ({exc})")
             else:
-                #  1.16.0: no drivers - and none left over from an older
-                #  import of the same light either
+                # 1.16.0: no drivers - and none left over from an older
+                # import of the same light either
                 gone = strip_light_drivers(obj)
                 if gone:
                     print(f"[LIGHTS]  {name}: removed {gone} old driver(s)")
@@ -2197,10 +2197,10 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
         except Exception as exc:
             failed.append((name, f"{type(exc).__name__}: {exc}"))
 
-    #  AFTER the loop, because the box is sized from where the lights ENDED
-    #  UP - a light that failed to build must not stretch the world, and one
-    #  that was keyed into motion is still measured at its rest position,
-    #  which is the honest answer for a static box.
+    # after the loop, because the box is sized from where the lights ENDED
+    # UP - a light that failed to build must not stretch the world, and one
+    # that was keyed into motion is still measured at its rest position,
+    # which is the honest answer for a static box.
     vol_on, vol_off = set_lights_volume_influence(
         made, mode=volume_lights, elements=made_elems)
     volume = {"object": None, "reason": "not requested"}
@@ -2247,7 +2247,7 @@ def import_lights(dmx_path, scale=1.0, energy_scale=1.0, spot_blend=0.15,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operator
+# Operator
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_import_lights(Operator, ImportHelper):
@@ -2272,12 +2272,12 @@ never guessed at.
 
     bl_idname = "ht.import_lights"
     bl_label = "Import Lights (Experimental)"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filename_ext = ".dmx"
@@ -2341,10 +2341,10 @@ never guessed at.
         default=True,
     )
 
-    #  ── the volumetric box ───────────────────────────────────────────────
-    #  ON BY DEFAULT, and that is the feature. A spot light in empty space
-    #  looks identical with volumetrics on and off, so an import without a
-    #  volume to scatter in reads as "Blender does not do volumetrics".
+    # ── the volumetric box ───────────────────────────────────────────────
+    # ON BY DEFAULT, and that's the feature. A spot light in empty space
+    # looks identical with volumetrics on and off, so an import w/o a
+    # volume to scatter in reads as "Blender doesn't do volumetrics".
     volume_box: BoolProperty(  # type: ignore
         name="Volumetric Box",
         description=("Build a large Principled Volume box around the lights "

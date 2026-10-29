@@ -31,7 +31,7 @@ from bpy_extras.io_utils import ImportHelper
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -43,7 +43,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR 1 — REMOVE DRIVERS
+# operator 1 — remove drivers
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_RemoveDrivers(Operator):
@@ -74,7 +74,7 @@ The shape keys themselves are untouched. Only the drivers go"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR 2 — SYMMETRIZE L SUFFIX SHAPE KEYS
+# operator 2 — symmetrize l suffix shape keys
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_SymmetrizeShapeKeys(Operator):
@@ -111,7 +111,7 @@ Skips anything already split, so running it twice is safe"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR 3 — IMPORT SHAPE KEYS (.dmx)  — flex only, no bake / no stereo
+# OPERATOR 3 — IMPORT SHAPE KEYS (.dmx)  — flex only, no bake / no stereo
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_UtilImportShapeKeys(Operator, ImportHelper):
@@ -141,7 +141,7 @@ move"""
 
         from ..importers import Import_Shape_Keys
         try:
-            # Call the public single-stage function directly — no flag mutation needed.
+            # call the public single-stage function directly — no flag mutation needed.
             result = Import_Shape_Keys.import_flex_dmx(self.filepath, obj)
         except Exception as exc:
             self.report({"ERROR"}, str(exc))
@@ -159,7 +159,7 @@ move"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR 4 — BAKE LOCALVARS (.qc)
+# OPERATOR 4 — BAKE LOCALVARS (.qc)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _qc_face_data_dir() -> str:
@@ -181,23 +181,23 @@ A QC bridges the controllers SFM animates to the flexes the mesh has,
 with %localvar expressions. Without evaluating them, a face driven by
 combination controls barely moves.
     """
-    #  BELOW THE TOOLTIP CAP. Blender truncates an operator description
-    #  at 1023 characters, without a warning, mid-word. These paragraphs
-    #  were part of the docstring and were already being cut off before
-    #  anyone could read them, so they live here instead - kept, but out
-    #  of the tooltip's budget.
-    #  THREE THINGS THIS GETS RIGHT
-    #  the % sigil    a QC refers to other localvars as %name. That is modulo
-    #  in Python, so those expressions used to be a syntax
-    #  error that silently evaluated to zero - and it was every
-    #  expression that referenced another one
-    #  intermediates  many localvars are not outputs at all; they exist to
-    #  feed other expressions, and are evaluated in dependency
-    #  order rather than read as zero
-    #  eyelids        three collapsed targets reconstructed from the QC's own
-    #  eyeball heights, which is what restores blinking
+    # BELOW the TOOLTIP CAP. Blender truncates an operator description
+    # at 1023 characters, without a warning, mid-word. These paragraphs
+    # were part of the docstring and were already being cut off before
+    # anyone could read them, so they live here instead - kept, but out
+    # of the tooltip's budget
+    # THREE THINGS THIS GETS RIGHT
+    # the % sigil    a QC refers to other localvars as %name. That is modulo
+    # in Python, so those expressions used to be a syntax
+    # error that silently evaluated to zero - and it was every
+    # expression that referenced another one
+    # intermediates  many localvars are not outputs at all; they exist to
+    # feed other expressions, and are evaluated in dependency
+    # order rather than read as zero
+    # eyelids        three collapsed targets reconstructed from the QC's own
+    # eyeball heights, which is what restores blinking
     #
-    #  Reports what resolved, what is an intermediate, and what had no source
+    # Reports what resolved, what is an intermediate, and what had no source
     #
 
     bl_idname  = "ht.bake_localvars"
@@ -250,7 +250,7 @@ combination controls barely moves.
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU DRAWING  (called from __init__.py)
+# MENU DRAWING  (called from __init__.py)
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_MT_utils_shapekeys_submenu(bpy.types.Menu):
@@ -284,7 +284,7 @@ def draw_utils_shapekeys_entry(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (

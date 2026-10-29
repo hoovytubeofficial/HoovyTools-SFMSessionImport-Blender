@@ -58,7 +58,7 @@ from pathlib import Path
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Kinds
+# Kinds
 # ─────────────────────────────────────────────────────────────────────────────
 
 SESSION   = "SESSION"
@@ -88,7 +88,7 @@ KIND_ICON = {
     MODEL:     'MESH_DATA',
 }
 
-# Which operator each kind routes to. None = not built yet, see roadmap.
+# which operator each kind routes to. None = not built yet, see roadmap
 KIND_OPERATOR = {
     SESSION:   ("ht.import_session",       "Import Session Models"),
     ANIMATION: ("ht.import_dmx_animation", "Import DMX Animation"),
@@ -100,14 +100,14 @@ KIND_OPERATOR = {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Fast pass
+# Fast pass
 # ─────────────────────────────────────────────────────────────────────────────
 
 _HEADER_RE = re.compile(
     rb"<!--\s*dmx encoding (\S+) (\d+) format (\S+) (\d+)\s*-->")
 _HEADER_PROTO_RE = re.compile(rb"<!--\s*DMXVersion binary_v(\d+)\s*-->")
 
-# token -> what its presence proves
+#token -> what its presence proves
 _MARKERS = {
     b"flexWeight":        "flex",
     b"fieldOfView":       "fov",
@@ -128,7 +128,7 @@ _MARKERS = {
     b"frameRate":         "frame_rate",
 }
 
-# Files bigger than this never get a deep pass unless deep=True is forced.
+# files bigger than this never get a deep pass unless deep=True is forced
 DEEP_SIZE_LIMIT = 8 * 1024 * 1024
 
 
@@ -199,7 +199,7 @@ def want_deep(path, fmt):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Deep pass
+# Deep pass
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _get_datamodel():
@@ -280,8 +280,8 @@ def _deep_read_session(model, out):
     """
     root = model.root
 
-    # Frame rate: renderSettings is the timeline, movieSettings can override
-    # it for output. Same rule as Session_Reader.session_fps.
+    # frame rate: renderSettings is the timeline, movieSettings can override
+    # it for output. Same rule as Session_Reader.session_fps
     try:
         settings = root.get("settings")
         if settings is not None:
@@ -359,14 +359,14 @@ def _deep_read(path, out):
 
     # A session keeps its animation under activeClip rather than in an
     # animationList, so it gets its own summary instead of the single-clip
-    # path below.
+    # path below
     if "activeClip" in out["root_keys"]:
         _deep_read_session(model, out)
         return
 
     clip = find_clip(root)
     if clip is None:
-        # A model/reference DMX: skeleton and mesh, no channels.
+        # A model/reference DMX: skeleton and mesh, no channels
         if "skeleton" in out["root_keys"] or "mesh" in out["marker_tags"]:
             out["kinds"].add(MODEL)
         return
@@ -406,7 +406,7 @@ def _deep_read(path, out):
         elif attr in ("position", "orientation"):
             to = ch.get("toElement")
             nm = getattr(to, "name", None) if to is not None else None
-            # "unnamed" is the game-model root channel's target, not a bone.
+            # "unnamed" is the game-model root channel's target, not a bone
             if (nm and nm != "unnamed" and attr == "position"
                     and len(bones) < 512):
                 bones.append(str(nm))
@@ -430,8 +430,8 @@ def _deep_read(path, out):
     out["frame_end"] = hi
     out["shot_bounds"] = read_shot_bounds(clip, frame_for)
 
-    # Sub-frame drift: SFM exports land on 4.0008 / 4.9992 / 6.0000 rather
-    # than clean integers. The splitter and the FPS check both care.
+    # sub-frame drift: SFM exports land on 4.0008 / 4.9992 / 6.0000 rather
+    # than clean integers. The splitter and the FPS check both care
     if lo is not None:
         drift = max(abs(v - round(v)) for v in (lo, hi))
         out["subframe_drift"] = drift
@@ -442,7 +442,7 @@ def _deep_read(path, out):
     # A rest pose is not an animation. Reference DMX files carry a full
     # channel set whose logs each hold a single key, so the whole frame span
     # collapses to zero. Importing one as animation yields a frame of nothing,
-    # so call it what it is.
+    # so call it what it is
     static = (lo is not None and hi is not None and abs(hi - lo) < 1e-6)
     out["static"] = static
 
@@ -452,7 +452,7 @@ def _deep_read(path, out):
     # never received its rootTransform. It then sat at the world origin
     # unrotated while every character around it got the SFM -> Blender map. In
     # `new session.dmx` that was `pit_a1`: the ground the whole shot stands on,
-    # 90 degrees out from the six characters standing on it.
+    # 90 degrees out from the six characters standing on it
     #
     # A rest pose has no placement to apply. A placed prop does. Who wrote the
     # file tells them apart unambiguously.
@@ -466,11 +466,11 @@ def _deep_read(path, out):
     out["session_extract"] = session_extract
 
     if static:
-        # The deep pass outranks the fast one. The fast scan saw unnamed_p
-        # and flexWeight tokens and guessed ANIMATION / SHAPEKEY; now that
-        # the logs are decoded and every one holds a single key, those
-        # guesses are wrong and get withdrawn rather than sitting alongside
-        # the truth.
+        #The deep pass outranks the fast one. The fast scan saw unnamed_p
+        #and flexWeight tokens and guessed ANIMATION / SHAPEKEY; now that
+        #the logs are decoded and every one holds a single key, those
+        #guesses are wrong and get withdrawn rather than sitting alongside
+        #the truth
         out["kinds"].discard(SHAPEKEY)
         out["kinds"].add(MODEL)
         if session_extract and (counts.get("position") or counts.get("orientation")):
@@ -499,7 +499,7 @@ def _deep_read(path, out):
 
     if not static and (counts.get("position") or counts.get("orientation")):
         # A camera export also carries one position + one orientation
-        # channel; a real animation has them per bone. Two is the camera.
+        # channel; a real animation has them per bone. Two is the camera
         if (counts.get("position", 0) + counts.get("orientation", 0)) > 2:
             out["kinds"].add(ANIMATION)
         elif CAMERA not in out["kinds"]:
@@ -507,7 +507,7 @@ def _deep_read(path, out):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Public entry point
+# Public entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
 def blank(path):
@@ -617,7 +617,7 @@ def analyze_many(paths, deep="auto"):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Router
+# Router
 # ─────────────────────────────────────────────────────────────────────────────
 
 def kinds_sorted(analysis):
@@ -700,7 +700,7 @@ def report_lines(analysis):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operator  -  Analyze DMX                                        [roadmap #6]
+# Operator  -  Analyze DMX                                        [roadmap #6]
 # ─────────────────────────────────────────────────────────────────────────────
 
 import bpy
@@ -816,11 +816,11 @@ importer. Pick several files at once to triage a folder"""
                         row.enabled = False
                         row.label(text=label, icon=KIND_ICON[kind])
 
-        #  This is the ONE popup that is not just text - a single-file
-        #  analysis offers "route it to..." buttons, and losing those would
-        #  turn the analyzer back into a thing you read and then act on by
-        #  hand. Report_UI takes the draw callback as `body_draw`; the plain
-        #  lines below are what the console and the coloured bar get.
+        #this is the one popup that isn't just text - a single-file
+        #analysis offers "route it to..." buttons, and losing those would
+        #turn the analyzer back into a thing you read and then act on by
+        #hand. Report_UI takes the draw callback as `body_draw`; the plain
+        #lines below are what the console and the coloured bar get
         flat = []
         for a in results[:12]:
             flat.extend(report_lines(a))

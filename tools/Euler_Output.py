@@ -1,10 +1,10 @@
 # ═════════════════════════════════════════════════════════════════════════════
-#  DEPENDENCIES
-#    bpy, mathutils                 the conversion
-#    core/anim_compat.py            layered (5.x) and legacy actions alike
-#    importers/Import_DMX_Animation fix_action_quat_flips - run first
-#  Called by session/Session_Orchestrator.py as the one-click's last step,
-#  and by the operator HT_OT_rotations_to_euler. Added in 1.16.0.
+# DEPENDENCIES
+# bpy, mathutils                 the conversion
+# core/anim_compat.py            layered (5.x) and legacy actions alike
+# importers/Import_DMX_Animation fix_action_quat_flips - run first
+# Called by session/Session_Orchestrator.py as the one-click's last step,
+# and by the operator HT_OT_rotations_to_euler. Added in 1.16.0.
 # ═════════════════════════════════════════════════════════════════════════════
 """
 Euler_Output - the import ENDS on Euler rotations.

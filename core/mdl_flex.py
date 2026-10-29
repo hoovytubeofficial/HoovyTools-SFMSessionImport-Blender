@@ -36,7 +36,7 @@ from pathlib import Path
 GENERATOR = "mdl_flex 1"            # bump when the output changes: older generated files are then rewritten
 SOURCE_TAG = "// source:"
 
-#  studio.h's flex ops
+#studio.h's flex ops
 CONST, FETCH1, FETCH2, ADD, SUB, MUL, DIV, NEG, EXP = 1, 2, 3, 4, 5, 6, 7, 8, 9
 OPEN, CLOSE, COMMA, MAX, MIN = 10, 11, 12, 13, 14
 TWOWAY_0, TWOWAY_1, NWAY, COMBO, DOMINATE = 15, 16, 17, 18, 19
@@ -148,19 +148,19 @@ def read(mdl_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Rule programs -> expressions
+# Rule programs -> expressions
 # ─────────────────────────────────────────────────────────────────────────────
 #
-#  The engine runs each rule on a stack (CStudioHdr::RunFlexRules). Run the same program on TEXT and the stack ends
-#  holding the expression. The bake's evaluator knows + - * /, min, max and names (a controller's value in its
-#  range; %name = another flex already computed), so the remapping ops are written out with those:
-#      2WAY_0   RemapValClamped(c, -1, 0, 1, 0) = min(1, max(0, -c))
-#      2WAY_1   RemapValClamped(c,  0, 1, 0, 1) = min(1, max(0, c))
-#      COMBO    the product of the last n
-#      DOMINATE value * (1 - product of the last n)
-#      NWAY     a trapezoid ramp of one controller times another
-#      DME_*_EYELID  the DMX eyelid rule, written with the same pieces
-#  A program using anything else (EXP, a ramp built from non-constants) is skipped and named in a comment.
+# The engine runs each rule on a stack (CStudioHdr::RunFlexRules). Run the same program on TEXT and the stack ends
+# holding the expression. The bake's evaluator knows + - * /, min, max and names (a controller's value in its
+# range; %name = another flex already computed), so the remapping ops are written out with those:
+# 2WAY_0   RemapValClamped(c, -1, 0, 1, 0) = min(1, max(0, -c))
+# 2WAY_1   RemapValClamped(c,  0, 1, 0, 1) = min(1, max(0, c))
+# COMBO    the product of the last n
+# DOMINATE value * (1 - product of the last n)
+# NWAY     a trapezoid ramp of one controller times another
+# DME_*_EYELID  the DMX eyelid rule, written with the same pieces
+# A program using anything else (EXP, a ramp built from non-constants) is skipped and named in a comment
 
 def _remap01(c):
     """RemapValClamped(controller, min, max, 0, 1) - the controller as 0..1 of its own range."""
@@ -250,21 +250,21 @@ def rule_expression(ops, descs, ctrls):
                 ramp = "min(%s, %s)" % (_ramp(x, a_[1], b_[1], False), _ramp(x, c_[1], d_[1], True))
                 stack.append(("(%s * %s)" % (ramp, ctrl(val)["name"]), None))
             elif op in (DME_LOWER_EYELID, DME_UPPER_EYELID):
-                #  The stack holds three controller INDICES (close lid, blink, eye up/down); the decompiled TF2 QCs
-                #  write the same three-way product, and the blink index is read and left out, as they do.
+                #the stack holds three controller INDICES (close lid, blink, eye up/down); the decompiled TF2 QCs
+                #write the same three-way product, and the blink index is read and left out, as they do
                 close_lid_v = _remap01(ctrl(val))
                 close_lid = _remap01(ctrl(const_index(pop())))
                 const_index(pop())                                 # blink
                 updown_ix = const_index(pop())
                 if updown_ix >= 0:
-                    updown = "(%s * 2 - 1)" % _remap01(ctrl(updown_ix))     # RemapValClamped(.., -1, 1)
+                    updown = "(%s * 2 - 1)" % _remap01(ctrl(updown_ix))     #RemapValClamped(.., -1, 1)
                 else:
                     updown = "0"
                 if op == DME_LOWER_EYELID:
-                    #  looking up opens the lower lid: (1 - max(0, up)) * (1 - closeV) * close
+                    # looking up opens the lower lid: (1 - max(0, up)) * (1 - closeV) * close
                     expr = "((1 - max(0, %s)) * (1 - %s) * %s)" % (updown, close_lid_v, close_lid)
                 else:
-                    #  looking down lowers the upper lid: (1 + min(0, up)) * closeV * close
+                    #looking down lowers the upper lid: (1 + min(0, up)) * closeV * close
                     expr = "((1 + min(0, %s)) * %s * %s)" % (updown, close_lid_v, close_lid)
                 stack.append((expr, None))
             elif op in (OPEN, CLOSE, COMMA):
@@ -279,7 +279,7 @@ def rule_expression(ops, descs, ctrls):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The .qc text
+# The .qc text
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _pair_base(a, b):

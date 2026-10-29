@@ -69,7 +69,7 @@ def import_vmt(path, use_bvlg=True, assign_to=None):
         raise FileNotFoundError("no such file: %s" % path)
     S._load_shader_assets(cache)
     manager, warnings = S._mounted_content(path, _content_roots())
-    #  the folder ABOVE materials\ is a game root too - a loose .vmt names its textures from there
+    #the folder ABOVE materials\ is a game root too - a loose .vmt names its textures from there
     loose = S._module("library.shared.content_manager.providers.loose_files").LooseFilesContentProvider
     TinyPath = S._module("library.utils.tiny_path").TinyPath
     for parent in path.parents:
@@ -110,7 +110,7 @@ def import_vmt(path, use_bvlg=True, assign_to=None):
 
 
 class _Picker:
-    #  filepath comes from ImportHelper; these two make the browser take several files at once
+    # filepath comes from ImportHelper; these two make the browser take several files at once
     directory: StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})  # type: ignore
     files: CollectionProperty(type=OperatorFileListElement, options={"HIDDEN", "SKIP_SAVE"})  # type: ignore
 
@@ -209,7 +209,7 @@ THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE"""
         if not made:
             self.report({"ERROR"}, "No texture imported - " + "; ".join(failed[:3]))
             return {"CANCELLED"}
-        #  show the first one where an Image Editor is open
+        # show the first one where an Image Editor is open
         try:
             img = bpy.data.images.get(made[0].rsplit(" (", 1)[0])
             for area in context.screen.areas if context.screen else ():

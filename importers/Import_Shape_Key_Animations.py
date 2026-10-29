@@ -46,22 +46,22 @@ from bpy.props import StringProperty, BoolProperty
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONFIG
+# config
 # ──────────────────────────────────────────────────────────────────────────────
 
 SHOT_FILTER        = "shot1"
 IGNORE_SHOT_NUMBER = False
 
-COLOR_OK   = "COLOR_04"   # green — shape keys imported
-COLOR_FAIL = "COLOR_06"   # red   — no mesh imported / error
+COLOR_OK   = "COLOR_04"   #green — shape keys imported
+COLOR_FAIL = "COLOR_06"   #red   — no mesh imported / error
 
-# Stems containing these keywords are skipped — they are rig / bone animations,
-# not flex animations.  Extend as needed.
+# stems containing these keywords are skipped — they are rig / bone animations,
+# not flex animations. Extend as needed.
 _SKIP_KEYWORDS = ("_anim", "_camera", "_cam", "_rig")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -73,7 +73,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  HELPERS
+# HELPERS
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _build_armature_map() -> dict:
@@ -130,7 +130,7 @@ def _collect_flex_dmx_files(folder: Path, shot_filter: str,
         prefix     = shot_filter.lower().rstrip("_") + "_"
         candidates = [f for f in all_dmx if f.name.lower().startswith(prefix)]
 
-    # Filter out files that look like bone animations or cameras
+    # filter out files that look like bone animations or cameras
     flex_files = [
         f for f in candidates
         if not any(kw in f.stem.lower() for kw in _SKIP_KEYWORDS)
@@ -169,7 +169,7 @@ def _color_top_collection(armature, color: str) -> str:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  PUBLIC API
+# public api
 # ──────────────────────────────────────────────────────────────────────────────
 
 def run_shape_key_harvester(folder: Path,
@@ -196,7 +196,7 @@ def run_shape_key_harvester(folder: Path,
     arm_map   = _build_armature_map()
     dmx_files = _collect_flex_dmx_files(folder, shot_filter, ignore_shot)
 
-    # Pre-color armatures with no matching flex DMX red
+    # pre-color armatures with no matching flex DMX red
     targeted_keys = set()
     for dmx in dmx_files:
         key = _armature_name_from_stem(dmx.stem, shot_filter, ignore_shot, arm_map)
@@ -208,7 +208,7 @@ def run_shape_key_harvester(folder: Path,
             col_name = _color_top_collection(arm, COLOR_FAIL)
             print(f"[SK_HARVEST]  NO MATCH: '{arm.name}' → '{col_name}' colored red")
 
-    # Main import loop
+    #main import loop
     results = []
     for dmx in dmx_files:
         arm_key  = _armature_name_from_stem(dmx.stem, shot_filter, ignore_shot, arm_map)
@@ -275,7 +275,7 @@ def run_shape_key_harvester(folder: Path,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_ImportShapeKeyAnimations(Operator):
@@ -293,12 +293,12 @@ actually move. A file whose rig is not in the scene is reported rather
 than dropped quietly"""
     bl_idname  = "ht.import_shape_key_animations"
     bl_label   = "Shape Key Animations (Folder)"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filepath:    StringProperty(subtype="FILE_PATH")
@@ -361,7 +361,7 @@ than dropped quietly"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU ITEMS
+# menu items
 # ──────────────────────────────────────────────────────────────────────────────
 
 def draw_menu_item(layout):
@@ -383,7 +383,7 @@ def draw_session_entry(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (HT_OT_ImportShapeKeyAnimations,)

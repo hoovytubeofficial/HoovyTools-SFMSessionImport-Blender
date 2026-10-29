@@ -1,10 +1,10 @@
 # ═════════════════════════════════════════════════════════════════════════════
-#  DEPENDENCIES
-#    bpy, mathutils            armature, bone, re-parenting, verification
-#    core/anim_compat.py       layered actions (5.x) and legacy ones alike
-#  Called by session/Session_Orchestrator.py after the cameras are imported
-#  and auto-split, and by the operator HT_OT_rig_cameras_on_bones.
-#  Added in 1.16.0.
+# DEPENDENCIES
+# bpy, mathutils            armature, bone, re-parenting, verification
+# core/anim_compat.py       layered actions (5.x) and legacy ones alike
+# Called by session/Session_Orchestrator.py after the cameras are imported
+# and auto-split, and by the operator HT_OT_rig_cameras_on_bones
+# Added in 1.16.0
 # ═════════════════════════════════════════════════════════════════════════════
 """
 Camera_Bone_Rig - cameras ride a BONE, not an empty.
@@ -43,7 +43,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 BONE_NAME = "camera"
-BONE_LENGTH = 10.0           # Source units - display only, cancelled below
+BONE_LENGTH = 10.0           #Source units - display only, cancelled below
 VERIFY_TOLERANCE = 1e-3
 VERIFY_SAMPLES = 120
 _CHANNELS = ("location", "rotation_quaternion", "rotation_euler", "scale")
@@ -115,7 +115,7 @@ def _make_armature(name, root, scene):
     arm.parent = root.parent
     arm.matrix_parent_inverse = root.matrix_parent_inverse.copy()
     arm.matrix_basis = Matrix.Identity(4)
-    #  edit bones need edit mode - the one place this cannot be avoided
+    # edit bones need edit mode - the one place this can't be avoided
     vl = bpy.context.view_layer
     prev_active = vl.objects.active
     with bpy.context.temp_override(active_object=arm, object=arm,
@@ -155,7 +155,7 @@ def rig_camera_on_bone(cam, scene=None):
     arm = _make_armature(name, root, scene)
     pb = arm.pose.bones[BONE_NAME]
     pb.rotation_mode = root.rotation_mode
-    #  channels with no curve keep the root's static value
+    # channels with no curve keep the root's static value
     pb.location = root.location
     pb.rotation_quaternion = root.rotation_quaternion
     pb.rotation_euler = root.rotation_euler
@@ -171,11 +171,11 @@ def rig_camera_on_bone(cam, scene=None):
                         fc.array_index, BONE_NAME)
             moved += 1
 
-    #  The keys arrive verbatim, flips included: the shot split re-keys the
-    #  per-shot rigs after the importer's own flip fix ran. Walk the
-    #  hemisphere once more on the bone - negation is the same orientation,
-    #  so it moves nothing and only stops the in-between going round the
-    #  back (camera wood_planks4 turned 1183 degrees inside frame 368).
+    #the keys arrive verbatim, flips included: the shot split re-keys the
+    #per-shot rigs after the importer's own flip fix ran. Walk the
+    #hemisphere once more on the bone - negation is the same orientation,
+    #so it moves nothing and only stops the in-between going round the
+    #back (camera wood_planks4 turned 1183 degrees inside frame 368)
     if moved:
         try:
             from ..importers.Import_DMX_Animation import fix_action_quat_flips
@@ -201,7 +201,7 @@ def rig_camera_on_bone(cam, scene=None):
     after = _world(cam, frames, scene)
     drift = _max_diff(before, after)
     if drift > VERIFY_TOLERANCE:
-        #  put it back exactly as it was - a wrong rig is worse than none
+        # put it back exactly as it was - a wrong rig is worse than none
         cam.parent = root
         cam.parent_type = 'OBJECT'
         cam.matrix_parent_inverse = Matrix.Identity(4)

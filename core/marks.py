@@ -25,24 +25,24 @@ against the real stdout and quietly become ASCII if they do not survive.
 
 import sys
 
-#  The circles, and what they mean everywhere in this add-on.
+# the circles, and what they mean everywhere in this add-on.
 _RICH = {
     "OK":      "\U0001F7E2",    # green circle  - fine
     "INFO":    "\U0001F7E2",    # green circle  - nothing wrong
     "WARNING": "\U0001F7E1",    # yellow circle - works, one thing is off
     "WARN":    "\U0001F7E1",
-    "ERROR":   "\U0001F534",    # red circle    - this will not work
+    "ERROR":   "\U0001F534",    #red circle    - this will not work
     "BAD":     "\U0001F534",
-    #  PURPLE IS PROVENANCE - where a thing came from, not whether it worked.
-    #  The other three answer "is this all right"; this one answers "which
-    #  file". They are never on the same line, so a purple dot in a log means
-    #  "this is a path you can go and open" and nothing else.
+    # PURPLE is PROVENANCE - where a thing came from, not whether it worked
+    # The other three answer "is this all right"; this one answers "which
+    # file". They are never on the same line, so a purple dot in a log means
+    # "this is a path you can go and open" and nothing else
     #
-    #  It is the same purple Developer Mode wears, and that is not an
-    #  accident: both are information ABOUT the add-on rather than about the
-    #  scene. The COLOUR section says so, because a colour that acquires a
-    #  second meaning quietly is a colour that means nothing.
-    "SOURCE":  "\U0001F7E3",    # purple circle - a file, go and look at it
+    # It is the same purple Developer Mode wears, and that is not an
+    # accident: both are information ABOUT the add-on rather than about the
+    # scene. The COLOUR section says so, bc a colour that acquires a
+    # second meaning quietly is a colour that means nothing
+    "SOURCE":  "\U0001F7E3",    #purple circle - a file, go and look at it
 }
 
 _PLAIN = {

@@ -18,7 +18,7 @@ from pathlib import Path
 LEARN_AFTER = 3
 STORE_NAME = "start_folders.json"
 
-#  kind -> the config ladder's folder kind (core/config.py KINDS)
+# kind -> the config ladder's folder kind (core/config.py KINDS)
 KINDS = {
     "session": "elements",
     "animation": "elements",

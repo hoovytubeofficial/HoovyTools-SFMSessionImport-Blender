@@ -57,7 +57,7 @@ from ..core import Progress
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Shared helpers
+# Shared helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
 def session_of(context):
@@ -197,8 +197,8 @@ def _animation_files(context):
             if session0 is not None:
                 bases.append(Session_Reader.default_out_dir(session0))
             for base in bases:
-                #  `base` may already BE the shot folder - it is whenever
-                #  ensure_extracted has just run - so try it before its child.
+                # `base` may already BE the shot folder - it's whenever
+                # ensure_extracted has just run - so try it before its child.
                 for cand in ((base,) if base.name == safe else ()) + (base / safe,):
                     try:
                         hit = sorted(Path(cand).glob("*.dmx"))
@@ -209,15 +209,15 @@ def _animation_files(context):
 
     files = Session_Paths.list_animations(context.scene)
 
-    #  FALLING BACK TO A FOLDER THAT HOLDS EVERY CUT. This is what is left
-    #  when a shot is chosen and nothing has been extracted for it - the user
-    #  turned `extract_first` off, and the folder still holds a whole-session
-    #  extract from some earlier run. Handing all of it over is how shot 2
-    #  ended up importing shot 1's camera.
+    #FALLING BACK TO A FOLDER THAT HOLDS EVERY CUT. This is what is left
+    #when a shot is chosen and nothing has been extracted for it - the user
+    #turned `extract_first` off, and the folder still holds a whole-session
+    #extract from some earlier run. Handing all of it over is how shot 2
+    #ended up importing shot 1's camera.
     #
-    #  Filter by the shot's OWN SET NAMES, which is what the extract names its
-    #  files after. Reading the session costs about 0.2 s and only happens on
-    #  this fallback, not on the normal path above.
+    #Filter by the shot's OWN SET NAMES, which is what the extract names its
+    #files after. Reading the session costs about 0.2 s and only happens on
+    #this fallback, not on the normal path above.
     if files and idx is not None and int(idx) >= 0:
         try:
             session1 = Session_Paths.session_file(context.scene)
@@ -252,7 +252,7 @@ def _animation_files(context):
         return []
     files = sorted(fallback.glob("*.dmx"))
     if files:
-        # Adopt it, so the panel and every later step agree from now on.
+        #adopt it, so the panel and every later step agree from now on
         pr = Session_Paths.project(context)
         if pr is not None and not pr.animations_path:
             pr.animations_path = str(fallback)
@@ -277,27 +277,27 @@ def _routed(context, kinds, allow_proxy=False, **opts):
         e["actions"] = [a for a in e["actions"]
                         if a in kinds or a == "SHAPEKEY_PROXY"]
     stats = SO.run(entries, allow_proxy=allow_proxy, **opts)
-    # Only count a file as "no matching rig" if THIS step was going to do
-    # something with it. A camera extract lives in the same folder and has no
-    # rig by nature, so every animation run ended on a red "1 file(s) had NO
-    # MATCHING RIG - run step 1 first" that pointed at a file which was never
-    # this step's business, and sent the user back to redo a step that worked.
+    #only count a file as "no matching rig" if this step was going to do
+    #something with it. A camera extract lives in the same folder and has no
+    #rig by nature, so every animation run ended on a red "1 file(s) had NO
+    #MATCHING RIG - run step 1 first" that pointed at a file which was never
+    #this step's business, and sent the user back to redo a step that worked.
     stats["unmatched"] = [e for e in entries
                           if e.get("unmatched") and e["actions"]]
     stats["files"] = len([e for e in entries if e["actions"]])
 
-    #  RE-ASSERT THE SHOT'S RANGE, AFTER the importers have run.
+    # RE-ASSERT the SHOT'S RANGE, after the importers have run
     #
-    #  `ensure_extracted` sets it before them, and Blender Source Tools then
-    #  pushes `frame_end` out to cover whatever it just imported - which for a
-    #  session is every set's full span, not the cut's. Measured on shot1:
-    #  the shot ends at 312 and the range grew to 339, because
-    #  `combine_rifle_ammo12` keeps keying past the cut.
+    # `ensure_extracted` sets it before them, and Blender Source Tools then
+    # pushes `frame_end` out to cover whatever it just imported - which for a
+    # session is every set's full span, not the cut's. Measured on shot1:
+    # the shot ends at 312 and the range grew to 339, bc
+    # `combine_rifle_ammo12` keeps keying past the cut
     #
-    #  Extending is right when nobody has said which cut this is. Once
-    #  somebody has, the cut is the answer and the leftover keys are not part
-    #  of it. Cheap and idempotent: four numbers and no file reading beyond
-    #  the session read it already does.
+    # Extending is right when nobody has said which cut this is. Once
+    # somebody has, the cut is the answer and the leftover keys are not part
+    # of it. Cheap and idempotent: four numbers and no file reading beyond
+    # the session read it already does
     try:
         session2 = None
         from . import Session_Paths as _SP
@@ -349,17 +349,17 @@ def _auto_split_cameras(context, force=False):
 
     from ..tools import Utils_Camera_Fix_Camera as UC
 
-    #  Collect roots first: splitting mutates the scene, so iterating
-    #  bpy.data.objects while it changes underneath is asking for trouble.
+    #collect roots first: splitting mutates the scene, so iterating
+    #bpy.data.objects while it changes underneath is asking for trouble
     split_col = bpy.data.collections.get(UC.SPLIT_COLLECTION)
 
     roots = []
     for obj in list(bpy.data.objects):
         if obj.type != "CAMERA":
             continue
-        #  NEVER RE-SPLIT A SPLIT. The shots are named "<orig>_cut_01", so they
-        #  still contain the needle - run this twice, or call it from two
-        #  places, and it would split the shots into shots.
+        # never RE-SPLIT A SPLIT. The shots are named "<orig>_cut_01", so they
+        # still contain the needle - run this twice, or call it from two
+        # places, and it would split the shots into shots
         if split_col is not None and obj.name in split_col.objects:
             continue
         root = UC._resolve_root(obj)
@@ -430,10 +430,10 @@ character instead of re-running step 3 over the whole scene"""
             self.report({"ERROR"}, f"No armature named '{self.rig_name}'")
             return {"CANCELLED"}
 
-        #  Wire in: the connected animations folder first; when it is empty
-        #  or gone, a fresh extract of the connected session (which also
-        #  covers the temp-extract workflow, where the files evaporate when
-        #  Blender closes).
+        # Wire in: the connected animations folder first; when it's empty
+        # or gone, a fresh extract of the connected session (which also
+        # covers the temp-extract workflow, where the files evaporate when
+        # Blender closes).
         files = _animation_files(context)
         if not files:
             session = Session_Paths.session_file(context.scene)
@@ -563,17 +563,17 @@ def apply_shot_frame_range(context, session, info=None):
         if shot is None:
             return None
         fps = float(info["fps"] or 24.0)
-        #  1.17.0: through shot_timeline_frames - SFM's movie frames by
-        #  default (the shot list's own numbers), extract frames in RAW mode.
-        #  One function for the range, the extract, the lights, the sounds
-        #  and the particles, so they cannot disagree.
+        # 1.17.0: thru shot_timeline_frames - SFM's movie frames by
+        # default (the shot list's own numbers), extract frames in RAW mode
+        # One function for the range, the extract, the lights, the sounds
+        # and the particles, so they cannot disagree
         start, end = Session_Reader.shot_timeline_frames(info["model"], shot,
                                                          fps)
         if end <= start:
             return None
         if start < 0:
-            #  Blender clamps frame_start at 0 - which is how the gothic
-            #  intro lost its first 173 frames in RAW placement. Say so.
+            # Blender clamps frame_start at 0 - which is how the gothic
+            # intro lost its first 173 frames in RAW placement. Say so
             print(f"[SESSION]  [WARN] {shot.get('name')} starts at frame "
                   f"{start} - Blender cannot start a scene below 0, the "
                   f"first {-start} frame(s) are outside the range. Shot "
@@ -581,9 +581,9 @@ def apply_shot_frame_range(context, session, info=None):
                   f"{shot['frame_start']}-{shot['frame_end']}.")
         scene.frame_start = start
         scene.frame_end = end
-        #  Put the playhead inside the range. At frame_start a character sits
-        #  in bind pose on the first key, which reads as "the animation did
-        #  not import" - the trap already recorded under TESTING.
+        # put the playhead inside the range. At frame_start a character sits
+        # in bind pose on the first key, which reads as "the animation did
+        # not import" - the trap already recorded under TESTING.
         if not (start <= scene.frame_current <= end):
             scene.frame_current = start
         print(f"[SESSION]  scene frame range set to {start}-{end} "
@@ -604,13 +604,13 @@ def ensure_extracted(context, session, rebase=False):
     asking the user whether they remembered to.
     """
     from . import Session_Reader, Session_Paths
-    #  THE ONE PLACE STEPS 3-5 GET THEIR FILES, so the shot filter goes here
-    #  and every one of them obeys it without knowing it exists.
+    # THE ONE PLACE STEPS 3-5 GET THEIR FILES, so the shot filter goes here
+    # and every one of them obeys it w/o knowing it exists
     idx, name = Session_Paths.shot_choice(context.scene if context else None)
 
-    #  A FOLDER YOU CHOSE IS WHERE THE EXTRACT GOES. Without this the extract
-    #  wrote to its own default and then pointed `animations_path` at it,
-    #  quietly undoing the choice on every run of steps 3, 4 and 5.
+    # A FOLDER YOU CHOSE is where THE EXTRACT GOES. Without this the extract
+    # wrote to its own default and then pointed `animations_path` at it,
+    # quietly undoing the choice on every run of steps 3, 4 and 5.
     pr0 = Session_Paths.project(context)
     out_dir = None
     if pr0 is not None and getattr(pr0, "animations_locked", False):
@@ -618,18 +618,18 @@ def ensure_extracted(context, session, rebase=False):
         if chosen is not None:
             out_dir = str(chosen)
 
-    #  CREATE UNPACKED ANIMS FOLDER, off. Extract into Blender's temp folder
-    #  instead of beside the session, so nothing is left in the user's
-    #  directory. Real files either way - the importer takes a path.
+    # CREATE UNPACKED ANIMS FOLDER, off. Extract into Blender's temp folder
+    # instead of beside the session, so nothing is left in the user's
+    # directory. Real files either way - the importer takes a path
     #
-    #  A STABLE NAME UNDER tempdir, NOT mkdtemp(). Steps 3, 4 and 5 each call
-    #  this, and a fresh random folder per call would re-extract the whole
-    #  session three times and leave two orphans behind. Keyed on the session
-    #  file so two sessions in one Blender run cannot overwrite each other.
+    # A STABLE NAME UNDER tempdir, not mkdtemp(). Steps 3, 4 and 5 each call
+    # this, and a fresh random folder per call would re-extract the whole
+    # session three times and leave two orphans behind. Keyed on the session
+    # file so two sessions in one Blender run can't overwrite each other
     #
-    #  A LOCKED FOLDER STILL WINS. Somebody who went and chose a folder by
-    #  hand has said where they want the files more loudly than a default
-    #  switch has, so this only applies when nothing is locked.
+    # A LOCKED FOLDER STILL WINS. Somebody who went and chose a folder by
+    # hand has said where they want the files more loudly than a default
+    # switch has, so this only applies when nothing is locked
     unpacked = True if pr0 is None else bool(getattr(pr0, "unpack_anims", True))
     if out_dir is None and not unpacked:
         import hashlib
@@ -642,9 +642,9 @@ def ensure_extracted(context, session, rebase=False):
 
     if idx is not None and int(idx) >= 0:
         base = Path(out_dir) if out_dir else Session_Reader.default_out_dir(session)
-        #  THE SHOT'S OWN NAME, not its position - `shot{idx+1}` reads as the
-        #  picker's numbering, where the first cut is 1, so choosing the cut
-        #  SFM calls `shot1` produced a folder called `shot2`. See _shot_label.
+        # THE SHOT'S own NAME, not its position - `shot{idx+1}` reads as the
+        # picker's numbering, where the first cut is 1, so choosing the cut
+        # SFM calls `shot1` produced a folder called `shot2`. See _shot_label
         out_dir = str(base / _shot_label(context, idx, name))
 
     from ..tools import Session_Visibility
@@ -656,27 +656,27 @@ def ensure_extracted(context, session, rebase=False):
     if r.get("shot_note"):
         print(f"[SESSION]  {r['shot_note']}")
 
-    #  The scene follows the shot. Here rather than in each step, because this
-    #  is already "the one place steps 3-5 get their files" and the range has
-    #  to agree with them.
+    # the scene follows the shot. Here rather than in each step, because this
+    # is already "the one place steps 3-5 get their files" and the range has
+    # to agree with them
     r["frame_range"] = apply_shot_frame_range(context, session,
                                               info=r.get("info"))
-    # Connect it too - extraction writing files that nothing points at is
-    # how steps 4-7 ended up reporting "no animation files".
+    # connect it too - extraction writing files that nothing points at is
+    # how steps 4-7 ended up reporting "no animation files"
     pr = Session_Paths.project(context)
     if pr is not None:
-        #  POINT AT WHERE IT ACTUALLY WENT, LOCKED OR NOT. The lock decides
-        #  which FOLDER the extract goes into; it cannot also mean "and then
-        #  read a different one back". Leaving the pointer on the parent while
-        #  the files went into a per-shot subfolder would hand steps 3-5 every
-        #  shot again, which is the whole bug this change exists to stop.
+        # POINT AT WHERE IT ACTUALLY WENT, LOCKED or not. The lock decides
+        # which FOLDER the extract goes into; it can't also mean "and then
+        # read a different one back". Leaving the pointer on the parent while
+        # the files went into a per-shot subfolder would hand steps 3-5 every
+        # shot again, which is the whole bug this change exists to stop.
         pr.animations_path = str(r["out_dir"])
         pr.scanned = False
     return r
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  1  Models
+# 1  Models
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_step_models(Operator):
@@ -699,30 +699,30 @@ one bone and SourceIO imports it as meshes only, so its animation would
 have nothing to land on - a one-bone rig is created and the meshes
 weighted to it. A static prop is rigid, so full weight is exact.
     """
-    #  BELOW THE TOOLTIP CAP. Blender truncates an operator description
-    #  at 1023 characters, without a warning, mid-word. These paragraphs
-    #  were part of the docstring and were already being cut off before
-    #  anyone could read them, so they live here instead - kept, but out
-    #  of the tooltip's budget.
-    #  Missing models are counted and named; they usually mean the .mdl is not
-    #  under the configured usermod path. Nothing else in the pipeline works
-    #  until this has run
+    # BELOW the TOOLTIP CAP. Blender truncates an operator description
+    # at 1023 characters, without a warning, mid-word. These paragraphs
+    # were part of the docstring and were already being cut off before
+    # anyone could read them, so they live here instead - kept, but out
+    # of the tooltip's budget
+    # Missing models are counted and named; they usually mean the .mdl isn't
+    # under the configured usermod path. Nothing else in the pipeline works
+    # until this has run
     #
 
     bl_idname = "ht.step_models"
     bl_label = "1  Import Models"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     reads_session = True
 
-    #  PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
-    #  and empty means "use the session this .blend is wired to".
+    # PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
+    # and empty means "use the session this .blend is wired to".
     pick_session: BoolProperty(default=False, options={"HIDDEN"})  # type: ignore
     filepath:    StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})  # type: ignore
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})  # type: ignore
@@ -777,7 +777,7 @@ weighted to it. A static prop is rigid, so full weight is exact.
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  3  Animations
+# 3  Animations
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_step_animations(Operator):
@@ -802,18 +802,18 @@ not in the scene yet, not that the animation is broken
         """
     bl_idname = "ht.step_animations"
     bl_label = "2  Import Animations"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     reads_session = True
 
-    #  PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
-    #  and empty means "use the session this .blend is wired to".
+    # PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
+    # and empty means "use the session this .blend is wired to".
     pick_session: BoolProperty(default=False, options={"HIDDEN"})  # type: ignore
     filepath:    StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})  # type: ignore
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})  # type: ignore
@@ -935,7 +935,7 @@ not in the scene yet, not that the animation is broken
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  3  Shape Keys
+# 3  Shape Keys
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_step_shapekeys(Operator):
@@ -953,31 +953,31 @@ folder of your own - it is searched first and the shipped twelve still
 work. Without a QC the flex curves still import and only the bake is
 skipped, with a line saying so.
     """
-    #  BELOW THE TOOLTIP CAP. Blender truncates an operator description
-    #  at 1023 characters, without a warning, mid-word. These paragraphs
-    #  were part of the docstring and were already being cut off before
-    #  anyone could read them, so they live here instead - kept, but out
-    #  of the tooltip's budget.
-    #  Run step 1 first. Facial data that finds no character is reported rather
-    #  than turned into a proxy: a screenful of proxy sliders and no animation
-    #  looks like the importer misfiring, when the real answer is that the rigs
-    #  are not there yet. The proxy is opt-in
+    # BELOW the TOOLTIP CAP. Blender truncates an operator description
+    # at 1023 characters, without a warning, mid-word. These paragraphs
+    # were part of the docstring and were already being cut off before
+    # anyone could read them, so they live here instead - kept, but out
+    # of the tooltip's budget
+    # Run step 1 first. Facial data that finds no character is reported rather
+    # than turned into a proxy: a screenful of proxy sliders and no animation
+    # looks like the importer misfiring, when the real answer is that the rigs
+    # are not there yet. The proxy is opt-in
     #
 
     bl_idname = "ht.step_shapekeys"
     bl_label = "3  Import Shape Keys"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     reads_session = True
 
-    #  PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
-    #  and empty means "use the session this .blend is wired to".
+    # PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
+    # and empty means "use the session this .blend is wired to".
     pick_session: BoolProperty(default=False, options={"HIDDEN"})  # type: ignore
     filepath:    StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})  # type: ignore
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})  # type: ignore
@@ -1059,7 +1059,7 @@ skipped, with a line saying so.
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  4  Cameras
+# 4  Cameras
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_step_cameras(Operator):
@@ -1083,18 +1083,18 @@ animation step rather than reported as rigless
         """
     bl_idname = "ht.step_cameras"
     bl_label = "4  Import Cameras"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     reads_session = True
 
-    #  PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
-    #  and empty means "use the session this .blend is wired to".
+    # PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
+    # and empty means "use the session this .blend is wired to".
     pick_session: BoolProperty(default=False, options={"HIDDEN"})  # type: ignore
     filepath:    StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})  # type: ignore
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})  # type: ignore
@@ -1153,9 +1153,9 @@ animation step rather than reported as rigless
         if stats["failed"]:
             lines.append(f"Failed  : {stats['failed']}")
 
-        #  Developer tab > Session Automation. Off by default; when on, any
-        #  camera whose name matches is split the moment it lands, so a session
-        #  that always needs splitting stops being a two-step job.
+        #developer tab > Session Automation. Off by default; when on, any
+        #camera whose name matches is split the moment it lands, so a session
+        #that always needs splitting stops being a two-step job
         lines += _auto_split_cameras(context)
 
         if session is not None and stats["imported"]:
@@ -1180,7 +1180,7 @@ animation step rather than reported as rigless
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  6  Lights
+# 6  Lights
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_step_lights(Operator):
@@ -1204,18 +1204,18 @@ falls off with the inverse square. Light aim is confirmed correct
         """
     bl_idname = "ht.step_lights"
     bl_label = "6  Import Lights"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     reads_session = True
 
-    #  PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
-    #  and empty means "use the session this .blend is wired to".
+    # PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
+    # and empty means "use the session this .blend is wired to".
     pick_session: BoolProperty(default=False, options={"HIDDEN"})  # type: ignore
     filepath:    StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})  # type: ignore
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})  # type: ignore
@@ -1251,10 +1251,10 @@ falls off with the inverse square. Light aim is confirmed correct
         default=True,
     )
 
-    #  ── the volumetric box ───────────────────────────────────────────────
-    #  ON BY DEFAULT, and that is the feature. A spot light in empty space
-    #  looks identical with volumetrics on and off, so an import without a
-    #  volume to scatter in reads as "Blender does not do volumetrics".
+    # ── the volumetric box ───────────────────────────────────────────────
+    # ON BY DEFAULT, and that's the feature. A spot light in empty space
+    # looks identical with volumetrics on and off, so an import w/o a
+    # volume to scatter in reads as "Blender doesn't do volumetrics".
     volume_box: BoolProperty(  # type: ignore
         name="Volumetric Box",
         description=("Build a large Principled Volume box around the lights "
@@ -1293,7 +1293,7 @@ falls off with the inverse square. Light aim is confirmed correct
                      "to the screen, so faithful colours read MORE saturated "
                      "in Blender than the same shot in SFM. Applied to the "
                      "static colour and every colour animation key alike"),
-        #  Lock-step with Light_Import.DESATURATE_DEFAULT.
+        # lock-step with Light_Import.DESATURATE_DEFAULT.
         default=0.6, min=0.0, max=1.0, precision=3,
     )
     volume_density: FloatProperty(  # type: ignore
@@ -1302,9 +1302,9 @@ falls off with the inverse square. Light aim is confirmed correct
                      "units across and optical depth is density x distance, "
                      "so a little goes a very long way - 0.000015 matches "
                      "SFM's look, 0.005 was white soup"),
-        #  Kept in lock-step with Light_Import.VOLUME_DENSITY - two entry
-        #  points, one look (the fix_quat_flips lesson: with two entry
-        #  points, the defaults are part of the interface).
+        # kept in lock-step with Light_Import.VOLUME_DENSITY - two entry
+        # points, one look (the fix_quat_flips lesson: with two entry
+        # points, the defaults are part of the interface)
         default=0.000015, min=0.0, soft_max=1.0, precision=6, step=0.1,
     )
     volume_anisotropy: FloatProperty(  # type: ignore
@@ -1328,10 +1328,10 @@ falls off with the inverse square. Light aim is confirmed correct
             self.report({"ERROR"}, no_session_error(self))
             return {"CANCELLED"}
         try:
-            #  THE SHOT PICKER REACHES STEP 7 NOW. It never did: steps 3-5
-            #  get their filter from `ensure_extracted` and this step does not
-            #  go through it, so every light in the file was imported whatever
-            #  cut was selected.
+            # the SHOT PICKER REACHES STEP 7 NOW. It never did: steps 3-5
+            # get their filter from `ensure_extracted` and this step doesn't
+            # go thru it, so every light in the file was imported whatever
+            # cut was selected
             idx, nm = Session_Paths.shot_choice(context.scene)
             from ..tools import Session_Visibility
             hidden = Session_Visibility.hidden_set_names(session, context.scene)
@@ -1366,9 +1366,9 @@ falls off with the inverse square. Light aim is confirmed correct
         elif r.get("shot_note"):
             lines.append(f"Shot     : {r['shot_note']}")
 
-        #  SAY WHICH PROPERTIES THE SFM VALUES DRIVE, AND WHICH THEY DO NOT.
-        #  A property skipped because it is ANIMATED is the right outcome -
-        #  but silence would make it look like the driver simply failed.
+        # SAY WHICH PROPERTIES THE SFM VALUES DRIVE, AND WHICH THEY DO NOT.
+        # A property skipped because it's ANIMATED is the right outcome -
+        # but silence would make it look like the driver simply failed
         skips = r.get("driver_skips") or {}
         if skips:
             kinds = {}
@@ -1379,9 +1379,9 @@ falls off with the inverse square. Light aim is confirmed correct
                 lines.append(f"Drivers  : {', '.join(sorted(props))} "
                              f"- {why}")
 
-        #  SAY WHAT THE BOX DID, INCLUDING WHEN IT DID NOTHING. A volume that
-        #  silently failed to build looks exactly like a volume that built and
-        #  is too thin to see, and the two want opposite next moves.
+        # SAY WHAT THE BOX DID, INCLUDING WHEN IT DID nothing. A volume that
+        # silently failed to build looks exactly like a volume that built and
+        # is too thin to see, and the two want opposite next moves.
         vol = r.get("volume") or {}
         if vol.get("object") is not None:
             lines.append("-" * 42)
@@ -1401,10 +1401,10 @@ falls off with the inverse square. Light aim is confirmed correct
         elif self.volume_box:
             lines.append(f"Volume   : not built - {vol.get('reason')}")
 
-        #  ATTENUATION. The magnitudes are the interesting part and they are
-        #  NOT applied - see the note in Light_Import. Printed per distinct
-        #  value rather than per light, because ten lights with two values
-        #  between them is two facts, not ten.
+        #ATTENUATION. The magnitudes are the interesting part and they are
+        #not applied - see the note in Light_Import. Printed per distinct
+        #value rather than per light, because ten lights with two values
+        #between them is two facts, not ten
         at = r.get("attenuation") or {}
         if at:
             lines.append("-" * 42)

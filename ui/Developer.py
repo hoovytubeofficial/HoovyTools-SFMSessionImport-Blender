@@ -43,7 +43,7 @@ import time
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Icon bridge (wired by __init__.register)
+# Icon bridge (wired by __init__.register)
 # ─────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -83,7 +83,7 @@ STATUS_LABEL = {
 
 
 PRIORITIES = (
-    # ── HIGH ──────────────────────────────────────────────────────────────
+    # ── high ──────────────────────────────────────────────────────────────
     dict(
         n=1, tier=TIER_HIGH, status="DONE",
         title="Animation Scale precision",
@@ -127,7 +127,7 @@ PRIORITIES = (
         detail=(),
     ),
 
-    # ── MEDIUM ────────────────────────────────────────────────────────────
+    # ── medium ────────────────────────────────────────────────────────────
     dict(
         n=8, tier=TIER_MEDIUM, status="DONE",
         title="Session Importer as orchestrator",
@@ -546,11 +546,11 @@ def roadmap_lines():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operators
+# Operators
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  RENDER PRESETS
+# render presets
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _volume_materials():
@@ -633,7 +633,7 @@ def _cycles_device():
     if addon is None:
         return "CPU"
     cp = addon.preferences
-    #  OPTIX before CUDA: same card, RT cores used.
+    # OPTIX before CUDA: same card, RT cores used.
     for want in ("OPTIX", "CUDA", "HIP", "ONEAPI", "METAL"):
         try:
             cp.compute_device_type = want
@@ -668,9 +668,9 @@ def apply_render_preset(scene, preset):
     lines = []
     volume = _scene_has_volume(scene)
 
-    #  PERSISTENT DATA IS ALWAYS ON. It keeps the evaluated scene between
-    #  frames, which is what an animation render wants and what a single
-    #  still does not care about.
+    # PERSISTENT DATA is always ON. It keeps the evaluated scene between
+    # frames, which is what an animation render wants and what a single
+    # still does not care about.
     _set(r, "use_persistent_data", True)
     r.resolution_x, r.resolution_y = 1920, 1080
 
@@ -716,21 +716,21 @@ def apply_render_preset(scene, preset):
         _set(cy, "glossy_bounces", 2 if cheap else 4)
         _set(cy, "transmission_bounces", 2 if cheap else 8)
         _set(cy, "transparent_max_bounces", 4 if cheap else 12)
-        #  ─── VOLUMETRICS ARE A RENDER SETTING TOO ────────────────────
+        #─── VOLUMETRICS ARE A RENDER SETTING TOO ────────────────────
         #
-        #  MEASURED on the Gothic fog box (1,440,000 units across, smooth
-        #  density), one frame, ten settings:
+        #MEASURED on the Gothic fog box (1,440,000 units across, smooth
+        #density), one frame, ten settings:
         #
-        #      step rate 1.0 ... a single foggy frame cost 104 s
-        #      step rate 8.0 ... the same frame cost 38-68 s
+        #step rate 1.0 ... a single foggy frame cost 104 s
+        #step rate 8.0 ... the same frame cost 38-68 s
         #
-        #  A huge box of SMOOTH fog gains nothing from fine steps - the
-        #  integrator is just sampling the same value repeatedly. Coarse
-        #  steps are the single biggest volumetric saving here.
+        #A huge box of SMOOTH fog gains nothing from fine steps - the
+        #integrator is just sampling the same value repeatedly. Coarse
+        #steps are the single biggest volumetric saving here.
         #
-        #  NOISE DEFEATS IT. A density modulated by a noise texture needs
-        #  the fine steps back: the same frame went to 205 s with noise at
-        #  0.5. If the fog is patchy, expect to pay for it.
+        #NOISE DEFEATS IT. A density modulated by a noise texture needs
+        #the fine steps back: the same frame went to 205 s with noise at
+        #0.5. If the fog is patchy, expect to pay for it
         _set(cy, "volume_bounces", 0 if not volume else (1 if cheap else 2))
         _set(cy, "volume_step_rate", 16.0 if cheap else 8.0)
         _set(cy, "volume_preview_step_rate", 16.0 if cheap else 8.0)
@@ -775,27 +775,27 @@ a still and ~90 s an animated frame on an RTX 4070 SUPER. The hero shot.
 
 Volumetrics go on only when a volume shader exists, Cycles is pointed at
 the GPU first, and output format and path are never touched"""
-    #  BELOW THE TOOLTIP CAP. Blender truncates an operator description at
-    #  1023 characters, mid-word and without a warning, and this one had
-    #  reached exactly 1023. The measurements live here instead:
+    # BELOW the TOOLTIP CAP. Blender truncates an operator description at
+    # 1023 characters, mid-word and without a warning, and this one had
+    # reached exactly 1023. The measurements live here instead:
     #
-    #  EXPENSIVE CYCLES - ten seconds of footage is ~7 hours. AND THE
-    #  THRESHOLD IS THE EXPENSIVE KNOB, not the sample cap - at 1080p:
-    #      512 spp / 0.01 threshold   48.9 s
-    #       64 spp / 0.01 threshold   27.8 s
-    #      128 spp / 0.05 threshold   25.8 s
-    #  Dropping the cap by 8x saved 43%; loosening the threshold by 5x saved
-    #  as much again for a quarter of the sample budget. Adaptive sampling
-    #  stops when the noise floor is met, so the threshold decides the time.
+    # EXPENSIVE CYCLES - ten secs of footage is ~7 hours. and THE
+    # THRESHOLD IS the EXPENSIVE KNOB, not the sample cap - at 1080p:
+    # 512 spp / 0.01 threshold   48.9 s
+    # 64 spp / 0.01 threshold   27.8 s
+    # 128 spp / 0.05 threshold   25.8 s
+    # Dropping the cap by 8x saved 43%; loosening the threshold by 5x saved
+    # as much again for a quarter of the sample budget. Adaptive sampling
+    # stops when the noise floor is met, so the threshold decides the time
     #
-    #  VOLUMES: volumetrics cost about 13% of a frame and this scene had
-    #  none - three full renders paid for them anyway - so a preset counts
-    #  volume shaders first. GPU: Blender shipped this machine with
-    #  compute_device_type NONE, so Cycles rendered on the CPU whatever the
-    #  sample count said; the Cycles presets pick OPTIX, then CUDA, then
-    #  whatever else is there, before touching a single quality knob.
-    #  Resolution, samples, bounces, shadows and persistent data are set;
-    #  container, codec and file path are yours.
+    # VOLUMES: volumetrics cost about 13% of a frame and this scene had
+    # none - three full renders paid for them anyway - so a preset counts
+    # volume shaders first. GPU: Blender shipped this machine with
+    # compute_device_type NONE, so Cycles rendered on the CPU whatever the
+    # sample count said; the Cycles presets pick OPTIX, then CUDA, then
+    # whatever else is there, before touching a single quality knob
+    # Resolution, samples, bounces, shadows and persistent data are set;
+    # container, codec and file path are yours
     bl_idname = "ht.render_preset"
     bl_label = "Render Preset"
     bl_options = {"REGISTER", "UNDO"}
@@ -939,11 +939,11 @@ Nothing is changed in the scene"""
         print("[HOOVYTOOLS]  Nothing has gone wrong and nothing was changed.")
         print("[HOOVYTOOLS]  A real failure prints a Python stack here,")
         print("[HOOVYTOOLS]  naming the file and line that raised.")
-        # Deliberately does NOT print a real stack dump, and deliberately
+        # deliberately does NOT print a real stack dump, and deliberately
         # avoids the word a log search looks for. A realistic-looking
         # failure sitting in the log is the kind of thing that costs
         # someone an hour six months later, and it breaks any tooling
-        # that greps logs for genuine errors.
+        # that greps logs for genuine errors
         print(bar)
         print()
         self.report({"ERROR"},
@@ -1027,27 +1027,27 @@ otherwise read identically"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The wiring readout
+# The wiring readout
 # ─────────────────────────────────────────────────────────────────────────────
 #
-#  WHAT IT IS FOR. Nine things have to be in place before a session imports,
-#  and when one is missing the error you get names the SYMPTOM: "model failed",
-#  "no reference file for this rig", "baker skipped". None of those say
-#  "SourceIO is not installed" or "your usermod path has a typo in it", which
-#  is what was actually wrong. This is the one screen that says which.
+# WHAT IT IS FOR. Nine things have to be in place before a session imports,
+# and when one is missing the error you get names the SYMPTOM: "model failed",
+# "no reference file for this rig", "baker skipped". None of those say
+# "SourceIO isn't installed" or "your usermod path has a typo in it", which
+# is what was actually wrong. This is the one screen that says which
 #
-#  DRAW() MUST NOT TOUCH THE DISK. It runs on every redraw - every mouse move
-#  over the panel - and `mod_dirs()` alone stats every child of `game/`. So the
-#  results are cached, and the cache key is built ONLY from things that are
-#  free to read: the preference strings, the toggle, how many icons loaded, and
-#  the connected session's path. Change any of those and the next draw
-#  recomputes; change something on disk behind the add-on's back and the
-#  Re-check button is there for exactly that.
+# DRAW() MUST NOT TOUCH THE DISK. It runs on every redraw - every mouse move
+# over the panel - and `mod_dirs()` alone stats every child of `game/`. So the
+# results are cached, and the cache key is built ONLY from things that are
+# free to read: the preference strings, the toggle, how many icons loaded, and
+# the connected session's path. Change any of those and the next draw
+# recomputes; change something on disk behind the add-on's back and the
+# Re-check button is there for exactly that.
 #
-#  THREE STATES, NOT TWO. A red X means the pipeline is broken and an import
-#  will fail. Orange means a FEATURE is unavailable but everything else still
-#  runs - no QC means the face bake is skipped and the flex curves still
-#  import, which is not the same kind of problem and must not look like one.
+# THREE STATES, NOT TWO. A red X means the pipeline is broken and an import
+# will fail. Orange means a FEATURE is unavailable but everything else still
+# runs - no QC means the face bake is skipped and the flex curves still
+# import, which is not the same kind of problem and must not look like one.
 
 _WIRING_CACHE = None
 _WIRING_KEY = None
@@ -1087,8 +1087,8 @@ def _wiring_key(context):
         anim_bit = str(anim) if anim else ""
     except Exception:
         anim_bit = "?"
-    #  The JSON store, by mtime and size - free to read, and the only thing
-    #  that changes when a user adds a folder from the wiring section.
+    # The JSON store, by mtime and size - free to read, and the only thing
+    # that changes when a user adds a folder from the wiring section
     try:
         store_bit = user_paths.fingerprint()
     except Exception:
@@ -1124,9 +1124,9 @@ def _check_usermod():
     from ..session import Import_Session
     bases = Import_Session.usermod_bases()
     if not bases:
-        #  Say WHICH way each configured slot failed, not just that none
-        #  worked. "D: not connected" and "you typed it wrong" want different
-        #  actions and the row is the only place that difference is cheap.
+        # Say which way each configured slot failed, not just that none
+        # worked. "D: not connected" and "you typed it wrong" want different
+        # actions and the row is the only place that difference is cheap
         why = []
         for i, raw in enumerate(_configured_usermods()):
             st, short, _long = diagnose_path(raw, want_gameinfo=True)
@@ -1138,10 +1138,10 @@ def _check_usermod():
     bad = [b for b in bases if not (b / "gameinfo.txt").is_file()]
     detail = "  |  ".join(str(b) for b in bases)
 
-    #  HOW MANY OF HOW MANY. "usermod" told you the folder's name, which you
-    #  knew; what you want when one of two drives is unplugged is that one of
-    #  two is unplugged. Counted against the slots that are SET, not against
-    #  the three that exist - two empty slots are not two failures.
+    #HOW MANY OF HOW MANY. "usermod" told you the folder's name, which you
+    #knew; what you want when one of two drives is unplugged is that one of
+    #two is unplugged. Counted against the slots that are SET, not against
+    #the three that exist - two empty slots are not two failures
     configured = [r for r in _configured_usermods() if r.strip()]
     total = max(len(configured), len(bases))
 
@@ -1171,9 +1171,9 @@ def _check_mounts():
                 "Nothing under game/ looks like a mod folder", None)
     has_ws = any(m.name.lower() == "workshop" for m in mounts)
     names = [m.name for m in mounts]
-    #  The game/ folder itself, not one mount - the row is about all of them.
-    #  The NAMES come back as extras so the row can print which ones got
-    #  connected without scanning the disk again from inside draw().
+    #the game/ folder itself, not one mount - the row is about all of them.
+    #The NAMES come back as extras so the row can print which ones got
+    #connected without scanning the disk again from inside draw()
     return (OK, f"{len(mounts)} found",
             ", ".join(names)
             + ("" if has_ws else "  (no 'workshop' folder - Workshop content "
@@ -1226,9 +1226,9 @@ def _check_folder(label, folders, pattern, empty_level, empty_note):
     for f in folders:
         n = len(list(f.glob(pattern)))
         total += n
-        #  PARENT/NAME, because the add-on's `_Faulty Rigs` and the SFM tree's
-        #  `_Faulty Rigs` have the same basename by design - and a detail line
-        #  reading "_Faulty Rigs: 15 | _Faulty Rigs: 13" names neither of them.
+        # PARENT/NAME, because the add-on's `_Faulty Rigs` and the SFM tree's
+        # `_Faulty Rigs` have the same basename by design - and a detail line
+        # reading "_Faulty Rigs: 15 | _Faulty Rigs: 13" names neither of them
         where.append(f"{f.parent.name}/{f.name}: {n}")
     if not folders:
         return empty_level, "no folder", empty_note, None
@@ -1281,7 +1281,7 @@ def _check_particles():
     """
     import addon_utils
     from ..core import siblings
-    #  Every name it has shipped under, newest first - see core/siblings.
+    # Every name it has shipped under, newest first - see core/siblings
     NAMES = siblings.names("particles")
 
     found = None
@@ -1295,8 +1295,8 @@ def _check_particles():
             found = (name, False)
     if found is None:
         try:
-            #  A hyphenated module name cannot be reached with `import X`,
-            #  so this goes through importlib like everything else now.
+            # A hyphenated module name cannot be reached with `import X`,
+            # so this goes through importlib like everything else now
             _name, _pi = siblings.find("particles")
             if _pi is None:
                 raise ImportError("no particle add-on under any known name")
@@ -1315,7 +1315,7 @@ def _check_particles():
             f"Preferences > Add-ons; nothing here can enable it for "
             f"you"), _module_dir(name)
 
-    #  The version, and whether the entry point actually imports.
+    # the version, and whether the entry point actually imports
     ver = ""
     try:
         mod = __import__(name)
@@ -1366,10 +1366,10 @@ def _check_anims(context):
     return OK, f"{anim.name} ({n} dmx)", str(anim), anim
 
 
-#  Order is the order things fail in. Everything above the line has to work
-#  before a session imports at all; everything below it costs you one feature.
+# order is the order things fail in. Everything above the line has to work
+# before a session imports at all; everything below it costs you one feature.
 _CHECKS = (
-    #  key            label              check              fixable as
+    #key            label              check              fixable as
     ("usermod",    "SFM usermod",    _check_usermod,    ("slot", "usermod")),
     ("mods",       "Mod folders",    _check_mounts,     ("slot", "usermod")),
     ("dmxconvert", "dmxconvert.exe", _check_dmxconvert, ("slot", "dmxconvert")),
@@ -1379,11 +1379,11 @@ _CHECKS = (
     ("particles",  ".PCF importer",  _check_particles,  ("enable", "particles")),
 )
 
-#  CHECKED, REPORTED, NOT DRAWN. These two are facts about the add-on's own
-#  files - the bundled SST folder and the images folder - and there is nothing
-#  a user can do about either from a panel. They earned a row when the readout
-#  was a completeness list; they cost one when it became a repair screen, so
-#  they live in Print Addon Behavior where a completeness list belongs.
+# CHECKED, REPORTED, NOT DRAWN. These two are facts about the add-on's own
+# files - the bundled SST folder and the images folder - and there's nothing
+# a user can do about either from a panel. They earned a row when the readout
+# was a completeness list; they cost one when it became a repair screen, so
+# they live in Print Addon Behavior where a completeness list belongs
 _REPORT_ONLY = (
     ("smd",    "SMD importer", _check_smd),
     ("icons",  "Panel icons",  _check_icons),
@@ -1399,24 +1399,24 @@ def _run_check(key, label, fn, fix, context=None):
     extras = {}
     try:
         got = fn(context) if key in ("session", "anims") else fn()
-        #  A check may return a fifth item: whatever else its row wants to
-        #  show. Only `mods` uses it today - for the list of mount NAMES,
-        #  which the row prints and which would otherwise mean scanning the
-        #  disk a second time from inside draw().
+        # A check may return a fifth item: whatever else its row wants to
+        # show. Only `mods` uses it today - for the list of mount NAMES,
+        # which the row prints and which would otherwise mean scanning the
+        # disk a second time from inside draw().
         if len(got) == 5:
             status, value, detail, path, extras = got
         else:
             status, value, detail, path = got
     except Exception as exc:                                  # noqa: BLE001
-        #  A check that raises is a red row, never a traceback in draw(). This
-        #  runs inside the panel; an exception here takes the whole sidebar
-        #  with it and the user loses the tab that would have told them what
-        #  was wrong.
+        # A check that raises is a red row, never a traceback in draw(). This
+        # runs inside the panel; an exception here takes the whole sidebar
+        # with it and the user loses the tab that would have told them what
+        # was wrong.
         status, value, detail, path = BAD, "check failed", str(exc), None
-    #  A row that is FINE offers no fix. The button is the answer to a
-    #  problem, so it appears with the problem and not before it - except an
-    #  OPTIONAL folder nobody connected (1.18.0, Animations): fine as it is,
-    #  and LOAD is still the one thing you could do with that row.
+    # A row that's FINE offers no fix. The button is the answer to a
+    # problem, so it appears with the problem and not before it - except an
+    # OPTIONAL folder nobody connected (1.18.0, Animations): fine as it's,
+    # and LOAD is still the one thing you could do with that row
     keep = status != OK or (key in ("anims", "session") and not path)
     row = _row(key, label, status, value, detail, path, fix if keep else None)
     row.update(extras or {})
@@ -1541,9 +1541,9 @@ def _draw_fix(row_layout, row):
         return
     kind, arg = fix
     if kind == "slot":
-        #  Slot 1, always. Slot 0 is the folder WE assign, and a broken row is
-        #  the moment to add yours rather than to overwrite the default you
-        #  may still want back.
+        # slot 1, always. Slot 0 is the folder WE assign, and a broken row is
+        # the moment to add yours rather than to overwrite the default you
+        # may still want back.
         op = row_layout.operator("ht.set_search_folder", text="Fix",
                                  icon='FILEBROWSER')
         op.slot_key, op.slot_index = arg, 1
@@ -1571,10 +1571,10 @@ def _draw_usermod_slots(col, context):
     raws = _configured_usermods()
     states = [diagnose_path(r, want_gameinfo=True) for r in raws]
 
-    #  1.18.0: ONLY THE SLOTS THAT ARE SET. Two "SFM 2 / SFM 3 - not set -
-    #  LOAD" rows on every install were two buttons for a question nobody
-    #  asked; adding a second install is what Where It Looks (folded in below)
-    #  is for. Nothing set at all: one row, one LOAD.
+    #1.18.0: only the SLOTS that ARE SET. Two "SFM 2 / SFM 3 - not set -
+    #LOAD" rows on every install were two buttons for a question nobody
+    #asked; adding a second install is what Where It Looks (folded in below)
+    #is for. Nothing set at all: one row, one LOAD.
     if not any(r for r in raws):
         line = col.row(align=True)
         line.label(text="", icon='DOT')
@@ -1675,7 +1675,7 @@ def draw_wiring(layout, context, st=None):
     _divider_drawn = False
     for r in rows:
         if r["key"] == "usermod":
-            continue                      # drawn above, as three slots
+            continue                      #drawn above, as three slots
         if r["key"] in ("session", "anims") and not _divider_drawn:
             _divider_drawn = True
             col.separator(factor=1.4)
@@ -1694,9 +1694,9 @@ def draw_wiring(layout, context, st=None):
                         slot_index=1,
                         fallback_op=fix[0], fallback_arg=fix[1])
 
-    #  WHICH MOD FOLDERS GOT CONNECTED. Names, not a count - the count is
-    #  already in the row and it is the names you check a missing model
-    #  against.
+    # which MOD FOLDERS GOT CONNECTED. Names, not a count - the count is
+    # already in the row and it's the names you check a missing model
+    # against
     mods = next((r for r in rows if r["key"] == "mods"), None)
     names = (mods or {}).get("names") or []
     if names and dev:
@@ -1706,8 +1706,8 @@ def draw_wiring(layout, context, st=None):
         sub.label(text=", ".join(names[:8])
                        + (f"  +{len(names) - 8}" if len(names) > 8 else ""))
 
-    #  ONE LINE, ONLY FOR RED. An orange row already says its state in its own
-    #  value column; a red one is somebody about to change the wrong thing.
+    # ONE LINE, ONLY FOR RED. An orange row already says its state in its own
+    # value column; a red one is somebody about to change the wrong thing
     reds = [(f"SFM {i + 1}", long)
             for i, (st, _s, long) in enumerate(um_states) if st == BAD]
     reds += [(r["label"], r["detail"]) for r in rows if r["status"] == BAD]
@@ -1765,10 +1765,10 @@ def diagnose_path(raw, want_gameinfo=False):
 
     p = Path(bpy.path.abspath(raw))
 
-    #  THE DRIVE, FIRST. `p.is_dir()` on an unplugged D: is False for the
-    #  same reason a typo is False, and telling somebody their path is wrong
-    #  when their drive is unplugged sends them to edit a setting that was
-    #  correct all along.
+    # the DRIVE, first. `p.is_dir()` on an unplugged D: is False for the
+    # same reason a typo is False, and telling somebody their path is wrong
+    # when their drive is unplugged sends them to edit a setting that was
+    # correct all along
     anchor = p.anchor
     if anchor and not Path(anchor).exists():
         return BAD, f"{anchor.rstrip(chr(92))} not connected", (
@@ -1777,8 +1777,8 @@ def diagnose_path(raw, want_gameinfo=False):
             f"misconfigured - do not change this path.")
 
     if not p.is_dir():
-        #  Walk up to the deepest parent that IS there. "this much of the path
-        #  is real" turns a wrong path into an obvious one.
+        # Walk up to the deepest parent that is there. "this much of the path
+        # is real" turns a wrong path into an obvious one.
         deepest = p
         while deepest.parent != deepest and not deepest.is_dir():
             deepest = deepest.parent
@@ -1794,7 +1794,7 @@ def diagnose_path(raw, want_gameinfo=False):
             pass
         hint = ""
         if "usermod" in [k.lower() for k in kids]:
-            #  The single most common mistake, and it is one click to fix.
+            # the single most common mistake, and it is one click to fix
             hint = (f"  There IS a 'usermod' folder inside it - you are one "
                     f"level too high. Point this at {p / 'usermod'}.")
         return WARN, "no gameinfo.txt", (
@@ -1804,8 +1804,8 @@ def diagnose_path(raw, want_gameinfo=False):
     return OK, "connected", str(p)
 
 
-#  What a slot should CONTAIN, and what it is for. `None` means "a usermod",
-#  which is checked by gameinfo.txt rather than by a glob.
+# what a slot should CONTAIN, and what it's for. `None` means "a usermod",
+# which is checked by gameinfo.txt rather than by a glob.
 _SLOT_PATTERN = {"usermod": None, "dmxconvert": "dmxconvert.exe",
                  "faulty_rigs": "*.dmx", "qc_face_data": "*.qc"}
 
@@ -1921,18 +1921,18 @@ log report you have kept still has your paths in it"""
     slot_key: StringProperty(options={'HIDDEN'})
     slot_index: IntProperty(default=0, options={'HIDDEN'})
 
-    #  `directory` plus `fileselect_add` is how Blender gives you a FOLDER
-    #  browser. `filter_folder` hides the files so the dialog cannot be
-    #  confusing about what it wants.
+    # `directory` plus `fileselect_add` is how Blender gives you a FOLDER
+    # browser. `filter_folder` hides the files so the dialog can't be
+    # confusing about what it wants.
     directory: StringProperty(subtype='DIR_PATH')
     filter_folder: BoolProperty(default=True, options={'HIDDEN'})
 
     def invoke(self, context, event):
         current = slot_value(context, self.slot_key, self.slot_index)
         if current:
-            #  Open ON the folder already set. Re-pointing a path is far more
-            #  common than setting one from nothing, and starting at the last
-            #  place Blender happened to browse means finding it again by hand.
+            # Open ON the folder already set. Re-pointing a path is far more
+            # common than setting one from nothing, and starting at the last
+            # place Blender happened to browse means finding it again by hand.
             self.directory = current
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
@@ -2014,9 +2014,9 @@ into the folder holding it, since every slot here wants a folder"""
         if not raw:
             return ""
         p = Path(bpy.path.abspath(raw))
-        #  A FILE MEANS THE FOLDER HOLDING IT. Pointing at dmxconvert.exe
-        #  itself is the obvious thing to do and every slot here wants the
-        #  folder, so accept it and do the right thing rather than refuse.
+        # A FILE MEANS THE FOLDER HOLDING IT. Pointing at dmxconvert.exe
+        # itself is the obvious thing to do and every slot here wants the
+        # folder, so accept it and do the right thing rather than refuse
         if p.is_file():
             p = p.parent
         return str(p)
@@ -2024,9 +2024,9 @@ into the folder holding it, since every slot here wants a folder"""
     def invoke(self, context, event):
         current = slot_value(context, self.slot_key, self.slot_index)
         clip = self._clean(getattr(context.window_manager, "clipboard", ""))
-        #  Only prefill from the clipboard when it actually IS a folder -
-        #  dropping whatever text you last copied into a path field is worse
-        #  than an empty box.
+        # only prefill from the clipboard when it actually is a folder -
+        # dropping whatever text you last copied into a path field is worse
+        # than an empty box
         self.path = current or (clip if clip and Path(clip).is_dir() else "")
         return context.window_manager.invoke_props_dialog(self, width=520)
 
@@ -2253,8 +2253,8 @@ def draw_row_button(row, connected, path, slot_key=None, slot_index=0,
     elif fallback_op == "connect_anims":
         btn.operator("ht.connect_animations", text="LOAD", icon='FILEBROWSER')
     else:
-        #  Nothing to offer, but the column still needs its width or the rows
-        #  above and below stop lining up.
+        # nothing to offer, but the column still needs its width or the rows
+        # above and below stop lining up
         dead = btn.row()
         dead.enabled = False
         dead.label(text="")
@@ -2275,10 +2275,10 @@ def _draw_slot_row(col, context, key, index, is_default):
     """One folder line: a tick, the path, what is in it, and the buttons."""
     raw = slot_value(context, key, index)
     if is_default and not raw:
-        #  Nothing set, so show what the add-on is ACTUALLY using. A blank row
-        #  under a readout saying "28 *.dmx" is two true statements that
-        #  together read as a bug - and the shipped folder was always being
-        #  used, it just was never on screen.
+        # nothing set, so show what the add-on is ACTUALLY using. A blank row
+        # under a readout saying "28 *.dmx" is two true statements that
+        # together read as a bug - and the shipped folder was always being
+        # used, it just was never on screen
         d = _slot_default(key)
         if d is not None:
             raw = str(d)
@@ -2321,8 +2321,8 @@ def draw_search_folders(layout, context, st=None):
     box, head = fold_section(layout, st, "sec_folders", "Where It Looks",
                              _icon_id("dev_folders", 'FILE_FOLDER'))
 
-    #  THE JSON IS A FILE YOU CAN OPEN AND EDIT, so there is a button that
-    #  opens it - rather than a sentence naming a path you then go and find.
+    # THE JSON is A FILE YOU CAN OPEN and EDIT, so there is a button that
+    # opens it - rather than a sentence naming a path you then go and find
     store = user_paths.store_path()
     ops = head.row(align=True)
     ops.enabled = store.is_file()
@@ -2408,30 +2408,30 @@ def _draw_config_files(box, context):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Print Addon Behavior  -  the file you send someone
+# Print Addon Behavior  -  the file you send someone
 # ─────────────────────────────────────────────────────────────────────────────
 #
-#  WHY A FILE AND NOT THE CONSOLE. Every other diagnostic here prints, and
-#  printing is fine when the person reading it is the person at the keyboard.
-#  It stops working the moment the answer has to travel: "open Window > Toggle
-#  System Console, scroll up, select the right part, do not miss the traceback
-#  above it" is four instructions before the useful one, and the screenshot
-#  that comes back is always cropped one line too low.
+# why A FILE and not THE CONSOLE. Every other diagnostic here prints, and
+# printing is fine when the person reading it's the person at the keyboard
+# It stops working the moment the answer has to travel: "open Window > Toggle
+# System Console, scroll up, select the right part, don't miss the traceback
+# above it" is four instructions before the useful one, and the screenshot
+# that comes back is always cropped one line too low
 #
-#  A .txt drops into Discord in one drag. So this writes the whole state of the
-#  add-on to a timestamped file and OPENS THE FOLDER, which turns "send me your
-#  logs" into "press the button, drag the file".
+# A .txt drops into Discord in one drag. So this writes the whole state of the
+# add-on to a timestamped file and OPENS the FOLDER, which turns "send me your
+# logs" into "press the button, drag the file".
 #
-#  WHAT GOES IN IT IS CHOSEN BY ONE TEST: could someone who cannot see this
-#  machine work out what went wrong? That means the configuration AND the
-#  history - what is installed answers "what have you got", and the question is
-#  always "what happened". Report_UI keeps the last 80 reports for exactly this.
+# what GOES IN IT is CHOSEN BY one TEST: could someone who can't see this
+# machine work out what went wrong? That means the configuration and the
+# history - what is installed answers "what have you got", and the question is
+# always "what happened". Report_UI keeps the last 80 reports for exactly this
 #
-#  IT CONTAINS PATHS FROM THIS MACHINE, AND THEREFORE A USER NAME. That is
-#  unavoidable - "the path is wrong" is the single most common fault and cannot
-#  be diagnosed from a redacted path - so the file says so in its own header,
-#  at the top, before anything worth reading. Nobody should learn what they
-#  shared after they shared it.
+# IT CONTAINS PATHS FROM THIS MACHINE, and THEREFORE A USER NAME. That is
+# unavoidable - "the path is wrong" is the single most common fault and cannot
+# be diagnosed from a redacted path - so the file says so in its own header,
+# at the top, before anything worth reading. Nobody should learn what they
+# shared after they shared it
 
 LOG_FOLDER_NAME = "HoovyTools Logs"
 
@@ -2501,9 +2501,9 @@ def _collect_report(context):
     L.append(f"  {_marks.legend()}")
     L.append("")
     try:
-        #  include_hidden: the report is a completeness list, which is exactly
-        #  what the SMD importer and the icon count stopped being useful for
-        #  on the panel. They belong here.
+        # include_hidden: the report is a completeness list, which is exactly
+        # what the SMD importer and the icon count stopped being useful for
+        # on the panel. They belong here
         rows = wiring(context, force=True, include_hidden=True)
         ok, warn, bad = wiring_summary(rows)
         L.append(_fmt("summary", f"{ok} ok, {warn} warning(s), {bad} broken"))
@@ -2515,9 +2515,9 @@ def _collect_report(context):
                 L.append(f"          {r['detail']}")
             if r.get("path"):
                 L.append(f"          {r['path']}")
-            #  EVERY MOUNT, ONE PER LINE. "27 found" is a number you have to
-            #  trust; the names are what somebody compares their missing model
-            #  against, and a comma-joined line of 27 of them wraps into mush.
+            # every MOUNT, one PER LINE. "27 found" is a number you have to
+            # trust; the names are what somebody compares their missing model
+            # against, and a comma-joined line of 27 of them wraps into mush
             for nm in (r.get("names") or []):
                 L.append(f"            - {nm}")
     except Exception as exc:                                # noqa: BLE001
@@ -2536,9 +2536,9 @@ def _collect_report(context):
     except Exception as exc:                                # noqa: BLE001
         L.append(f"  preferences unavailable: {exc}")
 
-    #  THE JSON, VERBATIM. It lives inside the add-on folder, so an update that
-    #  replaces that folder takes it with it - and a log report written before
-    #  the update is then the only copy of those paths that still exists.
+    # the JSON, VERBATIM. It lives inside the add-on folder, so an update that
+    # replaces that folder takes it with it - and a log report written before
+    # the update is then the only copy of those paths that still exists
     try:
         store = user_paths.store_path()
         L += ["", _fmt("user_paths.json",
@@ -2550,8 +2550,8 @@ def _collect_report(context):
         L.append(f"  user_paths.json unreadable: {exc}")
 
     # ── search paths ─────────────────────────────────────────────────────
-    #  IN FULL, NOT TRUNCATED. This is the list a missing model was looked up
-    #  in, so "and 19 more" is exactly where the answer would have been.
+    # in FULL, not TRUNCATED. This is the list a missing model was looked up
+    # in, so "and 19 more" is exactly where the answer would have been
     try:
         from ..session import Import_Session
         dirs = Import_Session._build_search_paths()
@@ -2583,9 +2583,9 @@ def _collect_report(context):
     # ── add-ons ──────────────────────────────────────────────────────────
     L += _sec("ADD-ONS")
     try:
-        #  EVERY NAME EACH ONE HAS SHIPPED UNDER. This is a readout, so
-        #  listing the old names too is correct - it is how somebody with an
-        #  older install sees "loaded" instead of "not installed".
+        # every NAME EACH one HAS SHIPPED UNDER. This is a readout, so
+        # listing the old names too is correct - it's how somebody with an
+        # older install sees "loaded" instead of "not installed"
         from ..core import siblings
         _addon_names = (("SourceIO", "SourceIO-master")
                         + siblings.names("particles")
@@ -2668,9 +2668,9 @@ def _collect_report(context):
             mark = {'INFO': "     ", 'WARNING': "WARN ", 'ERROR': "FAIL "}.get(
                 item["level"], "     ")
             L.append(f"  {item['t']}  {mark} {item['summary']}")
-        #  The last few IN FULL. A one-line summary says a step ran; the body
-        #  says what it did, and the thing that went wrong is almost always in
-        #  the most recent one.
+        # the last few in FULL. A one-line summary says a step ran; the body
+        # says what it did, and the thing that went wrong is almost always in
+        # the most recent one
         for item in hist[-3:]:
             L += ["", f"  --- {item['t']}  {item['title']}  "
                       f"({item['level']}) ---"]
@@ -2689,9 +2689,9 @@ def _reveal(path):
     folder = path.parent
     if _sys.platform == "win32":
         try:
-            #  /select, highlights the new file among however many are already
-            #  in there. The comma is part of the flag, not a typo, and the
-            #  path must be a separate argument or Explorer ignores it.
+            #/select, highlights the new file among however many are already
+            #in there. The comma is part of the flag, not a typo, and the
+            #path must be a separate argument or Explorer ignores it
             subprocess.Popen(["explorer", "/select,", str(path)])
             return True, "folder opened, file selected"
         except Exception:
@@ -2736,9 +2736,9 @@ It says so at the top. Read it before posting it somewhere public"""
         try:
             lines = _collect_report(context)
         except Exception as exc:                            # noqa: BLE001
-            #  A report about what is broken must not need everything to work.
-            #  If collection itself dies, write the traceback out - that IS
-            #  the report at that point.
+            # A report about what is broken must not need everything to work
+            # If collection itself dies, write the traceback out - that is
+            # the report at that point
             import traceback
             lines = ["HOOVYTOOLS LOG REPORT - COLLECTION FAILED",
                      "", f"{exc}", ""] + traceback.format_exc().splitlines()
@@ -2747,9 +2747,9 @@ It says so at the top. Read it before posting it somewhere public"""
         try:
             folder = _log_folder()
             path = folder / name
-            #  Same minute twice gets a suffix rather than an overwrite - two
-            #  runs a few seconds apart is exactly the before/after pair
-            #  someone is trying to compare.
+            # same minute twice gets a suffix rather than an overwrite - two
+            # runs a few seconds apart is exactly the before/after pair
+            # someone is trying to compare.
             n = 2
             while path.exists():
                 path = folder / (name[:-4] + f" ({n}).txt")
@@ -2845,7 +2845,7 @@ def _wiring_flag(r):
         return ("RISKY", f"the Source Particle Import add-on is {val}, so "
                          f"particles will not import")
     if key == "session":
-        #  a session that is simply not loaded yet is not a problem to report - only one that vanished is
+        # a session that's simply not loaded yet is not a problem to report - only one that vanished is
         return ("BREAKS", f"the session this .blend was connected to is gone "
                           f"({det})") if bad else None
     if key == "anims":
@@ -2867,7 +2867,7 @@ def help_flags(context):
     except Exception as exc:                                  # noqa: BLE001
         flags.append(("RISKY", f"the wiring check itself failed ({exc})"))
 
-    #  The frame rate - the quiet way an import goes wrong.
+    # the frame rate - the quiet way an import goes wrong
     try:
         from ..session import Session_Paths, FPS_Safety
         pr = Session_Paths.project(context)
@@ -2880,7 +2880,7 @@ def help_flags(context):
     except Exception:                                         # noqa: BLE001
         pass
 
-    #  What happened - the latest report of each kind that did not end well.
+    # what happened - the latest report of each kind that did not end well
     try:
         from ..core import Report_UI
         seen = set()
@@ -2898,7 +2898,7 @@ def help_flags(context):
     except Exception:                                         # noqa: BLE001
         pass
 
-    #  Python errors in this session's log - the thing nobody sees in a popup.
+    # Python errors in this session's log - the thing nobody sees in a popup.
     try:
         from ..core import Report_UI
         lp = Report_UI.log_path()
@@ -3110,7 +3110,7 @@ THIS FEATURE WAS ADDED IN VERSION 1.18.0 AND IS IN EXPERIMENTAL STAGE"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Register Skydome
+# Register Skydome
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _skydome_armatures(match):
@@ -3156,9 +3156,9 @@ def _first_image_of(mesh):
     return None
 
 
-#  PRIORITY: 4/10
-#  (Viewport/render taste. The skydome WORLD RIG below lights the scene from
-#  the dome's own texture; nothing downstream depends on its numbers.)
+# PRIORITY: 4/10
+# (Viewport/render taste. The skydome WORLD RIG below lights the scene from
+# the dome's own texture; nothing downstream depends on its numbers.)
 
 SKYDOME_GROUP = "HT Skydome World"
 
@@ -3176,7 +3176,7 @@ def _skydome_average_color(image):
         buf = np.empty(n * image.channels, dtype=np.float32)
         image.pixels.foreach_get(buf)
         px = buf.reshape(-1, image.channels)
-        step = max(1, n // 65536)          # ~65k samples is plenty for a mean
+        step = max(1, n // 65536)          #~65k samples is plenty for a mean
         rgb = px[::step, :3].mean(axis=0)
         return tuple(float(c) for c in rgb)
     except Exception:                                         # noqa: BLE001
@@ -3220,8 +3220,8 @@ def _build_skydome_world(scene, image):
     Re-running rebuilds the group from scratch - knob values reset to
     defaults, which is what a "register" button should do.
     """
-    #  Fresh group every run. Rebuilding in place would preserve knob values
-    #  but also preserve any half-broken state from an older build.
+    # fresh group every run. Rebuilding in place would preserve knob values
+    # but also preserve any half-broken state from an older build.
     old = bpy.data.node_groups.get(SKYDOME_GROUP)
     if old is not None:
         bpy.data.node_groups.remove(old)
@@ -3281,10 +3281,10 @@ def _build_skydome_world(scene, image):
     soft.location = (-100, 200)
     soft.label = "toward average"
 
-    #  Ground fade: factor = 1 - GroundFade * max(0, -Z) of the view
-    #  direction. Above the horizon it is exactly 1. Direction-dependent,
-    #  but ENGINE-INDEPENDENT: both engines evaluate the world per
-    #  direction, unlike per-ray-type.
+    # ground fade: factor = 1 - GroundFade * max(0, -Z) of the view
+    # direction. Above the horizon it's exactly 1. Direction-dependent,
+    # but ENGINE-INDEPENDENT: both engines evaluate the world per
+    # direction, unlike per-ray-type
     sep = n.new("ShaderNodeSeparateXYZ"); sep.location = (-960, -40)
     mneg = n.new("ShaderNodeMath"); mneg.operation = 'MULTIPLY'
     mneg.inputs[1].default_value = -1.0
@@ -3330,7 +3330,7 @@ def _build_skydome_world(scene, image):
     L(mstr.outputs[0], bg.inputs["Strength"])
     L(bg.outputs["Background"], go.inputs["Background"])
 
-    #  The world tree itself: ONE group node and the output.
+    # the world tree itself: one group node and the output.
     world = scene.world
     if world is None:
         world = bpy.data.worlds.new("HT Skydome World")
@@ -3432,8 +3432,8 @@ Re-running rebuilds the group fresh, knobs back at their defaults"""
 
         if self.override_world:
             if first_image is None:
-                #  Dome meshes without a texture: same flat-colour fallback
-                #  as no dome at all - the rig is the point, not the image.
+                # dome meshes w/o a texture: same flat-colour fallback
+                # as no dome at all - the rig is the point, not the image
                 world = _build_skydome_world(context.scene, None)
                 lines.append(f"World : '{world.name}' built WITHOUT a dome "
                              f"texture (none found on any skydome mesh) -")
@@ -3461,7 +3461,7 @@ Re-running rebuilds the group fresh, knobs back at their defaults"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Sidebar: Developer tab
+# Sidebar: Developer tab
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _draw_priority_row(col, p):
@@ -3486,7 +3486,7 @@ def draw_priorities(layout, st):
     head.operator("ht.dev_dump_roadmap", text="",
                   **_icon_id("print_roadmap", 'COPYDOWN'))
 
-    try:  # UILayout.progress is 4.0+; never let a draw call kill the panel
+    try:  #UILayout.progress is 4.0+; never let a draw call kill the panel
         bar = box.row()
         bar.scale_y = 0.4
         bar.progress(factor=(done / total if total else 0.0), type='BAR', text=" ")
@@ -3578,7 +3578,7 @@ def draw_model_engine(layout, context, st):
     prefs = _p.addon_prefs()
     col = box.column(align=True)
     if prefs is not None:
-        #  3.0.0: HoovyTools is the default - SourceIO only when you pick it here (maps still go through SourceIO)
+        #3.0.0: HoovyTools is the default - SourceIO only when you pick it here (maps still go through SourceIO)
         row = col.row(align=True)
         row.scale_y = 1.2
         row.prop(prefs, "model_importer", expand=True)
@@ -3589,7 +3589,7 @@ def draw_model_engine(layout, context, st):
         row = box.row(align=True)
         row.label(text="Textures")
         row.prop(pr, "session_textures", expand=True)
-        box.prop(pr, "skip_hidden", icon='HIDE_ON')                     # 1.26.0
+        box.prop(pr, "skip_hidden", icon='HIDE_ON')                     #1.26.0
 
 
 def draw_misc(layout, context, st):
@@ -3811,7 +3811,7 @@ def draw_configure(layout, context, st):
     # ── POPUPS ───────────────────────────────────────────────────────────
     draw_popups(box, context, st)
 
-    # ── ANIMS FOLDER ─────────────────────────────────────────────────────
+    # ── anims folder ─────────────────────────────────────────────────────
     sub, _h = fold_section(box, st, "sec_anims_folder", "Anims Folder",
                            _icon_id("anims_folder", 'FILE_FOLDER'))
     if sub is not None:
@@ -3824,7 +3824,7 @@ def draw_configure(layout, context, st):
             row.prop(pr, "unpack_anims", text="Create Anims Folders",
                      icon=('FILE_FOLDER' if on else 'TRASH'), toggle=True)
 
-    # ── SHOT TIMING ──────────────────────────────────────────────────────
+    # ── shot timing ──────────────────────────────────────────────────────
     sub, _h = fold_section(box, st, "sec_shot_timing", "Shot Timing",
                            _icon_id("shot_timing", 'TIME'))
     if sub is not None:
@@ -3835,7 +3835,7 @@ def draw_configure(layout, context, st):
             row.scale_y = 1.2
             row.prop(pr, "shot_timing", expand=True)
 
-    # ── FRAME RATE ───────────────────────────────────────────────────────
+    #── frame rate ───────────────────────────────────────────────────────
     draw_framerate_section(box, context, st)
 
     # ── SESSION AUTOMATION ───────────────────────────────────────────────
@@ -3854,7 +3854,7 @@ def draw_configure(layout, context, st):
 
 
 _CREDITS = (
-    #  (name, license, url, lines under it) - short lines, the sidebar is narrow
+    # (name, license, url, lines under it) - short lines, the sidebar is narrow
     ("Blender Source Tools", "GPL v2+",
      "https://github.com/Artfunkel/BlenderSourceTools",
      ("Artfunkel (Tom Edwards)", "with lasa01 (Lassi Säike), suXinjke",
@@ -3933,7 +3933,7 @@ def draw_credits(layout, context, st):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Menus
+# Menus
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_MT_roadmap_submenu(Menu):
@@ -4041,7 +4041,7 @@ def draw_developer_entry(layout):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Register
+# Register
 # ─────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (

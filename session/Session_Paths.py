@@ -40,7 +40,7 @@ from bpy.props import (StringProperty, PointerProperty, IntProperty,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The stored project
+# The stored project
 # ─────────────────────────────────────────────────────────────────────────────
 
 TIP = "\n\nTHIS FEATURE WAS ADDED IN VERSION 1.26.0 AND IS IN EXPERIMENTAL STAGE"
@@ -60,7 +60,7 @@ class HoovyToolsShot(PropertyGroup):
     frame_end: IntProperty(default=0)            # type: ignore
     set_count: IntProperty(default=0)            # type: ignore
     camera: StringProperty(default="")           # type: ignore
-    #  3.0.0: CLIP or SLUG (a cut with no animation sets - SFM's placeholder)
+    # 3.0.0: CLIP or SLUG (a cut with no animation sets - SFM's placeholder)
     kind: StringProperty(default="CLIP")         # type: ignore
 
 
@@ -90,39 +90,39 @@ class HoovyToolsProject(PropertyGroup):
         default="",
     )
 
-    # Filled by UPDATE ANIMATIONS so the panel can show what it found
-    # without touching the disk on every redraw.
+    # filled by UPDATE ANIMATIONS so the panel can show what it found
+    # w/o touching the disk on every redraw.
     anim_count: IntProperty(default=-1)          # type: ignore
     anim_fps: StringProperty(default="")         # type: ignore
     # anim_status holds a FPS_Safety status CODE and nothing else - OK,
-    # MISMATCH, MIXED, UNKNOWN. The human sentence goes in anim_message.
+    # MISMATCH, MIXED, UNKNOWN. The human sentence goes in anim_message
     # These were one field once, and a free-text message written into it
     # reached STATUS_ICON[status] in a draw() and took the whole panel down
     # with a KeyError. A draw-time exception also kills the console, so a
-    # bad value here is not a cosmetic bug.
+    # bad value here isn't a cosmetic bug
     anim_status: StringProperty(default="")      # type: ignore
     anim_message: StringProperty(default="")     # type: ignore
-    # The session's own frame rate, cached when it is connected so the
+    # the session's own frame rate, cached when it is connected so the
     # panel can show SFM vs Blender without reading the file every redraw.
     session_fps: StringProperty(default="")      # type: ignore
     session_sets: IntProperty(default=-1)        # type: ignore
-    #  SET BY HAND, SO STOP MOVING IT. `ensure_extracted` points
-    #  `animations_path` at wherever it just extracted, on every run of steps
-    #  3, 4 and 5 - which silently undid anybody who chose a folder. When this
-    #  is on, the extract goes INTO the chosen folder instead of relocating
-    #  the pointer, which is what "override the one from the session" means.
+    # SET BY HAND, SO STOP MOVING IT. `ensure_extracted` points
+    # `animations_path` at wherever it just extracted, on every run of steps
+    # 3, 4 and 5 - which silently undid anybody who chose a folder. When this
+    # is on, the extract goes INTO the chosen folder instead of relocating
+    # the pointer, which is what "override the one from the session" means
     animations_locked: BoolProperty(default=False)   # type: ignore
-    #  WHICH SHOT the import steps use. -1 is the whole session, which is
-    #  what everything did before this existed and what a one-shot session
-    #  means anyway. The NAME is stored beside the index so a session
-    #  re-saved with a cut inserted is noticed rather than silently
-    #  importing a different shot - see resolve_shot().
-    #  3.0.0: also the shot LIST's active row - picking a row stores its name with it
+    # WHICH SHOT the import steps use. -1 is the whole session, which is
+    # what everything did before this existed and what a one-shot session
+    # means anyway. The NAME is stored beside the index so a session
+    # re-saved with a cut inserted is noticed rather than silently
+    # importing a different shot - see resolve_shot()
+    # 3.0.0: also the shot LIST's active row - picking a row stores its name with it
     shot_index: IntProperty(default=-1, update=lambda self, _ctx: _shot_index_changed(self))  # type: ignore
     shot_name: StringProperty(default="")        # type: ignore
-    #  The cut list, cached. `shots_source` is the file it was read from, so a
-    #  stale list announces itself instead of quietly describing another
-    #  session's cuts.
+    # the cut list, cached. `shots_source` is the file it was read from, so a
+    # stale list announces itself instead of quietly describing another
+    # session's cuts.
     shots: CollectionProperty(type=HoovyToolsShot)   # type: ignore
     shots_source: StringProperty(default="")     # type: ignore
 
@@ -270,7 +270,7 @@ def list_animations(scene=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Connect
+# Connect
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_connect_animations(Operator):
@@ -388,8 +388,8 @@ report its frame rate and warn before a mismatch bends your keys"""
         if pr and pr.session_path:
             self.filepath = pr.session_path
         else:
-            #  Open where SFM keeps sessions - or, 3.0.0, the folder you picked sessions from 3+ times
-            #  (core/start_folders.py; the config ladder's elements folder until then).
+            #open where SFM keeps sessions - or, 3.0.0, the folder you picked sessions from 3+ times
+            #(core/start_folders.py; the config ladder's elements folder until then)
             try:
                 from ..core import start_folders
                 self.filepath = start_folders.start("session") or self.filepath
@@ -423,7 +423,7 @@ report its frame rate and warn before a mismatch bends your keys"""
             if blacked:
                 print("[HT_PATHS]  world set to black - SFM has no ambient sky")
 
-        # Cheap now that the loader is O(1) - read the session's own frame
+        # cheap now that the loader is O(1) - read the session's own frame
         # rate and set count so the panel has something true to show.
         try:
             from . import Session_Reader
@@ -433,10 +433,10 @@ report its frame rate and warn before a mismatch bends your keys"""
             pr.session_fps = f"{info['fps']:g}"
             pr.session_sets = len(info["sets"])
 
-            #  THE CUT LIST COMES FREE FROM THIS READ. `read_session` already
-            #  built it, so caching it here is the difference between the
-            #  picker costing nothing and the picker re-parsing a 17 MB DMX
-            #  every time the mouse crosses it.
+            # the CUT LIST COMES FREE FROM this READ. `read_session` already
+            # built it, so caching it here is the difference between the
+            # picker costing nothing and the picker re-parsing a 17 MB DMX
+            # every time the mouse crosses it
             pr.shots.clear()
             pr.shots_source = ""
             for sh in info["shots"]:
@@ -449,7 +449,7 @@ report its frame rate and warn before a mismatch bends your keys"""
                 item.kind = "SLUG" if sh.get("slug") else "CLIP"
             pr.shots_source = str(self.filepath)
             Progress.phase("3 Frame rate", number=3)
-            #  A NEW SESSION IS NOT THE OLD ONE'S SHOT 4.
+            # a new session is not the old one's shot 4.
             set_shot_choice(context.scene, SHOT_ALL, "")
 
             try:
@@ -499,7 +499,7 @@ copied to a new project and should not keep pointing at the old one"""
         pr.session_fps = ""
         pr.session_sets = -1
         pr.scanned = False
-        #  The cut list belonged to the session that just got disconnected.
+        # the cut list belonged to the session that just got disconnected
         pr.shots.clear()
         pr.shots_source = ""
         set_shot_choice(context.scene, SHOT_ALL, "")
@@ -508,7 +508,7 @@ copied to a new project and should not keep pointing at the old one"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Update
+# Update
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_update_animations(Operator):
@@ -561,7 +561,7 @@ nothing in the scene is touched"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Draw
+# Draw
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _path_row(col, pr, attr, connect_op, label, icon, resolved):
@@ -624,23 +624,23 @@ def draw_sources(layout, context, compact=False):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  THE CHOSEN SHOT
+# the chosen shot
 # ──────────────────────────────────────────────────────────────────────────────
 #
-#  ONE CHOICE, ON THE SCENE, READ BY EVERY STEP. Not a property on each import
-#  operator: there are five of them and they would each have to be told again,
-#  and the failure mode of getting it wrong - models from shot 3 with animation
-#  from shot 7 - is silent and looks like a broken importer rather than like a
-#  mismatched setting.
+# ONE CHOICE, ON the SCENE, READ BY EVERY STEP. Not a property on each import
+# operator: there are five of them and they would each have to be told again,
+# and the failure mode of getting it wrong - models from shot 3 with animation
+# from shot 7 - is silent and looks like a broken importer rather than like a
+# mismatched setting
 #
-#  STORED AS INDEX AND NAME, AND BOTH ARE CHECKED. The index is what the shot
-#  list is ordered by and the name is what the user actually chose. If the
-#  session is re-saved with a shot inserted, the index now points at a
-#  different cut - so `resolve_shot()` prefers the index only when the name
-#  still matches there, falls back to finding the name, and says so.
+# STORED AS INDEX and NAME, and both ARE CHECKED. The index is what the shot
+# list is ordered by and the name is what the user actually chose. If the
+# session is re-saved with a shot inserted, the index now points at a
+# different cut - so `resolve_shot()` prefers the index only when the name
+# still matches there, falls back to finding the name, and says so
 #
-#  -1 MEANS THE WHOLE SESSION, which is what everything did before this
-#  existed and what a one-shot session means anyway.
+# -1 MEANS the whole SESSION, which is what everything did before this
+# existed and what a one-shot session means anyway
 
 SHOT_ALL = -1
 
@@ -686,7 +686,7 @@ def resolve_shot(shot_list, index=None, name=None, scene=None):
         s = shot_list[index]
         if not name or s["name"] == name:
             return s, ""
-        #  Index still valid but it is a different cut now.
+        # index still valid but it's a different cut now
         for other in shot_list:
             if other["name"] == name:
                 return other, (f"shot {index + 1} is now '{s['name']}' - used "
@@ -726,9 +726,9 @@ def _shot_items(self, context):
     return items
 
 
-#  The enum callback cannot read the file - Blender calls it on every redraw of
-#  the dialog, and the gothic session takes a dmxconvert round trip. So the
-#  operator reads once in invoke() and the callback serves that.
+# the enum callback can't read the file - Blender calls it on every redraw of
+# the dialog, and the gothic session takes a dmxconvert round trip. So the
+# operator reads once in invoke() and the callback serves that
 _PICKER_CACHE = {"path": None, "shots": []}
 
 
@@ -773,9 +773,9 @@ def refresh_shots(context, quiet=False):
         item.kind = "SLUG" if s.get("slug") else "CLIP"
     pr.shots_source = str(path)
 
-    #  A CHOICE THAT NO LONGER POINTS ANYWHERE IS DROPPED HERE, not silently
-    #  carried into an import. resolve_shot() would catch it later and say so,
-    #  but the panel should not be showing "Shot 12" for a file with 4 cuts.
+    # A CHOICE that no LONGER POINTS ANYWHERE is DROPPED HERE, not silently
+    # carried into an import. resolve_shot() would catch it later and say so,
+    # but the panel should not be showing "Shot 12" for a file with 4 cuts
     idx, name = shot_choice(scene)
     if idx >= 0 and not (0 <= idx < len(shots) and shots[idx]["name"] == name):
         match = next((s for s in shots if s["name"] == name), None)
@@ -925,8 +925,8 @@ right now"""
 
         shots = _PICKER_CACHE["shots"]
         if len(shots) <= 1:
-            #  Nothing to choose. Say so rather than opening a dialog with one
-            #  option in it - a session with one shot IS the whole session.
+            # nothing to choose. Say so rather than opening a dialog with one
+            # option in it - a session with one shot is the whole session
             set_shot_choice(context.scene, SHOT_ALL, "")
             self.report({"INFO"},
                         f"'{path.name}' has one shot - nothing to pick, "

@@ -38,7 +38,7 @@ from ..core import Common_Props
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONFIG
+# config
 # ──────────────────────────────────────────────────────────────────────────────
 
 SHOT_FILTER        = "shot1"
@@ -49,7 +49,7 @@ COLOR_FAIL = "COLOR_06"  # red   — no animation found / error
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -61,7 +61,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  HELPERS
+# HELPERS
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _build_armature_map() -> dict:
@@ -126,7 +126,7 @@ def _color_top_collection(armature, color: str) -> str:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  PUBLIC API
+# public api
 # ──────────────────────────────────────────────────────────────────────────────
 
 def run_harvester(folder: Path,
@@ -157,20 +157,20 @@ def run_harvester(folder: Path,
     arm_map   = _build_armature_map()
     dmx_files = _collect_dmx_files(folder, shot_filter, ignore_shot)
 
-    # Track which armature keys are targeted so we can color untouched ones red
+    #track which armature keys are targeted so we can color untouched ones red
     targeted_keys = set()
     for dmx in dmx_files:
         key = _armature_name_from_stem(dmx.stem, shot_filter, ignore_shot, arm_map)
         if key in arm_map:
             targeted_keys.add(key)
 
-    # Color armatures with no matching DMX red up front
+    # color armatures with no matching DMX red up front
     for key, arm in arm_map.items():
         if key not in targeted_keys:
             col_name = _color_top_collection(arm, COLOR_FAIL)
             print(f"[HARVESTER]  NO MATCH: '{arm.name}' → '{col_name}' colored red")
 
-    # Main import loop
+    #main import loop
     results = []
     for dmx in dmx_files:
         arm_key = _armature_name_from_stem(dmx.stem, shot_filter, ignore_shot, arm_map)
@@ -221,7 +221,7 @@ def run_harvester(folder: Path,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_ImportAnimations(Operator):
@@ -243,12 +243,12 @@ For a session, prefer the numbered session steps - they extract and route
 for you"""
     bl_idname  = "ht.import_animations"
     bl_label   = "Animations (Folder)"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filepath:    StringProperty(subtype="FILE_PATH")
@@ -325,7 +325,7 @@ for you"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU ITEM
+# menu item
 # ──────────────────────────────────────────────────────────────────────────────
 
 def draw_menu_item(layout):
@@ -347,7 +347,7 @@ def draw_session_entry(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (HT_OT_ImportAnimations,)

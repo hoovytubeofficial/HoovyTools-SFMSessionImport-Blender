@@ -56,13 +56,13 @@ from ..core.anim_compat import make_action, get_channelbag, fc_find_or_new, iter
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONFIG
+# config
 # ──────────────────────────────────────────────────────────────────────────────
 
-#  The PARENT, not the folder: `_sfm_qc_folder()` runs the underscore ladder
-#  over it so `_QC Face Data` and `QC Face Data` are both found. The folder in
-#  the SFM tree was renamed to match the add-on's convention; anyone still
-#  holding the bare-named one keeps working.
+# The PARENT, not the folder: `_sfm_qc_folder()` runs the underscore ladder
+# over it so `_QC Face Data` and `QC Face Data` are both found. The folder in
+# the SFM tree was renamed to match the add-on's convention; anyone still
+# holding the bare-named one keeps working
 _QC_SFM_PARENT = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\SourceFilmmaker"
     r"\game\usermod\plugins\___SFM to Blender Session Importer\_Dev"
@@ -94,7 +94,7 @@ _STEREO_SLIDER_MAX =  10.0
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -106,7 +106,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  QC FOLDER RESOLUTION
+# qc folder resolution
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _addon_qc_folder() -> Path:
@@ -157,8 +157,8 @@ def _qc_search_folders() -> list:
     ladder = ([_override_qc_folder()]
               + _user_paths.folders("qc_face_data")
               + [_addon_qc_folder(), _sfm_qc_folder()]
-              #  The SFM-side copy inside EVERY install. Someone running two
-              #  SFMs has two of these and only one was ever looked at.
+              # The SFM-side copy inside every install. Someone running two
+              # SFMs has two of these and only one was ever looked at
               + [_paths.data_dir_at(b / "plugins"
                                     / "___SFM to Blender Session Importer"
                                     / "_Dev", "QC Face Data")
@@ -217,7 +217,7 @@ def ensure_face_qc(mdl_path, objects=None):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FUNCTION 1 — REMOVE SHAPE KEY DRIVERS
+# function 1 — remove shape key drivers
 # ──────────────────────────────────────────────────────────────────────────────
 
 def remove_shapekey_drivers(obj) -> int:
@@ -249,7 +249,7 @@ _remove_shapekey_drivers = remove_shapekey_drivers   # legacy alias
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FUNCTION 2 — STEREO SPLIT  (L → L + R)
+# FUNCTION 2 — STEREO SPLIT  (L → L + R)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def stereo_split(obj) -> int:
@@ -285,7 +285,7 @@ def stereo_split(obj) -> int:
             x_norm = (xs[i] - x_min) / x_range
             delta  = l_kb.data[i].co - mesh.vertices[i].co
 
-            # Smooth 50/50 split centered at x_norm=0.5, transition width = 2*BLEED
+            # smooth 50/50 split centered at x_norm=0.5, transition width = 2*BLEED
             # R: 0 on left side, 1 on right side
             # L: mirror of R — l_blend + r_blend always = 1.0
             t       = (x_norm - (0.5 - _STEREO_BLEED)) / (2.0 * _STEREO_BLEED)
@@ -316,7 +316,7 @@ _stereo_split = stereo_split   # legacy alias
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FUNCTION 3 — IMPORT FLEX DMX
+# FUNCTION 3 — IMPORT FLEX DMX
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _clear_previous_flex_animation(obj) -> int:
@@ -527,7 +527,7 @@ def import_flex_dmx(dmx_path, obj, stepped_keys='AUTO') -> dict:
 
     imported, max_frame, _ = _build_shape_key_animation(obj, frame_rate, channels, start)
 
-    #  Straight after the curves exist and BEFORE anything reads them.
+    #straight after the curves exist and before anything reads them.
     stepped = {"steps": 0, "resampled_curves": 0, "snapped": 0}
     if stepped_keys != 'OFF':
         try:
@@ -552,7 +552,7 @@ def import_flex_dmx(dmx_path, obj, stepped_keys='AUTO') -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FUNCTION 4 — BAKE HWM LOCALVARS
+# function 4 — bake hwm localvars
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── rig helpers ───────────────────────────────────────────────────────────────
@@ -696,18 +696,18 @@ def _strip_comments(line): return line.split("//")[0].split("#")[0].strip()
 
 # ── QC parsers ────────────────────────────────────────────────────────────────
 
-#  A QC expression refers to another localvar WITH ITS SIGIL:
-#      %right_lip_suppressor = 1 / %right_open * (1 - presser) * (1 - bite)
-#      %AU12R = right_corner_puller * right_corner_puller * %right_corner_suppressor
+# A QC expression refers to another localvar WITH its SIGIL:
+# %right_lip_suppressor = 1 / %right_open * (1 - presser) * (1 - bite)
+# %AU12R = right_corner_puller * right_corner_puller * %right_corner_suppressor
 #
-#  THIS IS WHY GMAN'S MOUTH WAS DEAD. `%` is the MODULO operator in Python, so
-#  `1 / %right_open` is a SyntaxError - _safe_eval raised, the handler
-#  substituted 0.0, and every expression that referenced another localvar
-#  silently produced nothing. The ones that worked (AU4, AU6, AU2, AU9, AU38,
-#  the eyelids) are exactly the ones with no `%` in their bodies.
+# THIS is why GMAN'S MOUTH WAS DEAD. `%` is the MODULO operator in Python, so
+# `1 / %right_open` is a SyntaxError - _safe_eval raised, the handler
+# substituted 0.0, and every expression that referenced another localvar
+# silently produced nothing. The ones that worked (AU4, AU6, AU2, AU9, AU38,
+# the eyelids) are exactly the ones with no `%` in their bodies.
 #
-#  The sigil carries no meaning beyond "this is a localvar" - QC has no modulo
-#  operator - so it is stripped here, once, before anything parses.
+# The sigil carries no meaning beyond "this is a localvar" - QC has no modulo
+# operator - so it is stripped here, once, before anything parses
 _RX_LV_SIGIL = _re.compile(r'%(?=[A-Za-z_])')
 
 
@@ -720,9 +720,9 @@ def _parse_localvar_expressions(qc_text: str) -> list:
                             "expr": _RX_LV_SIGIL.sub("", m.group(2)).strip()})
     return results
 
-# Two regex variants handle the two common QC formats:
-#   $flexcontroller <type> range <lo> <hi> <NAME>
-#   flexcontroller <NAME|"NAME"> range <lo> <hi> <NAME|"NAME">
+# two regex variants handle the two common QC formats:
+# $flexcontroller <type> range <lo> <hi> <NAME>
+# flexcontroller <NAME|"NAME"> range <lo> <hi> <NAME|"NAME">
 _RX_FC_A = _re.compile(
     r'^\$flexcontroller\s+(".*?"|\S+)\s+range\s+([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s+([A-Za-z_]\w*)\s*$',
     _re.IGNORECASE
@@ -810,7 +810,7 @@ def _resolve_flex_name(kb, token: str, idx: tuple, cache: dict):
         cache[token] = (prefix_hits[0], "prefix")
         return cache[token]
 
-    # 4 — contains (shortest match wins)
+    #4 — contains (shortest match wins)
     contains_hits = sorted(
         [name for nl, name in lower_list if tl in nl],
         key=lambda s: (len(s), s.lower())
@@ -878,11 +878,11 @@ def parse_flexpairs(qc_text: str) -> list:
     return out
 
 
-#  Which side of the model is the character's RIGHT. gman: right = -X,
-#  measured from the eyelid keys (see note 3 above). Exposed rather than
-#  hard-coded inline so a model that disagrees can be corrected in one place.
+# which side of the model is the character's RIGHT. gman: right = -X,
+# measured from the eyelid keys (see note 3 above). Exposed rather than
+# hard-coded inline so a model that disagrees can be corrected in one place
 RIGHT_IS_NEGATIVE_X = True
-SPLIT_BLEED = 0.15          # in model units, half-width of the blend across x=0
+SPLIT_BLEED = 0.15          #in model units, half-width of the blend across x=0
 
 
 def split_flexpairs(obj, qc_text: str, report=print) -> dict:
@@ -918,9 +918,9 @@ def split_flexpairs(obj, qc_text: str, report=print) -> dict:
             skipped += 1
             continue
 
-        #  Does it actually straddle the middle? A key that is already
-        #  one-sided was split by something else and must be left alone -
-        #  re-splitting it would delete half of a correct shape.
+        # does it actually straddle the middle? A key that's already
+        # one-sided was split by something else and must be left alone -
+        # re-splitting it would delete half of a correct shape
         both = False
         for i, d in enumerate(r_kb.data):
             if (d.co - basis.data[i].co).length > 1e-5:
@@ -939,8 +939,8 @@ def split_flexpairs(obj, qc_text: str, report=print) -> dict:
 
         for i, v in enumerate(verts):
             delta = r_kb.data[i].co - basis.data[i].co
-            #  Smooth weight across the symmetry plane so the seam does not
-            #  crease. t = 1 on the character's LEFT, 0 on the RIGHT.
+            # Smooth weight across the symmetry plane so the seam does not
+            # crease. t = 1 on the character's LEFT, 0 on the RIGHT.
             x = v.co.x
             t = (x + SPLIT_BLEED) / (2.0 * SPLIT_BLEED)
             t = 0.0 if t < 0.0 else (1.0 if t > 1.0 else t)
@@ -1036,10 +1036,10 @@ def bake_hwm_localvars(obj, qc_path: Path, do_split_pairs: bool = True) -> dict:
     if not localvars:
         return {**empty, "error": f"No %LocalVar expressions in {qc_path.name}"}
 
-    #  BEFORE ANYTHING READS THE SHAPE KEYS. SourceIO leaves every flexpair as
-    #  a single `...R` holding both sides of the face, so the `...L` half of
-    #  every expression has nothing to write to. Split them first and the
-    #  ordinary resolver finds both halves.
+    #before ANYTHING READS the SHAPE KEYS. SourceIO leaves every flexpair as
+    #a single `...R` holding both sides of the face, so the `...L` half of
+    #every expression has nothing to write to. Split them first and the
+    #ordinary resolver finds both halves
     split_info = ({"split": 0, "skipped": 0, "names": []} if not do_split_pairs
                   else split_flexpairs(obj, qc_text))
 
@@ -1052,34 +1052,34 @@ def bake_hwm_localvars(obj, qc_path: Path, do_split_pairs: bool = True) -> dict:
 
     # ── Everything the QC defines, and what each one is FOR ──────────────────
     #
-    #  Two kinds of %localvar, and the old code treated them as one:
+    # Two kinds of %localvar, and the old code treated them as one:
     #
-    #    OUTPUT        its name is a flex, so its value is written to that
-    #                  shape key       (e.g. %AU25R)
-    #    INTERMEDIATE  its name is not a flex; it exists only to be read by
-    #                  other expressions   (e.g. %right_open)
+    # OUTPUT        its name is a flex, so its value is written to that
+    # shape key       (e.g. %AU25R)
+    # INTERMEDIATE  its name is not a flex; it exists only to be read by
+    # other expressions   (e.g. %right_open)
     #
-    #  An intermediate has no shape key, so the old resolver returned None for
-    #  it and CLEAN_ADD dropped it - AND, worse, any expression that mentioned
-    #  it got 0.0 substituted for that token with no warning. gman.qc has 13
-    #  intermediates feeding the whole mouth, so most of the face was being
-    #  computed from zeros.
+    # An intermediate has no shape key, so the old resolver returned None for
+    # it and CLEAN_ADD dropped it - AND, worse, any expression that mentioned
+    # it got 0.0 substituted for that token with no warning. gman.qc has 13
+    # intermediates feeding the whole mouth, so most of the face was being
+    # computed from zeros
     #
-    #  Now: every expression is evaluated, in dependency order, into one shared
-    #  per-frame scope. Only the outputs get curves.
+    # Now: every expression is evaluated, in dependency order, into one shared
+    # per-frame scope. Only the outputs get curves.
     exprs = {}
     for lv in localvars[:MAX_LOCALVARS]:
         exprs[lv["localvar"]] = lv["expr"]
     order = _topo_order(exprs)
 
-    #  Which localvars actually reach a shape key.
-    #  EXACT MATCHES ONLY. The fuzzy resolver (prefix / contains) exists to
-    #  cope with importers that decorate names, and it is the wrong tool here:
-    #  a QC localvar that IS a flex matches its shape key exactly, and an
-    #  INTERMEDIATE like `mouth` will happily fuzzy-match `mouth_something`
-    #  and start driving a shape key nothing asked it to drive. An
-    #  intermediate silently writing to a real flex is worse than one that
-    #  writes nowhere, because the face moves and the reason is invisible.
+    # which localvars actually reach a shape key
+    # EXACT MATCHES ONLY. The fuzzy resolver (prefix / contains) exists to
+    # cope with importers that decorate names, and it is the wrong tool here:
+    # a QC localvar that IS a flex matches its shape key exactly, and an
+    # INTERMEDIATE like `mouth` will happily fuzzy-match `mouth_something`
+    # and start driving a shape key nothing asked it to drive. An
+    # intermediate silently writing to a real flex is worse than one that
+    # writes nowhere, bc the face moves and the reason is invisible
     outputs = {}
     intermediates = []
     for lv_name in order:
@@ -1090,11 +1090,11 @@ def bake_hwm_localvars(obj, qc_path: Path, do_split_pairs: bool = True) -> dict:
         else:
             intermediates.append(lv_name)
 
-    #  EYELIDS. `upper_right` is ONE shape key standing in for a three-target
-    #  flex, so three localvars - _raiser, _neutral, _lowerer - land on it.
-    #  _neutral is the base mesh and contributes nothing; _lowerer is the
-    #  missing target, reconstructed from the QC's own eyeball heights.
-    #  See the note above parse_eyelids for the arithmetic.
+    # EYELIDS. `upper_right` is one shape key standing in for a three-target
+    # flex, so three localvars - _raiser, _neutral, _lowerer - land on it.
+    # _neutral is the base mesh and contributes nothing; _lowerer is the
+    # missing target, reconstructed from the QC's own eyeball heights
+    # See the note above parse_eyelids for the arithmetic
     eyelid_outputs = {}
     for flex_name, k in eyelids.items():
         target, _mt = _resolve_flex_name(kb, flex_name, kb_idx, cache)
@@ -1105,13 +1105,13 @@ def bake_hwm_localvars(obj, qc_path: Path, do_split_pairs: bool = True) -> dict:
         if r_lv not in exprs and l_lv not in exprs:
             continue
         eyelid_outputs[flex_name] = (target, r_lv, l_lv, k)
-        #  A blink drives this to roughly k (about -5.6 on gman), so the
-        #  default 0..1 slider would clip the entire closing motion.
+        # A blink drives this to roughly k (about -5.6 on gman), so the
+        # default 0..1 slider would clip the entire closing motion
         blk = kb.get(target)
         if blk is not None:
             blk.slider_min = min(blk.slider_min, LOCALVAR_SLIDER_MIN)
             blk.slider_max = max(blk.slider_max, LOCALVAR_SLIDER_MAX)
-        #  These three are consumed here, not written individually.
+        # these three are consumed here, not written individually
         for n in (r_lv, l_lv, f"{flex_name}_neutral"):
             outputs.pop(n, None)
 
@@ -1147,15 +1147,15 @@ def bake_hwm_localvars(obj, qc_path: Path, do_split_pairs: bool = True) -> dict:
             fuzzy_c += 1
             if lv_name not in fuzzy_tokens:
                 fuzzy_tokens.append(lv_name)
-    #  An INTERMEDIATE is not "unresolved" - it is doing its job. Only a
-    #  CONTROLLER token with no source curve is a genuine miss, and those are
-    #  collected below where they are discovered.
+    # An INTERMEDIATE isn't "unresolved" - it's doing its job. Only a
+    # CONTROLLER token with no source curve is a genuine miss, and those are
+    # collected below where they are discovered
     eyelid_consumed = set()
     for fn, (_t, r, l, _k) in eyelid_outputs.items():
         eyelid_consumed.update((r, l, f"{fn}_neutral"))
     intermediates = [n for n in intermediates if n not in eyelid_consumed]
 
-    #  One f-curve per OUTPUT, made once rather than per frame.
+    # one f-curve per OUTPUT, made once rather than per frame
     out_fcs = {}
     for lv_name, (resolved_name, _mt) in outputs.items():
         path = f'key_blocks["{resolved_name}"].value'
@@ -1166,9 +1166,9 @@ def bake_hwm_localvars(obj, qc_path: Path, do_split_pairs: bool = True) -> dict:
         out_fcs["<eyelid>" + flex_name] = fc_find_or_new(
             bake_bag, path, group_name=target)
 
-    #  CONTROLLER INPUTS, resolved ONCE. The old loop re-resolved every token
-    #  of every expression on every frame - the same name lookup a thousand
-    #  times over. The set of tokens does not change between frames.
+    # CONTROLLER INPUTS, resolved once. The old loop re-resolved every token
+    # of every expression on every frame - the same name lookup a thousand
+    # times over. The set of tokens doesn't change between frames
     controller_src = {}
     for expr in exprs.values():
         for tok in _re.findall(r'\b([A-Za-z_]\w*)\b', expr):
@@ -1183,8 +1183,8 @@ def bake_hwm_localvars(obj, qc_path: Path, do_split_pairs: bool = True) -> dict:
                 unresolved_tokens.append(tok)
 
     for frame in range(f_start, f_end + 1):
-        #  ONE scope for the whole frame. Intermediates computed here are
-        #  visible to every expression after them - which is the entire point.
+        # ONE scope for the whole frame. Intermediates computed here are
+        # visible to every expression after them - which is the entire point
         scope = {}
         for tok, src in controller_src.items():
             if src is None:
@@ -1262,7 +1262,7 @@ run_hwm_bake = bake_hwm_localvars   # legacy alias
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MISC HELPERS
+# misc helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _detect_hwm(obj) -> tuple:
@@ -1280,7 +1280,7 @@ def _detect_hwm(obj) -> tuple:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ORCHESTRATOR
+# ORCHESTRATOR
 # ──────────────────────────────────────────────────────────────────────────────
 
 def import_shape_keys(dmx_path, mesh_obj,
@@ -1338,10 +1338,10 @@ def import_shape_keys(dmx_path, mesh_obj,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
-@start_folders.browser_at("shapekeys")          # 3.0.0: opens where you work, learns your folder
+@start_folders.browser_at("shapekeys")          #3.0.0: opens where you work, learns your folder
 class HT_OT_ImportShapeKeys(Operator, ImportHelper):
     """PICK .dmx (face / flex) - ONE file, onto the SELECTED MESH
 
@@ -1362,24 +1362,24 @@ WHAT ONLY THE BAKE FIXES
   localvars  ones that only feed others are evaluated in dependency
              order, not read as zero
     """
-    #  BELOW THE TOOLTIP CAP. Blender truncates an operator description
-    #  at 1023 characters, without a warning, mid-word. These paragraphs
-    #  were part of the docstring and were already being cut off before
-    #  anyone could read them, so they live here instead - kept, but out
-    #  of the tooltip's budget.
-    #  Needs the model's .qc. Twelve TF2 ones ship in _QC Face Data; for any
-    #  other character point "QC Face Data (override)" in preferences at a
-    #  folder of your own. Without a QC only the bake is skipped, and it says so
+    # BELOW the TOOLTIP CAP. Blender truncates an operator description
+    # at 1023 characters, without a warning, mid-word. These paragraphs
+    # were part of the docstring and were already being cut off before
+    # anyone could read them, so they live here instead - kept, but out
+    # of the tooltip's budget
+    # Needs the model's .qc. Twelve TF2 ones ship in _QC Face Data; for any
+    # other character point "QC Face Data (override)" in preferences at a
+    # folder of your own. Without a QC only the bake is skipped, and it says so
     #
 
     bl_idname  = "ht.import_shape_keys"
     bl_label   = "Intelligent Flex Animation (.dmx)"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filename_ext = ".dmx"
@@ -1459,9 +1459,9 @@ WHAT ONLY THE BAKE FIXES
     def execute(self, context):
         obj = context.active_object
         if not obj or obj.type != "MESH":
-            # [roadmap #12] A missing target mesh is not the end of the
-            # operation. Build the procedural stand-in so the data can still
-            # be inspected, rather than dead-ending on "select a mesh".
+            #[roadmap #12] A missing target mesh is not the end of the
+            #operation. Build the procedural stand-in so the data can still
+            #be inspected, rather than dead-ending on "select a mesh".
             if not self.proxy_if_no_target:
                 self.report({"ERROR"}, "Select a mesh object first.")
                 return {"CANCELLED"}
@@ -1508,7 +1508,7 @@ WHAT ONLY THE BAKE FIXES
                 self.report({"ERROR"}, f"Stereo split failed: {exc}")
                 return {"CANCELLED"}
 
-        # ── Stage 3: Import flex DMX ──────────────────────────────────────────
+        #── Stage 3: Import flex DMX ──────────────────────────────────────────
         imported   = 0
         max_frame  = 0.0
         frame_rate = 30
@@ -1533,7 +1533,7 @@ WHAT ONLY THE BAKE FIXES
                 except Exception as exc:
                     bake_result = {"ok": False, "error": str(exc)}
 
-        # ── Popup report ──────────────────────────────────────────────────────
+        #── Popup report ──────────────────────────────────────────────────────
         t_total    = round(time.time() - t_total, 2)
         dmx_name   = Path(self.filepath).name
         is_hwm, lc, rc = _detect_hwm(obj) if DETECT_HWM else (False, 0, 0)
@@ -1604,7 +1604,7 @@ def draw_menu_item(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (HT_OT_ImportShapeKeys,)

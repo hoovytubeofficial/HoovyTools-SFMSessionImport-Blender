@@ -1,17 +1,17 @@
 # ==========================================================================
-#  importers/Standalone_MDL.py - part of HoovyTools (1.19.0)
+# importers/Standalone_MDL.py - part of HoovyTools (1.19.0)
 # --------------------------------------------------------------------------
-#    carried : your standalone importer, byte for byte, from
-#              E:\....Blender\Source Engine - Decompiling\MDL Import Full\
-#              IMPORT SOURCE MDL.py  (sha256 b00f08ab449cfd65)
-#    changed : ONE thing - import_mdl_file(..., import_textures=True); the
-#              no-texture mode sets SourceIO's ModelOptions.import_textures
-#              from it (it was hard-coded True). The embedded bundle and its
-#              checksum are untouched.
-#    used by : importers/Import_MDL.py - Import Model's engine when SourceIO
-#              is not installed, and DEVELOPER > MISC > MDL IMPORT (STANDALONE)
-#    note    : nothing here registers on import; HoovyTools calls
-#              import_mdl_file() directly. Imported only when used (2.6 MB).
+# carried : your standalone importer, byte for byte, from
+# E:\....Blender\Source Engine - Decompiling\MDL Import Full\
+# IMPORT SOURCE MDL.py  (sha256 b00f08ab449cfd65)
+# changed : one thing - import_mdl_file(..., import_textures=True); the
+# no-texture mode sets SourceIO's ModelOptions.import_textures
+# from it (it was hard-coded True). The embedded bundle and its
+# checksum are untouched
+# used by : importers/Import_MDL.py - Import Model's engine when SourceIO
+# is not installed, and DEVELOPER > MISC > MDL IMPORT (STANDALONE)
+# note    : nothing here registers on import; HoovyTools calls
+# import_mdl_file() directly. Imported only when used (2.6 MB).
 # ==========================================================================
 """IMPORT SOURCE MDL — standalone Blender Text Editor importer.
 
@@ -44,7 +44,7 @@ This private MDL bundle does not modify or register the installed SourceIO add-o
 """
 MODEL_PATH = ''
 CONTENT_ROOTS = ()  # Example: (r'D:\SFM\game\usermod', r'D:\SFM\game\tf')
-IMPORT_SCALE = 0.0254  # Source inches to Blender meters. Use 1.0 for Source units.
+IMPORT_SCALE = 0.0254  #Source inches to Blender meters. Use 1.0 for Source units
 USE_SOURCE_SHADERS = True
 IMPORT_PHYSICS = False
 
@@ -100,7 +100,7 @@ def _bootstrap():
                 temporary.replace(target)
             except OSError:
                 # A second Blender process can finish the same extraction and
-                # load the native module before this one commits its copy.
+                # load the native module before this one commits its copy
                 if target.is_file() and hashlib.sha256(target.read_bytes()).hexdigest() == digest:
                     temporary.unlink(missing_ok=True)
                 else:
@@ -163,7 +163,7 @@ def _mounted_content(filepath, content_roots):
     manager.clean(); manager.first_import = None; manager.priority_list = None
     preferred = []
     warnings = []
-    # Explicit roots are mounted in user order and searched first.
+    # explicit roots are mounted in user order and searched first
     for entry in content_roots:
         path = Path(bpy.path.abspath(str(entry))).expanduser().resolve()
         if not path.exists():
@@ -178,7 +178,7 @@ def _mounted_content(filepath, content_roots):
         manager.scan_for_content(TinyPath(str(filepath)))
     except (OSError, ValueError, AttributeError) as exc:
         warnings.append('Automatic content discovery: ' + str(exc))
-    # Deterministic local roots before unrelated discovered game providers.
+    # deterministic local roots before unrelated discovered game providers.
     local_roots = [parent.parent for parent in filepath.parents if parent.name.lower() == 'models']
     local_roots.append(filepath.parent)
     for path in local_roots:
@@ -266,7 +266,7 @@ def import_mdl_file(filepath, content_roots=(), scale=0.0254, use_source_shaders
     if not math.isfinite(scale) or scale <= 0: raise ValueError('Scale must be positive and finite')
     if bpy.context.mode != 'OBJECT': raise ValueError('Switch to Object Mode before importing')
     cache = _bootstrap()
-    # Capture state for local rollback if parsing/geometry creation fails.
+    # capture state for local rollback if parsing/geometry creation fails
     kinds = ('objects','meshes','armatures','materials','images','node_groups','collections')
     before = {kind:set(getattr(bpy.data,kind)) for kind in kinds}
     selected = list(bpy.context.selected_objects)
@@ -276,8 +276,8 @@ def import_mdl_file(filepath, content_roots=(), scale=0.0254, use_source_shaders
         _load_shader_assets(cache)
         manager, warnings = _mounted_content(filepath, content_roots)
         bpy_utils = _module('blender_bindings.utils.bpy_utils')
-        # Each import is independent, including the same MDL with different
-        # roots or shader settings. Only reuse textures inside this import.
+        # each import is independent, including the same MDL with different
+        # roots or shader settings. Only reuse textures inside this import
         scope = str(filepath).casefold() + '#' + uuid.uuid4().hex
         bpy_utils.MDL_IMPORT_SCOPE = scope
         _module('blender_bindings.utils.texture_utils').MDL_IMPORT_SCOPE = scope
@@ -287,7 +287,7 @@ def import_mdl_file(filepath, content_roots=(), scale=0.0254, use_source_shaders
         options.import_physics = bool(import_physics); options.bodygroup_grouping = True
         utils = _module('library.utils')
         TinyPath = _module('library.utils.tiny_path').TinyPath
-        # Record actual texture lookup failures, not every speculative VMT path.
+        # record actual texture lookup failures, not every speculative VMT path
         shader_cls = _module('blender_bindings.material_loader.shaders.source1_shader_base').Source1ShaderBase
         old_load = shader_cls.load_texture
         def tracked_load(self, name, path):

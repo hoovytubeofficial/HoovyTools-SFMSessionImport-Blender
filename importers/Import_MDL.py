@@ -82,18 +82,18 @@ def _skin_items(self, context):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONFIG
+# config
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Distance in front of the head the viewTarget bone tail sits
+# distance in front of the head the viewTarget bone tail sits
 VIEW_TARGET_FORWARD_DIST = 10.0
 
-# Eye empty name prefixes/patterns to recognise
+#eye empty name prefixes/patterns to recognise
 EYE_PREFIXES = ("eye_", "Eye_", "eyeball_", "Eyeball_")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -105,7 +105,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  EYE FIX  (shared with Utils_MDL)
+# EYE FIX  (shared with Utils_MDL)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _is_eye_empty(obj) -> bool:
@@ -127,7 +127,7 @@ def _find_head_bone(armature) -> str | None:
     Checks Child Of subtarget on the first eye empty found, then falls back to
     a name search.
     """
-    # Try to read the subtarget from an existing eye empty
+    # try to read the subtarget from an existing eye empty
     for obj in bpy.data.objects:
         if _is_eye_empty(obj):
             for con in obj.constraints:
@@ -136,7 +136,7 @@ def _find_head_bone(armature) -> str | None:
                         and con.subtarget):
                     return con.subtarget
 
-    # Name-based fallback
+    # name-based fallback
     candidates = ('bip_head', 'ValveBiped.Bip01_Head1',
                   'head', 'Head', 'Bip01_Head1')
     for name in candidates:
@@ -193,7 +193,7 @@ def apply_eye_fix(armature: bpy.types.Object) -> dict:
     if 'viewTarget' in edit_bones:
         edit_bones.remove(edit_bones['viewTarget'])
 
-    # Position viewTarget at average eye-empty world location (in armature space)
+    #Position viewTarget at average eye-empty world location (in armature space)
     arm_mat_inv = armature.matrix_world.inverted()
     avg_pos_world = sum(
         (obj.matrix_world.translation for obj in eye_empties),
@@ -225,7 +225,7 @@ def apply_eye_fix(armature: bpy.types.Object) -> dict:
         vt_empty.empty_display_size = 2.0
         vt_empty.show_in_front      = True
 
-    # Make sure it lives in the same collection as the armature
+    # make sure it lives in the same collection as the armature
     if vt_empty.name not in bpy.context.scene.collection.objects:
         for col in armature.users_collection:
             if vt_empty.name not in col.objects:
@@ -246,7 +246,7 @@ def apply_eye_fix(armature: bpy.types.Object) -> dict:
 
     # ── Step 3: Track To on each eye empty ────────────────────────────────
     for eye_obj in eye_empties:
-        # Remove any existing Track To so we don't stack them
+        # remove any existing Track To so we don't stack them
         for con in list(eye_obj.constraints):
             if con.type == 'TRACK_TO':
                 eye_obj.constraints.remove(con)
@@ -265,7 +265,7 @@ def apply_eye_fix(armature: bpy.types.Object) -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
 class _ImportMDLBase:
@@ -285,24 +285,24 @@ raw Source units; at 0.01905 a reference rest pose flings every bone
 about 52x.
 
 Source models already stand Z-up; the report says so for a character"""
-    #  1.19.0: a MIXIN, not the operator - two operators share it. Subclassing a
-    #  REGISTERED operator class breaks the parent: bpy.ops.ht.import_mdl then
-    #  returned FINISHED without ever running execute (measured).
+    # 1.19.0: a MIXIN, not the operator - two operators share it. Subclassing a
+    # REGISTERED operator class breaks the parent: bpy.ops.ht.import_mdl then
+    # returned FINISHED w/o ever running execute (measured).
     bl_label   = "Source Model (.mdl)"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filename_ext = ".mdl"
     filter_glob: StringProperty(default="*.mdl", options={"HIDDEN"})
 
     # ── HoovyTools additions ───────────────────────────────────────────────
-    #  FIRST, so it sits at the top of the browser's sidebar: click a .mdl
-    #  and its skins are listed here before anything is imported.
+    # first, so it sits at the top of the browser's sidebar: click a .mdl
+    # and its skins are listed here before anything is imported.
     skin: EnumProperty(  # type: ignore
         name="Import Skin",
         description=("Which of the model's skins to put on it. The list fills "
@@ -349,7 +349,7 @@ Source models already stand Z-up; the report says so for a character"""
         default="AUTO",
     )
 
-    # ── SourceIO pass-through options (exact property names from ModelOptions) ──
+    # ── SourceIO pass-thru options (exact property names from ModelOptions) ──
     scale: FloatProperty(
         name="World Scale",
         description=(
@@ -405,7 +405,7 @@ Source models already stand Z-up; the report says so for a character"""
         have_sio = sourceio_ready()
         engine = self.engine
         if engine == "AUTO":
-            #  1.21.0: Auto also obeys DEVELOPER > Model Importer > Use SourceIO
+            # 1.21.0: Auto also obeys DEVELOPER > Model Importer > Use SourceIO
             from ..core import model_engine
             engine = "SOURCEIO" if (have_sio and model_engine.use_sourceio()) else "EMBEDDED"
         if engine == "SOURCEIO" and not have_sio:
@@ -527,7 +527,7 @@ Source models already stand Z-up; the report says so for a character"""
             else:
                 lines.append(f"Eyes   : skipped - {fix['error']}")
 
-        # ── Rest pose, the same procedure as Fix All Rig Rest Poses ───────
+        #── Rest pose, the same procedure as Fix All Rig Rest Poses ───────
         if self.fix_rig:
             try:
                 from ..session import Import_Session
@@ -574,10 +574,10 @@ Source models already stand Z-up; the report says so for a character"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU
+# menu
 # ──────────────────────────────────────────────────────────────────────────────
 
-@start_folders.browser_at("model")          # 3.0.0: opens where you work, learns your folder
+@start_folders.browser_at("model")          #3.0.0: opens where you work, learns your folder
 class HT_OT_ImportMDL(_ImportMDLBase, Operator, ImportHelper):
     __doc__ = _ImportMDLBase.__doc__
     bl_idname = "ht.import_mdl"
@@ -594,10 +594,10 @@ def draw_menu_item(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
-@start_folders.browser_at("model")          # 3.0.0: opens where you work, learns your folder
+@start_folders.browser_at("model")          #3.0.0: opens where you work, learns your folder
 class HT_OT_ImportMDLEmbedded(_ImportMDLBase, Operator, ImportHelper):
     """PICK .mdl (compiled model) - Import Model through the EMBEDDED importer
 

@@ -32,9 +32,9 @@ from ..core import Progress
 
 COLLECTION_PREFIX = "Map - "
 WORLD_MARK = "ht_world_map"
-#  The session's world map: (x, y, z) -> (y, -x, z).
+# the session's world map: (x, y, z) -> (y, -x, z)
 WORLD = Matrix.Rotation(-math.pi / 2.0, 4, 'Z')
-#  No SourceIO: the map is left out, everything else imports - the models come in with HoovyTools' own importer.
+#No SourceIO: the map is left out, everything else imports - the models come in with HoovyTools' own importer
 SKIPPED_NO_SOURCEIO = {"map": None, "skipped": "sourceio",
                        "note": "left out - SourceIO is not installed, and maps import through it (the models do not "
                                "need it)"}
@@ -151,7 +151,7 @@ def import_map_file(context, path):
         for c in list(o.users_collection):
             c.objects.unlink(o)
         target.objects.link(o)
-    #  SourceIO's own collections hold nothing now - deepest first, so a parent empties after its children
+    # SourceIO's own collections hold nothing now - deepest first, so a parent empties after its children
     parents = {}
     for c in bpy.data.collections:
         for ch in c.children:

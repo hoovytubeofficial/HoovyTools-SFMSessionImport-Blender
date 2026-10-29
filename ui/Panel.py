@@ -33,17 +33,17 @@ from bpy.props import EnumProperty, BoolProperty, StringProperty
 from bpy.types import Panel, Operator, PropertyGroup
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Status colours (RGBA, matched to Blender's dark theme)
+# Status colours (RGBA, matched to Blender's dark theme)
 # ─────────────────────────────────────────────────────────────────────────────
 
 C_MODEL = (0.90, 0.55, 0.18, 1.0)   # orange - model imported, nothing else
 C_ANIM  = (0.92, 0.84, 0.25, 1.0)   # yellow - animation imported
 C_FULL  = (0.35, 0.78, 0.42, 1.0)   # green  - shape key animation present
 
-# Collection color_tag values used by the harvester
-TAG_OK   = "COLOR_04"   # green
-TAG_FAIL = "COLOR_06"   # red
-TAG_NONE = "NONE"       # white / default
+# collection color_tag values used by the harvester
+TAG_OK   = "COLOR_04"   #green
+TAG_FAIL = "COLOR_06"   #red
+TAG_NONE = "NONE"       #white / default
 
 
 def _dot(layout, color):
@@ -56,7 +56,7 @@ def _dot(layout, color):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Icon bridge (wired by __init__.register)
+# Icon bridge (wired by __init__.register)
 # ─────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -69,7 +69,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Settings
+# Settings
 # ─────────────────────────────────────────────────────────────────────────────
 
 TAB_ITEMS = [
@@ -131,11 +131,11 @@ class HoovyToolsPanelSettings(PropertyGroup):
             "do - press any import and its full option set is in the dialog "
             "and in the redo panel either way"),
     )
-    #  DEFAULT ON. Naming a camera "hoovy" IS the request to split it - that
-    #  is the whole point of the magic name, and a toggle that ships off means
-    #  the name silently does nothing on a fresh scene, which reads as "the
-    #  feature does not register". The match string is specific enough that
-    #  nothing is ever split by accident.
+    #DEFAULT ON. Naming a camera "hoovy" IS the request to split it - that
+    #is the whole point of the magic name, and a toggle that ships off means
+    #the name silently does nothing on a fresh scene, which reads as "the
+    #feature doesn't register". The match string is specific enough that
+    #nothing is ever split by accident
     auto_split_hoovy_camera: BoolProperty(  # type: ignore
         name="Auto-split 'hoovy' cameras", default=True,
         description=(
@@ -191,7 +191,7 @@ class HoovyToolsPanelSettings(PropertyGroup):
 SECTIONS = (
     ("sec_session",        True),
     ("sec_elements",       True),
-    #  TOOLS - Main Tools open, every shelf below it closed
+    # TOOLS - Main Tools open, every shelf below it closed
     ("sec_main_tools",     True),
     ("sec_tool_mdl",       False),
     ("sec_tool_anim",      False),
@@ -211,7 +211,7 @@ SECTIONS = (
     ("sec_clean_rigs",     True),      # inside Cleanup
     ("sec_clean_scene",    True),
     ("sec_clean_world",    True),
-    #  DEV - closed
+    # DEV - closed
     ("sec_wiring",         False),
     ("sec_folders",        False),     # Where It Looks, inside Wiring
     ("sec_behavior",       False),
@@ -225,7 +225,7 @@ SECTIONS = (
     ("sec_shot_timing",    False),
     ("sec_framerate",      False),
     ("sec_autosplit",      False),
-    ("sec_scene",          False),     # IMPORTED SESSION
+    ("sec_scene",          False),     # imported session
     ("sec_rigs",           True),      # its rig roster
     ("sec_model_engine",   False),     # 1.21.0 MODEL IMPORTER, above Misc
     ("sec_misc",           False),     # 1.19.0 MISC, above Credits
@@ -273,7 +273,7 @@ def settings(context):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Status detection (read-only, draw-safe)
+# Status detection (read-only, draw-safe)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _action_has_keys(action):
@@ -359,7 +359,7 @@ _STATUS_META = {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Cleanup helpers (shared by the operators)
+# Cleanup helpers (shared by the operators)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _top_collection(arm):
@@ -428,20 +428,20 @@ def _clear_shapekey_animation(arm):
             continue
         cleared = False
 
-        # Drop the whole animation_data block (action + drivers + NLA) in one go
+        #drop the whole animation_data block (action + drivers + NLA) in one go
         if sk.animation_data is not None:
             try:
                 sk.animation_data_clear()
                 cleared = True
             except Exception:
-                # Fall back to clearing the action alone
+                # fall back to clearing the action alone
                 try:
                     sk.animation_data.action = None
                     cleared = True
                 except Exception:
                     pass
 
-        # Reset every non-basis key to 0 so the mesh sits at rest
+        # reset every non-basis key to 0 so the mesh sits at rest
         try:
             for kb in sk.key_blocks:
                 if kb.value != 0.0:
@@ -491,10 +491,10 @@ def _strip_animation(arm):
     root = _root_empty(arm)
     axis = _axis_empty(arm)
 
-    # Unparent the armature but leave its local (basis) transform intact.
+    #unparent the armature but leave its local (basis) transform intact
     if arm.parent in (root, axis) and arm.parent is not None:
         arm.parent = None
-        # Reset the parent-inverse so a later manual reparent starts clean.
+        # reset the parent-inverse so a later manual reparent starts clean.
         # (The animation importer sets this to identity itself, so this is
         # just tidiness - matrix_basis is what actually matters above.)
         try:
@@ -516,7 +516,7 @@ def _strip_animation(arm):
         ad.action = None
         removed["action"] = True
 
-    # Clear shape-key animation on bound meshes and reset them to rest.
+    # clear shape-key animation on bound meshes and reset them to rest
     removed["meshes"] = _clear_shapekey_animation(arm)
 
     top = _top_collection(arm)
@@ -528,7 +528,7 @@ def _strip_animation(arm):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operators
+# Operators
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_purge_model_only(Operator):
@@ -564,7 +564,7 @@ Undoable, but read the list in the report first"""
             names.append(arm.name)
             top = _top_collection(arm)
             removed_objs += _delete_object_tree(arm)
-            # Delete the top collection if it is now empty of objects
+            #delete the top collection if it's now empty of objects
             if top is not None and not top.all_objects:
                 try:
                     bpy.data.collections.remove(top)
@@ -634,8 +634,8 @@ stacked, and rigs do not rotate 90 degrees on the second pass"""
             empties += r["empties"]
             meshes += r["meshes"]
 
-        # Restore rest poses via the Rig Fixer, then recolor white last so the
-        # fixer's own yellow tagging doesn't leave the scene mislabeled.
+        # restore rest poses via the Rig Fixer, then recolor white last so the
+        # fixer's own yellow tagging doesn't leave the scene mislabeled
         rest_line = None
         if self.restore_rest_poses:
             try:
@@ -646,7 +646,7 @@ stacked, and rigs do not rotate 90 degrees on the second pass"""
                 if fx["errors"]:
                     rest_line += f", {fx['errors']} error(s)"
                 # Rig Fixer recolors fixed rigs yellow - reset to white so the
-                # final state reads as clean model-only.
+                # final state reads as clean model-only
                 for arm in arms:
                     top = _top_collection(arm)
                     if top is not None and top.color_tag != TAG_NONE:
@@ -677,7 +677,7 @@ stacked, and rigs do not rotate 90 degrees on the second pass"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Environment detection (Tutorial tab)
+# Environment detection (Tutorial tab)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _usermod_path():
@@ -709,7 +709,7 @@ def _sourceio_installed():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Tab: Animation Set Editor
+# Tab: Animation Set Editor
 # ─────────────────────────────────────────────────────────────────────────────
 
 def draw_imported_session(layout, context, st):
@@ -787,7 +787,7 @@ def draw_imported_session(layout, context, st):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Tab: Tools
+# Tab: Tools
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _section(layout, st, key, title, icon_key, fallback='TOOL_SETTINGS'):
@@ -819,7 +819,7 @@ MAIN_TOOLS = (
     ("ht.import_shape_keys",    "3  Import Shape Keys (.dmx)", "import_shape_keys", 'SHAPEKEY_DATA'),
     ("ht.import_dmx_camera",    "4  Import Camera (.dmx)",     "import_dmx_camera", 'CAMERA_DATA'),
 )
-#  3.0.0: the fold each main tool's ribbon uses
+# 3.0.0: the fold each main tool's ribbon uses
 MAIN_TOOL_FOLDS = {"ht.import_mdl": "sec_tool_mdl", "ht.import_dmx_animation": "sec_tool_anim",
                    "ht.import_shape_keys": "sec_tool_shapekeys", "ht.import_dmx_camera": "sec_tool_camera"}
 HOOVY_IMPORTERS = (
@@ -884,14 +884,14 @@ def ribbon(layout, context, st, key, idname, text, icon_kw, enabled=True, tool=N
     col.use_property_decorate = False
     for n in names:
         col.prop(props, n)
-#  5 is the HoovyTools Particle Import add-on's own .pcf importer, drawn as
-#  it is - a copy here would be the one that drifts.
+#5 is the HoovyTools Particle Import add-on's own .pcf importer, drawn as
+#it's - a copy here would be the one that drifts.
 PARTICLE_TOOL = ("htp.choose_particle_system", "5  Import Particles (.pcf)",
                  "import_pcf", 'PARTICLES')
 
-#  What Developer Mode shows under each main importer - the same properties
-#  its file browser sidebar has; this only decides whether you have to open
-#  the browser to see them.
+# What Developer Mode shows under each main importer - the same properties
+# its file browser sidebar has; this only decides whether you have to open
+# the browser to see them.
 MAIN_TOOL_OPTIONS = {
     "ht.import_mdl":           ("apply_eye_fix", "fix_rig", "rig_static_prop",
                                 "scale"),
@@ -963,15 +963,15 @@ def draw_tools(layout, context, st):
     dev = bool(getattr(st, "developer_mode", False))
     from ..session import Session_Paths as _SP
 
-    # ── MAIN TOOLS ───────────────────────────────────────────────────────
+    #── main tools ───────────────────────────────────────────────────────
     col = _section(layout, st, "sec_main_tools", "Main Tools",
                    "sec_main_tools", 'IMPORT')
     if col is not None:
         draw_main_tool_buttons(col, context, dev=dev, st=st)
 
-    # ── HOOVYTOOLS IMPORTERS (3.0.0) ─────────────────────────────────────
-    #  MDL / VMT / VTF through HoovyTools' own code - SourceIO is not needed for any of them (maps still go
-    #  through SourceIO, as the session import's last step).
+    # ── hoovytools importers (3.0.0) ─────────────────────────────────────
+    # MDL / VMT / VTF thru HoovyTools' own code - SourceIO isn't needed for any of them (maps still go
+    # through SourceIO, as the session import's last step).
     col = _section(layout, st, "sec_hoovy_importers", "HoovyTools Importers",
                    "sec_hoovy_importers", 'IMPORT')
     if col is not None:
@@ -1024,9 +1024,9 @@ def draw_tools(layout, context, st):
         col.operator("ht.bake_localvars", text="Bake HWM Localvars",
                      **_icon_id("bake_localvars", 'RENDER_ANIMATION'))
 
-    # ── SOURCE IO HELP ───────────────────────────────────────────────────
-    #  For rigs already in the scene. Import Model and Import Models do the
-    #  rest pose and the eyes by themselves since 1.18.0.
+    #── SOURCE IO HELP ───────────────────────────────────────────────────
+    #For rigs already in the scene. Import Model and Import Models do the
+    #rest pose and the eyes by themselves since 1.18.0
     col = _section(layout, st, "sec_sourceio", "Source IO Help",
                    "sec_sourceio", 'ARMATURE_DATA')
     if col is not None:
@@ -1110,8 +1110,8 @@ STEP_BUTTONS = (
     ("ht.step_map",              "8  Import Map",         "import_map", 'WORLD'),
 )
 
-#  Which properties Developer Mode shows inline per step. The operator still
-#  owns them all; this is only the shortlist the panel surfaces.
+# which properties Developer Mode shows inline per step. The operator still
+# owns them all; this is only the shortlist the panel surfaces
 STEP_OPTIONS = {
     "ht.step_models":     ("fix_rigs",),
     "ht.step_animations": ("root_motion", "up_axis", "extract_first",
@@ -1122,8 +1122,8 @@ STEP_OPTIONS = {
     "ht.step_particles":  ("scale", "only_emitting"),
 }
 
-#  The one-click's switches - Developer Mode shows them under the IMPORT SHOT
-#  button, and the button asks with all of them before it runs.
+# the one-click's switches - Developer Mode shows them under the IMPORT SHOT
+# button, and the button asks with all of them before it runs
 ONECLICK_OPTIONS = ("do_models", "do_extract", "do_fps", "do_animation",
                     "do_sounds", "do_lights", "do_particles", "do_organize",
                     "do_euler", "do_visibility", "do_map")
@@ -1187,8 +1187,8 @@ def draw_main(layout, context, st):
             load.operator("ht.connect_session", text="LOAD DMX SESSION",
                           **_icon_id("session_load", 'FILE_FOLDER'))
         else:
-            #  Which shot - ABOVE the import button, because it changes what
-            #  that button does.
+            # which shot - ABOVE the import button, because it changes what
+            # that button does
             Session_Paths.draw_shot_grid(box, context, icon_id=_icon_id)
 
 
@@ -1311,11 +1311,11 @@ class HT_PT_sidebar(Panel):
             box.label(text="Re-enable the addon and restart Blender.")
             return
 
-        #  MAIN carries the workflow, so it gets the room. The other
-        #  three share what is left. prop_enum draws one enum value at a
-        #  time, which is the only way to give them different widths.
-        #  3.0.0: buttons that wear the add-on's own icons (an enum tab can only show Blender's), Dev a small
-        #  icon-only tab at the right - its tooltip names it
+        # MAIN carries the workflow, so it gets the room. The other
+        # three share what is left. prop_enum draws one enum value at a
+        # time, which is the only way to give them different widths
+        # 3.0.0: buttons that wear the add-on's own icons (an enum tab can only show Blender's), Dev a small
+        # icon-only tab at the right - its tooltip names it
         bar = layout.row()
         bar.scale_y = 1.3
         row = bar.row(align=True)
@@ -1338,12 +1338,12 @@ class HT_PT_sidebar(Panel):
             from . import Developer
             Developer.draw_developer(layout, context, st)
         else:
-            #  MAIN, and also whatever a stale saved enum resolves to.
+            # MAIN, and also whatever a stale saved enum resolves to
             draw_main(layout, context, st)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Register
+# Register
 # ─────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (

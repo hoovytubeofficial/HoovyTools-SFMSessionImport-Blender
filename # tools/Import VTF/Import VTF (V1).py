@@ -1,23 +1,23 @@
 # =============================================================================
-#  Import VTF (V1)
-#  The Text Editor version of  SFM Session Importer > Tools > HoovyTools
-#  Importers > 3 Import VTF  (SFM Session Importer 3.0.0).
+# Import VTF (V1)
+# The Text Editor version of  SFM Session Importer > Tools > HoovyTools
+# Importers > 3 Import VTF  (SFM Session Importer 3.0.0)
 # =============================================================================
 #
-#  WHAT IT DOES: decodes each .vtf into a Blender image, packed into the
-#  .blend - every format SFM uses, sprite sheets included - with HoovyTools'
-#  own reader: SourceIO does not have to be installed. Open the images in an
-#  Image Editor or pick them in any Image Texture node.
+# what IT DOES: decodes each .vtf into a Blender image, packed into the
+# .blend - every format SFM uses, sprite sheets included - with HoovyTools'
+# own reader: SourceIO doesn't have to be installed. Open the images in an
+# Image Editor or pick them in any Image Texture node.
 #
-#  HOW: set the value below, press Run Script (Alt+P). Each image's name and
-#  size prints to the console (Window > Toggle System Console).
+# HOW: set the value below, press Run Script (Alt+P). Each image's name and
+# size prints to the console (Window > Toggle System Console).
 #
-#  Needs the SFM Session Importer add-on (3.0.0 or newer) installed.
+# Needs the SFM Session Importer add-on (3.0.0 or newer) installed.
 #
-#  THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE.
+# this feature was added in version 3.0.0 and is in experimental stage.
 # =============================================================================
 
-VTF_FILES = [r""]           # one or more .vtf files: [r"C:\...\a.vtf", r"C:\...\b.vtf"]
+VTF_FILES = [r""]           #one or more .vtf files: [r"C:\...\a.vtf", r"C:\...\b.vtf"]
 
 # -----------------------------------------------------------------------------
 

@@ -32,15 +32,15 @@ convention without breaking anyone still holding the bare-named ones.
 
 from pathlib import Path
 
-#  A folder under SourceFilmmaker/game is a MOUNT if it holds one of these.
-#  Signature, not a whitelist: `workshop` is the folder people report missing,
-#  and no fixed list of mod names can know what someone called theirs.
+# A folder under SourceFilmmaker/game is a MOUNT if it holds one of these
+# Signature, not a whitelist: `workshop` is the folder people report missing,
+# and no fixed list of mod names can know what someone called theirs
 _MOD_MARKERS = ("gameinfo.txt", "models", "materials", "particles",
                 "sound", "maps", "scripts")
 
-#  Not mounts, and cheap to say so by name: `bin` is the engine's DLLs and
-#  `reports` is SFM's crash dumps. Both would otherwise match on `scripts`
-#  or on sheer coincidence and add a pointless branch to every model lookup.
+# not mounts, and cheap to say so by name: `bin` is the engine's DLLs and
+# `reports` is SFM's crash dumps. Both would otherwise match on `scripts`
+# or on sheer coincidence and add a pointless branch to every model lookup
 _NOT_MODS = {"bin", "reports", "screencast"}
 
 
@@ -64,27 +64,27 @@ def data_dir(name: str) -> Path:
     return data_dir_at(addon_root(), name)
 
 
-#  WHERE THE REPORTS ARE WRITTEN
+# where the reports are written
 #  -----------------------------
-#  `_Logs`, one underscore: optional, and the add-on runs without it.
+# `_Logs`, one underscore: optional, and the add-on runs w/o it
 #
-#  THIS FOLDER IS THE ONE EXCEPTION TO THE UNDERSCORE CONVENTION, so it is
-#  written down here rather than remembered. The convention is `name`
-#  required, `_name` optional but SHIPPED, `__name` development only and
-#  never shipped. A log is runtime output and is not content, so by that
-#  reading it belongs under two underscores, where `__*/` in `.gitignore`
-#  excludes it automatically and nobody has to think about it.
+# this FOLDER IS the ONE EXCEPTION TO the UNDERSCORE CONVENTION, so it is
+# written down here rather than remembered. The convention is `name`
+# required, `_name` optional but SHIPPED, `__name` development only and
+# never shipped. A log is runtime output and is not content, so by that
+# reading it belongs under two underscores, where `__*/` in `.gitignore`
+# excludes it automatically and nobody has to think about it
 #
-#  It is `_Logs` anyway, because a log the user is meant to find has to sit
-#  somewhere they will look. That costs the automatic exclusion: `_name` is
-#  a SHIPPED tier, so nothing in `.gitignore` covers this folder by pattern
-#  and it needs its own explicit `_Logs/` line. That line is load-bearing -
-#  delete it and every report this add-on writes starts getting committed.
+# It is `_Logs` anyway, bc a log the user is meant to find has to sit
+# somewhere they will look. That costs the automatic exclusion: `_name` is
+# a SHIPPED tier, so nothing in `.gitignore` covers this folder by pattern
+# and it needs its own explicit `_Logs/` line. That line is load-bearing -
+# delete it and every report this add-on writes starts getting committed
 #
-#  CREATED ON DEMAND, AND NEVER FATAL. An add-on folder can be read-only -
-#  installed by an admin, or sitting on a share - and that is a reason to skip
-#  a log file, not a reason to break every report in the add-on. Returns None
-#  and the caller carries on printing to the console exactly as before.
+# CREATED ON DEMAND, AND NEVER FATAL. An add-on folder can be read-only -
+# installed by an admin, or sitting on a share - and that is a reason to skip
+# a log file, not a reason to break every report in the add-on. Returns None
+# and the caller carries on printing to the console exactly as before
 
 LOGS_DIR_NAME = "_Logs"
 
@@ -179,9 +179,9 @@ def is_mod_dir(path: Path) -> bool:
     for marker in _MOD_MARKERS:
         if (path / marker).exists():
             return True
-    #  A VPK-only mount has no loose folders at all. `next()` on the glob
-    #  rather than a list: one hit is the whole answer and some of these
-    #  folders hold thousands of files.
+    # A VPK-only mount has no loose folders at all. `next()` on the glob
+    # rather than a list: one hit is the whole answer and some of these
+    # folders hold thousands of files
     return next(path.glob("*.vpk"), None) is not None
 
 

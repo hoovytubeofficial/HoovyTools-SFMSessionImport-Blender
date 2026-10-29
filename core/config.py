@@ -61,9 +61,9 @@ STARTUP_NAME = "_startupconfig.json"
 CUSTOM_NAME = "customizedconfig.json"
 CONFIG_VERSION = 1
 
-#  kind -> the subfolder of usermod it normally lives in.
-#  Order is the order they are written to the file, so the file reads as a
-#  list of what the add-on cares about rather than as a dict in hash order.
+# kind -> the subfolder of usermod it normally lives in
+# Order is the order they are written to the file, so the file reads as a
+# list of what the add-on cares about rather than as a dict in hash order
 KINDS = (
     ("animations", "animations", "extracted per-set .dmx animation files"),
     ("elements",   "elements",   "SFM session files"),
@@ -93,7 +93,7 @@ def custom_path() -> Path:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  building the ladder
+# building the ladder
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_ladders(usermod_bases, default_usermod=None) -> dict:
@@ -113,13 +113,13 @@ def build_ladders(usermod_bases, default_usermod=None) -> dict:
     out = {}
     for kind, sub, _desc in KINDS:
         rungs = []
-        #  The specific folder in every install first...
+        # the specific folder in every install first...
         for b in bases:
             p = b / sub
             if p not in rungs:
                 rungs.append(p)
-        #  ...then the bare usermod folders, because a flat install keeps
-        #  everything loose and "usermod/animations" simply is not there.
+        # ...then the bare usermod folders, bc a flat install keeps
+        # everything loose and "usermod/animations" simply isn't there
         for b in bases:
             if b not in rungs:
                 rungs.append(b)
@@ -134,9 +134,9 @@ def _read(path):
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:                                  # noqa: BLE001
-        #  ONCE PER DISTINCT FAULT. This is reached on the way into an import
-        #  and from the panel; a broken file must say so, not say so a
-        #  thousand times.
+        #ONCE PER DISTINCT FAULT. This is reached on the way into an import
+        #and from the panel; a broken file must say so, not say so a
+        #thousand times
         sig = f"{path}|{exc}"
         if sig != _last_error:
             _last_error = sig
@@ -214,7 +214,7 @@ def folder(kind, live_bases=None, default_usermod=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  writing
+# writing
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _payload(ladders, usermod_bases, note):
@@ -250,9 +250,9 @@ def write_startup(usermod_bases, default_usermod=None):
                                 indent=2), encoding="utf-8")
         return p
     except Exception as exc:                                  # noqa: BLE001
-        #  An add-on folder can be read-only - installed by an admin, or on a
-        #  share. That is a reason to skip the file, never a reason to fail
-        #  registration and leave the user with no add-on at all.
+        #an add-on folder can be read-only - installed by an admin, or on a
+        #share. That is a reason to skip the file, never a reason to fail
+        #registration and leave the user with no add-on at all
         print(f"[HoovyTools]  could not write {STARTUP_NAME} ({exc}) - "
               f"the built-in folders still work")
         return None

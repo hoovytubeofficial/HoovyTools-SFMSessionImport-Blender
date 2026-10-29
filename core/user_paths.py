@@ -49,10 +49,10 @@ from . import paths as _paths
 STORE_NAME = "user_paths.json"
 STORE_VERSION = 1
 
-#  key -> (how many slots, human label). The counts are the whole spec: three
-#  installs because that is what people have, two extras each for the data
-#  folders because a folder of your own plus a shared one off a network drive
-#  is the case that came up.
+# key -> (how many slots, human label). The counts are the whole spec: three
+# installs because that is what people have, two extras each for the data
+# folders bc a folder of your own plus a shared one off a network drive
+# is the case that came up
 SLOTS = (
     ("usermod",      3, "SFM usermod"),
     ("dmxconvert",   2, "dmxconvert.exe"),
@@ -60,16 +60,16 @@ SLOTS = (
     ("qc_face_data", 2, "QC Face Data"),
 )
 
-#  WHY THE OTHER WIRING ROWS HAVE NO SLOT, and it is not an oversight.
-#  SourceIO, the SMD importer and the .PCF add-on are ADD-ONS. Blender decides
-#  where add-ons live and loads them from its own script paths; pointing
-#  HoovyTools at a folder would not make Blender load one from there, so a
-#  slot on those rows would be a control that does nothing. The rows above are
-#  the ones this add-on actually goes looking in.
+# WHY the OTHER WIRING ROWS HAVE no SLOT, and it's not an oversight
+# SourceIO, the SMD importer and the .PCF add-on are ADD-ONS. Blender decides
+# where add-ons live and loads them from its own script paths; pointing
+# HoovyTools at a folder would not make Blender load one from there, so a
+# slot on those rows would be a control that does nothing. The rows above are
+# the ones this add-on actually goes looking in.
 
 _COUNT = {k: n for k, n, _ in SLOTS}
 
-#  Last read failure, so a broken file is reported once and not per redraw.
+# last read failure, so a broken file is reported once and not per redraw
 _last_load_error = None
 
 
@@ -96,12 +96,12 @@ def load() -> dict:
     try:
         raw = json.loads(p.read_text(encoding="utf-8"))
     except Exception as exc:                                  # noqa: BLE001
-        #  ONCE PER DISTINCT FAULT, NOT ONCE PER READ. `load()` is called from
-        #  the wiring readout, which is called from draw(), which runs on every
-        #  mouse move - a broken file printed nine times in one test run here
-        #  and would print thousands of times in a session. The message is
-        #  worth saying; saying it again on the next redraw is not, so the
-        #  signature is remembered and only a CHANGED fault speaks up again.
+        # ONCE PER DISTINCT FAULT, not ONCE PER READ. `load()` is called from
+        # the wiring readout, which is called from draw(), which runs on every
+        # mouse move - a broken file printed nine times in one test run here
+        # and would print thousands of times in a session. The message is
+        # worth saying; saying it again on the next redraw isn't, so the
+        # signature is remembered and only a CHANGED fault speaks up again
         global _last_load_error
         sig = f"{p}|{exc}"
         if sig != _last_load_error:
@@ -116,9 +116,9 @@ def load() -> dict:
         got = raw.get(key)
         if not isinstance(got, (list, tuple)):
             continue
-        #  Pad or trim to the slot count rather than trusting the file. A JSON
-        #  written by an older build with two usermod slots must not make
-        #  `slots("usermod")[2]` an IndexError three call sites away.
+        #Pad or trim to the slot count rather than trusting the file. A JSON
+        #written by an older build with two usermod slots must not make
+        #`slots("usermod")[2]` an IndexError three call sites away
         for i in range(min(n, len(got))):
             v = got[i]
             data[key][i] = v.strip() if isinstance(v, str) else ""

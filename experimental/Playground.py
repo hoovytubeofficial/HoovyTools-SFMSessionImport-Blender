@@ -77,7 +77,7 @@ from pathlib import Path
 from bpy.types import Operator
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  Icon bridge (wired by __init__.register)
+# Icon bridge (wired by __init__.register)
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -113,7 +113,7 @@ MAGIC = (b"IDST", b"IDSQ")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Parser  (bpy-free, so it can be exercised outside Blender)
+# Parser  (bpy-free, so it can be exercised outside Blender)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _cstr(buf, off):
@@ -184,7 +184,7 @@ def parse_mdl(path):
         })
     out["anims"] = anims
 
-    # sequences
+    #sequences
     seqs = []
     si = i32(OFF["localseqindex"])
     for k in range(out["numlocalseq"]):
@@ -360,7 +360,7 @@ def report_lines(parsed_list, missing, max_seqs=40):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operator
+# Operator
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_mdl_sequences(Operator, ImportHelper):
@@ -462,7 +462,7 @@ Results go to a Text datablock and the system console"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Menu
+# Menu
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_MT_playground_submenu(bpy.types.Menu):

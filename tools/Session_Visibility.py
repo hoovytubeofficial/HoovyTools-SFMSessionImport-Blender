@@ -1,11 +1,11 @@
 # ═════════════════════════════════════════════════════════════════════════════
-#  DEPENDENCIES
-#    bpy                            the imported objects, the scene camera
-#    session/Session_Reader.py      the session, its shots and their sets
-#    session/Session_Paths.py       which shot the .blend holds
-#    tools/Layout_Builder.py        viewports into camera view
-#  Called by session/Session_Orchestrator.py (one-click step 11) and by the
-#  operator HT_OT_match_sfm_visibility. Added in 1.17.0.
+# DEPENDENCIES
+# bpy                            the imported objects, the scene camera
+# session/Session_Reader.py      the session, its shots and their sets
+# session/Session_Paths.py       which shot the .blend holds
+# tools/Layout_Builder.py        viewports into camera view
+# Called by session/Session_Orchestrator.py (one-click step 11) and by the
+# operator HT_OT_match_sfm_visibility. Added in 1.17.0.
 # ═════════════════════════════════════════════════════════════════════════════
 """
 Session_Visibility - what SFM hides stays hidden, and the shot's own camera is
@@ -56,7 +56,7 @@ KINDS = (("gameModel", "model"), ("light", "light"), ("camera", "camera"))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Reading the session
+# Reading the session
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _scene_parents(shot_element):
@@ -192,7 +192,7 @@ def shot_camera_set(shot):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Finding the Blender objects
+# Finding the Blender objects
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _named(scene, name, types):
@@ -275,7 +275,7 @@ def set_shot_camera(context, session_path, shot_index=None, shot_name="", info=N
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Applying
+# Applying
 # ─────────────────────────────────────────────────────────────────────────────
 
 def apply(context, session_path, shot_index=None, shot_name="", info=None,
@@ -323,9 +323,9 @@ def apply(context, session_path, shot_index=None, shot_name="", info=None,
             scene[SCENE_CAMERA_KEY] = cam.name
             r["camera"] = cam.name
         elif SCENE_CAMERA_KEY in scene.keys():
-            del scene[SCENE_CAMERA_KEY]       # an older shot's stamp must not win
+            del scene[SCENE_CAMERA_KEY]       #an older shot's stamp must not win
     elif set_camera:
-        #  WHOLE SESSION: every shot's camera on a marker, the first one live.
+        # whole SESSION: every shot's camera on a marker, the first one live
         r["markers"] = bind_shot_cameras(scene, shot_list)
         if r["markers"]:
             first = bpy.data.objects.get(r["markers"][0][2])

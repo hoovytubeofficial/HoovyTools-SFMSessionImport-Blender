@@ -1,27 +1,27 @@
 # =============================================================================
-#  Import VMT (V1)
-#  The Text Editor version of  SFM Session Importer > Tools > HoovyTools
-#  Importers > 2 Import VMT  (SFM Session Importer 3.0.0).
+# Import VMT (V1)
+# The Text Editor version of  SFM Session Importer > Tools > HoovyTools
+# Importers > 2 Import VMT  (SFM Session Importer 3.0.0).
 # =============================================================================
 #
-#  WHAT IT DOES: builds a Blender material from each .vmt - its shader, its
-#  textures (found through your SFM install and the folders around the file)
-#  and their settings, packed into the .blend - with HoovyTools' own reader:
-#  SourceIO does not have to be installed. With a mesh active, the materials
-#  are added to it.
+# what IT does: builds a Blender material from each .vmt - its shader, its
+# textures (found through your SFM install and the folders around the file)
+# and their settings, packed into the .blend - with HoovyTools' own reader:
+# SourceIO doesn't have to be installed. With a mesh active, the materials
+# are added to it
 #
-#  HOW: set the values below, press Run Script (Alt+P). What it made, and
-#  every texture it could not find, prints to the console (Window > Toggle
-#  System Console).
+# HOW: set the values below, press Run Script (Alt+P). What it made, and
+# every texture it could not find, prints to the console (Window > Toggle
+# System Console).
 #
-#  Needs the SFM Session Importer add-on (3.0.0 or newer) installed.
+# Needs the SFM Session Importer add-on (3.0.0 or newer) installed.
 #
-#  THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE.
+# this feature was added in version 3.0.0 and is in experimental stage.
 # =============================================================================
 
-VMT_FILES = [r""]           # one or more .vmt files: [r"C:\...\a.vmt", r"C:\...\b.vmt"]
-SOURCE_SHADING = True       # True = VertexLitGeneric with the Source look (phong, rim, tint); False = plain Principled
-ADD_TO_ACTIVE_MESH = True   # add every material to the active mesh's material slots
+VMT_FILES = [r""]           #one or more .vmt files: [r"C:\...\a.vmt", r"C:\...\b.vmt"]
+SOURCE_SHADING = True       #True = VertexLitGeneric with the Source look (phong, rim, tint); False = plain Principled
+ADD_TO_ACTIVE_MESH = True   #add every material to the active mesh's material slots
 
 # -----------------------------------------------------------------------------
 

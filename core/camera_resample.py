@@ -1,13 +1,13 @@
 # ═════════════════════════════════════════════════════════════════════════════
-#  DEPENDENCIES
-#    math, mathutils           pure maths - NO bpy, so the Text Editor
-#                              standalone can embed this very file
-#  Used by importers/Import_DMX_Camera.py (session cameras and File > Import),
-#  importers/Light_Import.py (light orientation keys), tools/Euler_Output.py
-#  (a camera's Euler order, cut keys kept as steps), tools/Utils_Misc.py
-#  (Delete Rotation Spins repairs one-frame camera flips) and the standalone
+# DEPENDENCIES
+# math, mathutils           pure maths - no bpy, so the Text Editor
+# standalone can embed this very file
+# Used by importers/Import_DMX_Camera.py (session cameras and File > Import),
+# importers/Light_Import.py (light orientation keys), tools/Euler_Output.py
+# (a camera's Euler order, cut keys kept as steps), tools/Utils_Misc.py
+# (Delete Rotation Spins repairs one-frame camera flips) and the standalone
 #  ___Architecture/DMX Animation - Camera, which Shared/bundle_standalone.py
-#  builds with THIS file inside it. Added in 1.17.3.
+# builds with this file inside it. Added in 1.17.3
 # ═════════════════════════════════════════════════════════════════════════════
 """
 camera_resample - SFM camera samples onto whole frames, with no flips.
@@ -69,7 +69,7 @@ ORDERS = ("XYZ", "XZY", "YXZ", "YZX", "ZXY", "ZYX")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  SMALL PIECES
+# SMALL PIECES
 # ──────────────────────────────────────────────────────────────────────────────
 
 def quat(v):
@@ -111,7 +111,7 @@ def _lerp(a, b, t):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  1  THE HEMISPHERE WALK
+# 1  THE HEMISPHERE WALK
 # ──────────────────────────────────────────────────────────────────────────────
 
 def hemisphere_walk(samples):
@@ -132,7 +132,7 @@ def hemisphere_walk(samples):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  2 + 3  ONE VALUE PER WHOLE FRAME, CUTS KEPT AS CUTS
+# 2 + 3  ONE VALUE PER WHOLE FRAME, CUTS KEPT AS CUTS
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _cut_test(samples, distance, threshold):
@@ -187,7 +187,7 @@ def cut_frames(samples, cut):
         pre = int(math.floor(f0 + 1e-9))
         inside = pre + 1
         if f0 < inside < f1 and (inside - f0) < (f1 - inside):
-            pre = inside                       # the frame inside takes f0's side
+            pre = inside                       #the frame inside takes f0's side
         if pre + 1 <= f_hi:
             out.add(pre)
     return out
@@ -223,7 +223,7 @@ def resample_values(samples, threshold=None):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  WHAT 1.17.2 DID - kept ONLY so a report can show what changed
+# WHAT 1.17.2 DID - kept only so a report can show what changed
 # ──────────────────────────────────────────────────────────────────────────────
 
 def component_lerp_1172(samples):
@@ -237,7 +237,7 @@ def component_lerp_1172(samples):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ONE-FRAME FLIPS ALREADY IN A SCENE
+# one-frame flips already in a scene
 # ──────────────────────────────────────────────────────────────────────────────
 
 def one_frame_flips(keys, positions=None, min_deg=SPIKE_MIN_DEG, ratio=SPIKE_RATIO):
@@ -282,7 +282,7 @@ def repaired(keys, index):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  THE EULER ORDER OF A CAMERA
+# THE EULER ORDER OF A CAMERA
 # ──────────────────────────────────────────────────────────────────────────────
 
 def lock_margin_deg(quats, order):

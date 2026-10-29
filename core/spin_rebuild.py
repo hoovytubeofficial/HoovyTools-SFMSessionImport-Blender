@@ -1,9 +1,9 @@
 # ═════════════════════════════════════════════════════════════════════════════
-#  DEPENDENCIES
-#    math, mathutils           pure maths - NO bpy, so a Text Editor
-#                              standalone can embed this very file
-#  Used by tools/Utils_Misc.py (Delete Rotation Spins, the BAKED SPINS pass).
-#  Added in 1.22.0.
+# DEPENDENCIES
+# math, mathutils           pure maths - NO bpy, so a Text Editor
+# standalone can embed this very file
+# Used by tools/Utils_Misc.py (Delete Rotation Spins, the BAKED SPINS pass)
+# Added in 1.22.0
 # ═════════════════════════════════════════════════════════════════════════════
 """
 spin_rebuild - a rotation that goes the long way round ACROSS SEVERAL BAKED
@@ -91,7 +91,7 @@ STAND_OUT = 0.25         # the keys around a spike must turn slower than this sh
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  SMALL PIECES
+# SMALL PIECES
 # ──────────────────────────────────────────────────────────────────────────────
 
 def quat(v):
@@ -188,7 +188,7 @@ def step_rates(frames, quats):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FIND
+# find
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _dist(a, b):
@@ -259,7 +259,7 @@ def find_spins(frames, quats, positions=None, cut_frames=(), frame_range=None,
         # a baked spin is an EVENT: one or two keys whip round while the
         # motion either side is slow. Many fast keys in a row is a real fast
         # turn (a fan, a wheel); no keys around it means it cannot be told
-        # apart from one (a 4-key hand-made wrap test, suite 9).
+        # apart from one (a 4-key hand-made wrap test, suite 9)
         if len(cl) > max_spike_steps:
             out["left"].append({"frames": spike_frames, "worst": worst,
                                 "why": "a sustained fast turn over %d keys (real motion)" % len(cl)})
@@ -314,9 +314,9 @@ def find_spins(frames, quats, positions=None, cut_frames=(), frame_range=None,
             if float(frames[b]) - float(frames[e]) > max_window:
                 capped = True
                 break
-        #  PAD only where creep was found: a single frame turned the long way
-        #  with exact keys either side keeps those keys (the One-Frame Camera
-        #  Flips case - its neighbours are true samples).
+        # PAD only where creep was found: a single frame turned the long way
+        # with exact keys either side keeps those keys (the One-Frame Camera
+        # Flips case - its neighbours are true samples).
         grown = a < s - 1 or b > e
         if a < s - 1:
             a = max(0, a - pad)
@@ -346,7 +346,7 @@ def find_spins(frames, quats, positions=None, cut_frames=(), frame_range=None,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REBUILD
+# rebuild
 # ──────────────────────────────────────────────────────────────────────────────
 
 def rebuild(frames, quats, a, b, interp="SMOOTH", tangent_keys=TANGENT_KEYS,

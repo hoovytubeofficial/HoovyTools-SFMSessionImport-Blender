@@ -55,8 +55,8 @@ from bpy.props import IntProperty, BoolProperty, FloatProperty, EnumProperty
 from ..core.anim_compat import iter_fcurves
 
 
-# Focal length is bounded in a way position is not. Blender's own camera
-# lens limit is 1 mm at the low end; leave headroom above it.
+# focal length is bounded in a way position is not. Blender's own camera
+# lens limit is 1 mm at the low end; leave headroom above it
 LENS_MIN_MM = 1.0
 LENS_MAX_MM = 5000.0
 
@@ -64,7 +64,7 @@ HANDLE_MARK = "ht_handle"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Curve helpers
+# Curve helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _curves_by_path(action, owner):
@@ -122,7 +122,7 @@ def edge_velocity(fc, at_start, samples=1):
             return edge, 0.0
         return edge, (b.co[1] - a.co[1]) / span
 
-    # Least squares over the window.
+    # least squares over the window
     xs = [k.co[0] for k in window]
     ys = [k.co[1] for k in window]
     mx = sum(xs) / n
@@ -167,7 +167,7 @@ def _write_key(fc, frame, value):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Per-channel extrapolation
+# Per-channel extrapolation
 # ─────────────────────────────────────────────────────────────────────────────
 
 def extend_linear(curves, at_start, frames, step=1.0, clamp=None,
@@ -186,7 +186,7 @@ def extend_linear(curves, at_start, frames, step=1.0, clamp=None,
         if edge is None or abs(per_frame) < 1e-12:
             continue
         if not at_start and edge.interpolation == 'CONSTANT':
-            edge.interpolation = 'LINEAR'     # 1.17.3: a shot ending on a held cut key
+            edge.interpolation = 'LINEAR'     #1.17.3: a shot ending on a held cut key
         direction = -1.0 if at_start else 1.0
         for i in range(1, count + 1):
             travel = ease_profile(i, count, mode) * step
@@ -236,7 +236,7 @@ def extend_quaternion(curves, at_start, frames, step=1.0, mode='CONSTANT'):
         return 0
     delta.normalize()
 
-    # Scale the turn to exactly one step via AXIS-ANGLE, not slerp.
+    # scale the turn to exactly one step via AXIS-ANGLE, not slerp.
     #
     # slerp's factor is documented for 0..1 and raises outside it, and the
     # factor here is 1/span - keys land 0.9984 frames apart on a real SFM
@@ -244,7 +244,7 @@ def extend_quaternion(curves, at_start, frames, step=1.0, mode='CONSTANT'):
     # has no such range limit: the axis is the direction of the turn and
     # the angle is simply divided by how long the turn took, so the rate
     # is correct whether the source was keyed every frame, every third
-    # frame, or at some drifting fraction in between.
+    # frame, or at some drifting fraction in between
     axis = delta.axis
     angle = delta.angle
     if angle > math.pi:                 # take the short way round
@@ -259,14 +259,14 @@ def extend_quaternion(curves, at_start, frames, step=1.0, mode='CONSTANT'):
     direction = -1.0 if at_start else 1.0
     edge_frame = pairs[0][1].co[0]
     if not at_start:
-        for p in pairs:                       # 1.17.3: a shot ending on a held cut key
+        for p in pairs:                       #1.17.3: a shot ending on a held cut key
             if p[1].interpolation == 'CONSTANT':
                 p[1].interpolation = 'LINEAR'
 
-    # In EASE mode the turn decays to a stop over the handle, exactly like
-    # the linear channels - so a pan settles instead of spinning on. The
-    # per-step angle is rebuilt from the travel delta rather than composed
-    # blindly, or the two channels would drift apart.
+    #In EASE mode the turn decays to a stop over the handle, exactly like
+    #the linear channels - so a pan settles instead of spinning on. The
+    #per-step angle is rebuilt from the travel delta rather than composed
+    #blindly, or the two channels would drift apart
     count = int(frames / step)
     written = 0
     previous = edge.copy()
@@ -288,7 +288,7 @@ def extend_quaternion(curves, at_start, frames, step=1.0, mode='CONSTANT'):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Public API
+# Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
 def add_handles(obj, pre=12, post=12, do_location=True, do_rotation=True,
@@ -378,7 +378,7 @@ def shot_report(obj):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operators
+# Operators
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_camera_handles(Operator):
@@ -396,12 +396,12 @@ way. Focal length extrapolates linearly but stays inside a real lens range.
 Run it on the cameras in ___HoovyTools Cameras___ after Split Camera Cuts"""
     bl_idname = "ht.camera_handles"
     bl_label = "Add Camera Pre/Post Handles"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     pre_frames: IntProperty(  # type: ignore

@@ -58,7 +58,7 @@ from pathlib import Path
 from bpy.types import Operator
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  Icon bridge (wired by __init__.register)
+# Icon bridge (wired by __init__.register)
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -75,11 +75,11 @@ from bpy_extras.io_utils import ImportHelper
 
 
 COLLECTION = "___HoovyTools ShapeKey Proxy___"
-COLLECTION_COLOR = "COLOR_05"      # blue
+COLLECTION_COLOR = "COLOR_05"      #blue
 
 # LAYOUT
 # ------
-# Everything lives in the XZ plane and is read head-on, like an equaliser.
+# Everything lives in the XZ plane and is read head-on, like an equaliser
 # The first attempt wrapped rows backwards in -Y and it was unreadable: from
 # the front the rows receded into perspective and hid each other. Rows now
 # stack DOWNWARD in -Z, each one its own little chart, and Y is used only
@@ -99,9 +99,9 @@ GLYPH_ADVANCE = 0.52 # average character advance, in em, for the default font
 # Richer visualization                                       [roadmap #19]
 PEAK_H = 0.05        # thickness of the peak-value marker on a track
 ACTIVE_EPS = 0.02    # a flex counts as firing above this value
-# The roll is sized RELATIVE to the bar chart so the two read as one figure.
-# The first attempt used absolute lane heights and a 57-flex file produced a
-# roll three times taller than the chart it belonged to.
+#The roll is sized RELATIVE to the bar chart so the two read as one figure.
+#The first attempt used absolute lane heights and a 57-flex file produced a
+#roll three times taller than the chart it belonged to
 ROLL_H = 0.15        # height of one lane
 ROLL_GAP = 0.035
 ROLL_MARGIN = 1.6    # gap between the bar chart and the roll
@@ -109,7 +109,7 @@ ROLL_RAIL = 0.03     # dim full-width rail per lane, so empty lanes show
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Collection
+# Collection
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _get_collection():
@@ -128,7 +128,7 @@ def _link(obj, col):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Colour
+# Colour
 # ─────────────────────────────────────────────────────────────────────────────
 
 def ramp_colour(i, n, active=True):
@@ -217,13 +217,13 @@ def _emission_material(name, colour, use_attribute=True):
         emit.inputs["Color"].default_value = colour
     emit.inputs["Strength"].default_value = 1.0
     nt.links.new(emit.outputs["Emission"], out.inputs["Surface"])
-    # Solid shading reads diffuse_color, which no node touches.
+    # solid shading reads diffuse_color, which no node touches
     mat.diffuse_color = colour
     return mat
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Geometry
+# Geometry
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _box(x0, y0, z0, w, d, h):
@@ -280,7 +280,7 @@ def build_proxy_mesh(names, active_flags, per_row=12):
     for i, name in enumerate(names):
         kb = obj.shape_key_add(name=name, from_mix=False)
         _x0, _z0, base = positions[i]
-        # Top four verts of box i are base+4 .. base+7.
+        # top four verts of box i are base+4 .. base+7.
         for vi in range(base + 4, base + 8):
             co = kb.data[vi].co
             kb.data[vi].co = (co[0], co[1], co[2] + BAR_FULL_H)
@@ -349,7 +349,7 @@ def build_activity_roll(names, spans_list, per_row=12, frame_lo=0.0,
         z = -(i * (ROLL_H + ROLL_GAP))
         # A dim rail for every lane, so a flex that never fires still has a
         # visible row - otherwise the roll silently omits it and you cannot
-        # tell "quiet" from "not present".
+        # tell "quiet" from "not present"
         v, f = _box(0.0, BAR_D * 0.55, z + (ROLL_H - ROLL_RAIL) * 0.5,
                     roll_w, BAR_D * 0.3, ROLL_RAIL)
         base = len(verts)
@@ -377,7 +377,7 @@ def build_activity_roll(names, spans_list, per_row=12, frame_lo=0.0,
     for i, c in enumerate(colours):
         attr.data[i].color = c
     obj = bpy.data.objects.new("HT_ProxyRoll", mesh)
-    # Sit the roll below the bar chart, clear of the deepest label band.
+    # sit the roll below the bar chart, clear of the deepest label band
     rows = math.ceil(n / per_row) if per_row else 1
     obj.location = (0.0, 0.0,
                     -(rows - 1) * ROW_HEIGHT - LABEL_BAND - ROLL_MARGIN)
@@ -426,7 +426,7 @@ def _make_label(text, x, z, size=LABEL_SIZE):
     """
     curve = bpy.data.curves.new(f"HT_lbl_{text}", type='FONT')
     curve.body = text
-    # Fit the name to the label band instead of letting it run into the row
+    # fit the name to the label band instead of letting it run into the row
     # below. Blender only knows a text's real length after evaluation, which
     # is too late here, so estimate from the glyph count: the bundled font
     # averages about 0.52 em of advance per character. A long flex name like
@@ -435,20 +435,20 @@ def _make_label(text, x, z, size=LABEL_SIZE):
     budget = LABEL_BAND - 0.25
     curve.size = size * (budget / est) if est > budget else size
     # LEFT so the name starts at the bar and runs away from it; CENTER so it
-    # sits on the column's centre line.
+    # sits on the column's centre line
     curve.align_x = 'LEFT'
     curve.align_y = 'CENTER'
     obj = bpy.data.objects.new(f"HT_lbl_{text}", curve)
-    # Text is authored reading +X with its face along +Z. Two rotations get
+    # text is authored reading +X with its face along +Z. Two rotations get
     # it reading DOWNWARD (-Z) while still facing the front (-Y):
     #
-    #   Rx(90)  reading +X, face +Z -> -Y      now vertical, faces front
-    #   Ry(90)  reading +X -> -Z, face -Y      now runs down the label band
+    # Rx(90)  reading +X, face +Z -> -Y      now vertical, faces front
+    # Ry(90)  reading +X -> -Z, face -Y      now runs down the label band
     #
     # Blender composes XYZ euler as Rz @ Ry @ Rx, so (90, 90, 0) is exactly
     # that pair in that order. The first attempt used (90, 0, 90); its Rz
     # turned the text about the WORLD z instead, which swung the reading
-    # direction into +Y and rendered every label edge-on and mirrored.
+    # direction into +Y and rendered every label edge-on and mirrored
     obj.rotation_euler = (math.pi / 2, math.pi / 2, 0.0)
     obj.location = (x, -BAR_D * 0.05, z - 0.14)
     return obj
@@ -485,7 +485,7 @@ def _make_backdrop(n, per_row):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Public API
+# Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_proxy(channels, frame_rate=30, start=0.0, per_row=16,
@@ -507,7 +507,7 @@ def build_proxy(channels, frame_rate=30, start=0.0, per_row=16,
         raise RuntimeError("No flexWeight channels to build a proxy from")
 
     # A channel is "active" when its values actually move. A flat channel
-    # is data that exists but never fires, and the proxy says so visually.
+    # is data that exists but never fires, and the proxy says so visually
     names, active, peaks, spans_list = [], [], [], []
     for ch in channels:
         vals = [float(v) for v in ch["values"]]
@@ -520,7 +520,7 @@ def build_proxy(channels, frame_rate=30, start=0.0, per_row=16,
 
     col = _get_collection()
 
-    # Clear any previous proxy so re-running is idempotent.
+    # clear any previous proxy so re-running is idempotent
     for old in list(col.objects):
         data = old.data
         bpy.data.objects.remove(old, do_unlink=True)
@@ -648,7 +648,7 @@ def build_proxy_from_dmx(dmx_path, per_row=16, add_labels=True,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operator
+# Operator
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_shapekey_proxy(Operator, ImportHelper):
@@ -668,12 +668,12 @@ labelled with its flex name.
 Use it when you have facial data but not the face"""
     bl_idname = "ht.shapekey_proxy"
     bl_label = "Generate Shape Key Proxy"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filename_ext = ".dmx"

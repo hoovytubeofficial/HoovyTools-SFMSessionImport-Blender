@@ -1,34 +1,34 @@
 # anim_compat.py
 # ──────────────────────────────────────────────────────────────────────────────
-# Blender 4.x / 5.0 animation API compatibility shim for HoovyTools.
+# Blender 4.x / 5.0 animation API compatibility shim for HoovyTools
 #
 # Blender 5.0 removed Action.groups and Action.fcurves. F-curves now live in
 # per-slot "channelbags" accessed via:
-#   action.slots  → action.layers → layer.strips → strip.channelbag(slot)
+# action.slots  → action.layers → layer.strips → strip.channelbag(slot)
 #
 # This module provides three helpers that work on both versions:
 #
-#   make_action(name, target_obj)
-#       Create a new Action and wire it to target_obj, returning (action, bag).
-#       bag  is the channelbag (5.0) or an ActionGroups/FCurves proxy (4.x).
+# make_action(name, target_obj)
+# Create a new Action and wire it to target_obj, returning (action, bag)
+# bag  is the channelbag (5.0) or an ActionGroups/FCurves proxy (4.x)
 #
-#   get_channelbag(action, target_obj)
-#       Return the channelbag for an existing action / object pair.
+# get_channelbag(action, target_obj)
+# Return the channelbag for an existing action / object pair
 #
-#   fc_find_or_new(bag, data_path, index=0, group_name=None)
-#       Find or create an FCurve; optionally assign it to a named group.
+# fc_find_or_new(bag, data_path, index=0, group_name=None)
+# Find or create an FCurve; optionally assign it to a named group
 #
-#   iter_fcurves(action, target_obj=None)
-#       Yield all FCurves for the action (bag-aware).
+# iter_fcurves(action, target_obj=None)
+# Yield all FCurves for the action (bag-aware)
 #
-#   count_fcurves(action, target_obj=None)
-#       Return the number of FCurves for the action.
+# count_fcurves(action, target_obj=None)
+# Return the num of FCurves for the action.
 #
 # ──────────────────────────────────────────────────────────────────────────────
 
 import bpy
 
-# True when running on Blender 5.0+
+# true when running on Blender 5.0+
 _LAYERED = hasattr(bpy.types, "ActionLayer")
 
 
@@ -52,7 +52,7 @@ class _LegacyBag:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  Public API
+# Public API
 # ──────────────────────────────────────────────────────────────────────────────
 
 def make_action(name: str, target_obj) -> tuple:
@@ -73,7 +73,7 @@ def make_action(name: str, target_obj) -> tuple:
     anim = target_obj.animation_data
 
     if _LAYERED:
-        # Blender 5.0 layered action
+        #Blender 5.0 layered action
         slot = action.slots.new(id_type=target_obj.id_type, name=target_obj.name)
         anim.action            = action
         anim.action_slot_handle = slot.handle
@@ -105,9 +105,9 @@ def get_channelbag(action, target_obj):
 
     anim.action = action
 
-    # ActionSlot has no .name attribute for reading in 5.0.
+    # ActionSlot has no .name attribute for reading in 5.0
     # Match by handle — if animation_data already points to a slot in this
-    # action, reuse it; otherwise create a new one.
+    # action, reuse it; otherwise create a new one
     slot = None
     if anim.action_slot_handle:
         for s in action.slots:
@@ -119,7 +119,7 @@ def get_channelbag(action, target_obj):
         slot = action.slots.new(id_type=target_obj.id_type, name=target_obj.name)
         anim.action_slot_handle = slot.handle
 
-    # Find or create layer + strip
+    #find or create layer + strip
     if action.layers:
         layer = action.layers[0]
     else:
@@ -156,7 +156,7 @@ def fc_find_or_new(bag, data_path: str, index: int = 0, group_name: str = None):
         else:
             fc = bag.fcurves.new(data_path=data_path, index=index)
 
-    # Assign / create group
+    # assign / create group
     if group_name:
         group = (bag.groups.get(group_name) or
                  bag.groups.new(name=group_name))

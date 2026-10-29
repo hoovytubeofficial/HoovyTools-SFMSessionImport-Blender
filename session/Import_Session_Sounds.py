@@ -57,7 +57,7 @@ from ..core import paths as _paths
 from ..core import Progress
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  Icon bridge (wired by __init__.register)
+# Icon bridge (wired by __init__.register)
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -74,13 +74,13 @@ EPS = 1e-4
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  DMX loading (uses the bundled SST datamodel, same as the rest of the addon)
+# DMX loading (uses the bundled SST datamodel, same as the rest of the addon)
 # ──────────────────────────────────────────────────────────────────────────────
 
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FPS
+# FPS
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _blender_fps(scene):
@@ -133,7 +133,7 @@ def _to_frame(seconds, fps):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  Element graph + path resolution
+# Element graph + path resolution
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _seconds(v):
@@ -190,8 +190,8 @@ def _search_roots(usermod):
     no two of them agreed.
     """
     roots = []
-    #  The configured sound folder leads, for the same reason particles do:
-    #  a shared wav library does not have to live inside an SFM install.
+    #the configured sound folder leads, for the same reason particles do:
+    #a shared wav library doesn't have to live inside an SFM install
     try:
         from ..core import config as _config
         from . import Import_Session as _IS
@@ -204,9 +204,9 @@ def _search_roots(usermod):
         pass
     if not (usermod and os.path.isdir(usermod)):
         return roots
-    #  Every configured install's mounts, not only the one handed in. A wave
-    #  referenced by a session can live in whichever SFM the mod was installed
-    #  into, and the session file does not say which.
+    # every configured install's mounts, not only the one handed in. A wave
+    # referenced by a session can live in whichever SFM the mod was installed
+    # into, and the session file doesn't say which
     mounts = []
     try:
         from . import Import_Session
@@ -223,8 +223,8 @@ def _search_roots(usermod):
         s = os.path.join(str(mount), "sound")
         if os.path.isdir(s):
             roots.append(s)
-    #  The old fixed list ran even when a mount had no sound/ - keep the
-    #  named ones as a backstop in case one lives outside game/ entirely.
+    # the old fixed list ran even when a mount had no sound/ - keep the
+    # named ones as a backstop in case one lives outside game/ entirely
     game_dir = os.path.dirname(usermod)
     for sib in SIBLING_MOUNTS:
         s2 = os.path.join(game_dir, sib, "sound")
@@ -273,7 +273,7 @@ def _resolve(rel, roots):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  Sequencer helpers (Blender 5.x `strips`, older `sequences`)
+# Sequencer helpers (Blender 5.x `strips`, older `sequences`)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _strip_collection(se):
@@ -332,7 +332,7 @@ def _free_channel(se, strip, min_channel=1):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  Core import
+# Core import
 # ──────────────────────────────────────────────────────────────────────────────
 
 def run_session_sound_import(dmx_path, scene,
@@ -363,8 +363,8 @@ def run_session_sound_import(dmx_path, scene,
     """
     from . import Session_Reader as SR
 
-    #  Through Session_Reader, not a private loader: it survives a non-UTF-8
-    #  session via dmxconvert, and it hands back the shot list this needs.
+    # Through Session_Reader, not a private loader: it survives a non-UTF-8
+    # session via dmxconvert, and it hands back the shot list this needs
     info = SR.read_session(dmx_path)
     dm = info["model"]
     shot_list = info["shots"]
@@ -373,8 +373,8 @@ def run_session_sound_import(dmx_path, scene,
     sfm_fps = float(info["fps"] or _sfps or 24.0)
     bl_fps = _blender_fps(scene)
 
-    #  THE CHOSEN SHOT, IF THERE IS ONE. Resolved the same way steps 3-5
-    #  resolve it, so "which cut am I working on" has one answer in the file.
+    # the CHOSEN SHOT, IF THERE is ONE. Resolved the same way steps 3-5
+    # resolve it, so "which cut am I working on" has one answer in the file.
     chosen = None
     shot_note = ""
     if shot_index is not None and int(shot_index) >= 0:
@@ -385,13 +385,13 @@ def run_session_sound_import(dmx_path, scene,
         except Exception:
             chosen = None
     if chosen is None and len(shot_list) == 1:
-        #  One cut is not a choice. Using it silently keeps a one-shot session
-        #  behaving identically whether or not anybody touched the picker.
+        # One cut isn't a choice. Using it silently keeps a one-shot session
+        # behaving identically whether or not anybody touched the picker.
         chosen = shot_list[0]
 
-    #  Cache one time base per shot - it is four numbers and a closure, but it
-    #  walks every set in the shot to find them, and a 30-clip session would
-    #  otherwise do that 30 times.
+    # cache one time base per shot - it is four numbers and a closure, but it
+    # walks every set in the shot to find them, and a 30-clip session would
+    # otherwise do that 30 times
     _bases = {}
 
     def base_for(shot):
@@ -400,12 +400,12 @@ def run_session_sound_import(dmx_path, scene,
             _bases[key] = SR.shot_time_base(dm, shot)
         return _bases[key]
 
-    #  Global offset: seconds -> whole frames on SFM's grid, like everything
-    #  else here. It used to convert at the SCENE rate while the times it was
-    #  added to were converted at another, so the nudge itself drifted.
+    # Global offset: secs -> whole frames on SFM's grid, like everything
+    # else here. It used to convert at the SCENE rate while the times it was
+    # added to were converted at another, so the nudge itself drifted
     global_offset_frames = _to_frame(global_offset_seconds, sfm_fps)
 
-    # Targeted track map: only DmeTrack children, not a full-graph parent walk.
+    # targeted track map: only DmeTrack children, not a full-graph parent walk
     track_of = {}
     for tr in (e for e in dm.elements if e.type == "DmeTrack"):
         if "children" in tr.keys():
@@ -449,8 +449,8 @@ def run_session_sound_import(dmx_path, scene,
                 if (_sn and "soundname" in _sn.keys()) else None)
         if not _rel:
             return None
-        #  Rounded to the frame: two clips a microsecond apart are the same
-        #  clip saved twice, not a deliberate flam.
+        # rounded to the frame: two clips a microsecond apart are the same
+        # clip saved twice, not a deliberate flam.
         return (str(_rel).lower().replace("/", "\\"),
                 round(_st * sfm_fps))
 
@@ -521,9 +521,9 @@ def run_session_sound_import(dmx_path, scene,
             missing.append({"name": rel, "reason": "not found under usermod"})
             continue
 
-        #  ── MOVIE TIME -> THE CLOCK THE ANIMATION IS ON ──────────────────
-        #  `start_s` is movie seconds. The rigs are not. See the module
-        #  docstring; the conversion belongs to Session_Reader.
+        # ── movie time -> the clock the animation is on ──────────────────
+        # `start_s` is movie secs. The rigs are not. See the module
+        # docstring; the conversion belongs to Session_Reader
         shot = chosen
         overlaps = []
         if shot is None:
@@ -533,9 +533,9 @@ def run_session_sound_import(dmx_path, scene,
 
         out_of_shot = False
         if shot is None:
-            #  Touches no cut at all - sound sitting in the film's dead air.
-            #  There is no animation to be in sync with, so movie time is the
-            #  only meaningful answer and it is reported as such.
+            # Touches no cut at all - sound sitting in the film's dead air
+            # There is no animation to be in sync with, so movie time is the
+            # only meaningful answer and it is reported as such.
             raw_s = start_s
             out_of_shot = True
         else:
@@ -546,31 +546,31 @@ def run_session_sound_import(dmx_path, scene,
                 missing.append({"name": rel,
                                 "reason": f"not in {shot.get('name')}"})
                 continue
-            #  1.17.0: + the shot's placement - movie time by default, so
-            #  this is start_s itself when both scales are 1.
+            #1.17.0: + the shot's placement - movie time by default, so
+            #this is start_s itself when both scales are 1
             raw_s = tb["to_raw"](start_s) + SR.place_shift(dm, shot, base=tb)
             if not tb["agreed"]:
                 disagreed.add(shot.get("name") or "?")
 
         target_frame = _to_frame(raw_s, sfm_fps) + global_offset_frames
 
-        #  offset and duration are DURATIONS, not instants - the shot mapping
-        #  is affine with scale 1 in every session measured, so they convert
-        #  by rate alone. A shot that really did carry a time scale would need
-        #  them scaled too; `straddles` and the report say when that is in
-        #  play rather than pretending it cannot be.
+        #offset and duration are DURATIONS, not instants - the shot mapping
+        #is affine with scale 1 in every session measured, so they convert
+        #by rate alone. A shot that really did carry a time scale would need
+        #them scaled too; `straddles` and the report say when that's in
+        #play rather than pretending it can't be
         trim_in = _to_frame(offset_s, sfm_fps)
         window = _to_frame(dur_s, sfm_fps)
 
-        #  SFM'S OWN TIME SCALE ON THE CLIP. `timeFrame.scale` says the media
-        #  plays at that rate: 0.5 stretches the wav across twice the window.
-        #  BLENDER 5.2 CANNOT DO IT - `SoundStrip` has no `pitch` and no
-        #  `speed_factor`, only `pitch_correction`, so there is no way to
-        #  retime a sound strip from Python. Measured, not assumed.
-        #  So the strip gets the RIGHT LENGTH on the timeline and the wrong
-        #  rate inside it, and the report names the clip. Silently placing a
-        #  natural-rate 20-frame strip where SFM plays 97 frames is the one
-        #  outcome that cannot be noticed.
+        # SFM'S own TIME SCALE ON the CLIP. `timeFrame.scale` says the media
+        # plays at that rate: 0.5 stretches the wav across twice the window
+        # BLENDER 5.2 CANNOT DO IT - `SoundStrip` has no `pitch` and no
+        # `speed_factor`, only `pitch_correction`, so there's no way to
+        # retime a sound strip from Python. Measured, not assumed
+        # So the strip gets the RIGHT LENGTH on the timeline and the wrong
+        # rate inside it, and the report names the clip. Silently placing a
+        # natural-rate 20-frame strip where SFM plays 97 frames is the one
+        # outcome that cannot be noticed
         clip_scale = 1.0
         if tf is not None and "scale" in tf.keys():
             try:
@@ -581,7 +581,7 @@ def run_session_sound_import(dmx_path, scene,
             rescaled.append({"name": rel, "scale": clip_scale,
                              "window": window})
 
-        # Place raw strip so that after trim-in, its visible start == target.
+        # place raw strip so that after trim-in, its visible start == target.
         raw_start = target_frame - trim_in
         temp_ch = max([getattr(s, "channel", 1) for s in _all_strips(se)],
                       default=0) + 1
@@ -616,12 +616,12 @@ def run_session_sound_import(dmx_path, scene,
             strip.show_waveform = True
 
         s0, s1 = _strip_range(strip)
-        #  ONLY A SOUND THAT BELONGS TO THIS SHOT MAY STRETCH THE SCENE.
-        #  A clip from another cut is placed and flagged (see above), and it
-        #  can land hundreds of frames past the shot - dragging frame_end out
-        #  there makes the timeline mostly empty and hides the shot the user
-        #  asked for. Measured on shot1: the conga from the next cut sits at
-        #  f342-379 against a shot ending at 312.
+        # ONLY A SOUND THAT BELONGS TO THIS SHOT MAY STRETCH THE SCENE.
+        # A clip from another cut is placed and flagged (see above), and it
+        # can land hundreds of frames past the shot - dragging frame_end out
+        # there makes the timeline mostly empty and hides the shot the user
+        # asked for. Measured on shot1: the conga from the next cut sits at
+        # f342-379 against a shot ending at 312
         if not out_of_shot:
             max_end = max(max_end, s1)
         placed.append({
@@ -634,21 +634,21 @@ def run_session_sound_import(dmx_path, scene,
             "movie_frame": _to_frame(start_s, sfm_fps),
             "shot": (shot.get("name") if shot is not None else None),
             "out_of_shot": out_of_shot,
-            #  EVERY OTHER CUT IT TOUCHES - excluding the one it was timed
-            #  through. Slicing [1:] was right only while the chosen shot
-            #  happened to sort first, which it does not when a shot is
-            #  picked by hand: a sound then reported that it also straddled
-            #  the very shot it had just been placed in.
+            # every OTHER CUT IT TOUCHES - excluding the one it was timed
+            # thru. Slicing [1:] was right only while the chosen shot
+            # happened to sort first, which it does not when a shot is
+            # picked by hand: a sound then reported that it also straddled
+            # the very shot it had just been placed in
             "straddles": [o.get("name") for o in overlaps if o is not shot],
             "scale": clip_scale,
             "muted": muted,
         })
 
-    # Extend scene end to cover the audio
+    # extend scene end to cover the audio
     if max_end > scene.frame_end:
         scene.frame_end = int(max_end)
 
-    # Audio playback niceties
+    # audio playback niceties
     if enable_audio_scrub:
         try:
             scene.sync_mode = "AUDIO_SYNC"
@@ -684,7 +684,7 @@ def run_session_sound_import(dmx_path, scene,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_ImportSessionSounds(Operator):
@@ -710,12 +710,12 @@ viewport
         """
     bl_idname  = "ht.import_session_sounds"
     bl_label   = "Session Sounds"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filepath:    StringProperty(subtype="FILE_PATH")  # type: ignore
@@ -723,9 +723,9 @@ viewport
 
     reads_session = True
 
-    #  PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else.
-    #  This one already had a file browser, so all the flag has to do is stop
-    #  it short-circuiting to the connected session.
+    # PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else
+    # This one already had a file browser, so all the flag has to do is stop
+    # it short-circuiting to the connected session.
     pick_session: BoolProperty(default=False, options={"HIDDEN"})  # type: ignore
 
     enable_audio_scrub: BoolProperty(  # type: ignore
@@ -759,11 +759,11 @@ viewport
             return None
 
     def invoke(self, context, event):
-        # Every other numbered step runs off the connected session. This one
+        # every other numbered step runs off the connected session. This one
         # alone opened a file browser, which broke the rhythm of working
-        # through Import Session Elements in order - and with no filepath set
+        # thru Import Session Elements in order - and with no filepath set
         # it failed with "Pick a session .dmx file" against a session that was
-        # already connected. Use that when it is there; ask only when it isn't.
+        # already connected. Use that when it's there; ask only when it isn't
         if not self.filepath and not self.pick_session:
             session = self._connected_session(context)
             if session is not None:
@@ -780,8 +780,8 @@ viewport
 
     @Progress.jobbed_execute("SFM Session Importer - 5  Import Sounds")
     def execute(self, context):
-        # Same fallback on the execute side, so a scripted call and the
-        # one-click both work without being handed a path.
+        # same fallback on the execute side, so a scripted call and the
+        # one-click both work w/o being handed a path
         if not self.filepath and not self.pick_session:
             session = self._connected_session(context)
             if session is not None:
@@ -794,11 +794,11 @@ viewport
                         "a file.")
             return {"CANCELLED"}
 
-        #  THE SAME SHOT STEPS 3-5 USED. Sound has to be timed through the cut
-        #  the rigs came out of or it is in the wrong place by construction -
-        #  72 frames one way for one shot, 120 the other way for the next.
-        #  Read here rather than inside the importer so a scripted call can
-        #  still say "no shot, work it out per sound".
+        # THE same SHOT STEPS 3-5 USED. Sound has to be timed through the cut
+        # the rigs came out of or it's in the wrong place by construction -
+        # 72 frames one way for one shot, 120 the other way for the next
+        # Read here rather than inside the importer so a scripted call can
+        # still say "no shot, work it out per sound"
         s_idx, s_name = -1, ""
         try:
             from . import Session_Paths
@@ -826,9 +826,9 @@ viewport
                else f"   SCENE IS {result['blender_fps']:g} - see Frame Rate"),
             f"Placed    : {len(placed)} / {result['total']} sound(s)",
         ]
-        #  THE LINE THAT MAKES THE TIMING FALSIFIABLE. A reader who thinks the
-        #  sound is out can compare this number against the shot's own frame
-        #  range without opening the DMX.
+        # the LINE that MAKES the TIMING FALSIFIABLE. A reader who thinks the
+        # sound is out can compare this number against the shot's own frame
+        # range without opening the DMX.
         if result.get("shot"):
             off = result.get("shot_offset_frames")
             lines.append(
@@ -885,7 +885,7 @@ viewport
 
         # GUARD THE POPUP. Every other module in this addon checks
         # bpy.app.background before drawing one; this was the only one that
-        # did not, and in `blender -b` there is no window to draw into -
+        # did not, and in `blender -b` there's no window to draw into -
         # Blender walks a dead icon and dies with EXCEPTION_ACCESS_VIOLATION.
         # It went unnoticed while sounds were a button a person pressed by
         # hand; wiring them into Import Whole Session made a headless run of
@@ -903,7 +903,7 @@ viewport
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU ITEMS
+# menu items
 # ──────────────────────────────────────────────────────────────────────────────
 
 def draw_menu_item(layout):
@@ -924,7 +924,7 @@ def draw_session_entry(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (HT_OT_ImportSessionSounds,)

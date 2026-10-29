@@ -1,9 +1,9 @@
 # ═════════════════════════════════════════════════════════════════════════════
-#  DEPENDENCIES
-#    bpy                      hide flags on the imported mesh objects
-#    struct                   the .mdl bodypart table
-#  Called by session/Import_Session.py after each SourceIO model import.
-#  Added in 1.16.0.
+# DEPENDENCIES
+# bpy                      hide flags on the imported mesh objects
+# struct                   the .mdl bodypart table
+# Called by session/Import_Session.py after each SourceIO model import
+# Added in 1.16.0
 # ═════════════════════════════════════════════════════════════════════════════
 """
 Session_Bodygroups - show only the bodygroup options the SESSION has on.
@@ -131,8 +131,8 @@ def _match(ob, parts):
             if model["verts"] <= 0:
                 continue
             for full in _expected_names(part, model):
-                #  a cut name: Blender keeps 63 characters, and a ".001"
-                #  copy keeps only 59 of the base before its suffix
+                # a cut name: Blender keeps 63 characters, and a ".001"
+                # copy keeps only 59 of the base before its suffix
                 hit = (data_name == full
                        or (len(data_name) >= NAME_MAX - 5
                            and full.startswith(data_name)))
@@ -140,7 +140,7 @@ def _match(ob, parts):
                     best, best_len = (i, k), len(full)
     if best is not None:
         return best
-    #  fallback: object named after the model, inside the bodypart collection
+    # fallback: object named after the model, inside the bodypart collection
     for i, part in enumerate(parts):
         for k, model in enumerate(part["models"]):
             if model["verts"] <= 0:

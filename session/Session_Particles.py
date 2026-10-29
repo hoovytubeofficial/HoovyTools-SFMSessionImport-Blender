@@ -101,15 +101,15 @@ PARTICLE_TYPES = ("DmeGameParticleSystem",)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The other add-on
+# The other add-on
 # ─────────────────────────────────────────────────────────────────────────────
 
 def particle_api():
     """The Particle Import add-on's stable API, or None with a reason."""
-    #  THE NAME IS NOT ONE NAME. core.siblings knows every folder this
-    #  add-on has shipped under - the current hyphenated one, the old
-    #  run-together one, and the "-main" that GitHub's zip unpacks to - and
-    #  a hyphenated name cannot be reached with `from X import y` at all.
+    #the NAME IS NOT ONE NAME. core.siblings knows every folder this
+    #add-on has shipped under - the current hyphenated one, the old
+    #run-together one, and the "-main" that GitHub's zip unpacks to - and
+    #a hyphenated name can't be reached with `from X import y` at all
     try:
         from ..core import siblings
         import addon_utils
@@ -134,13 +134,13 @@ def particle_api():
 def particle_dirs():
     """Folders to search for .pcf files, best first."""
     out = []
-    #  THE CONFIG LEADS, AHEAD OF THE PARTICLE ADD-ON'S OWN FOLDER.
-    #  `_startupconfig.json` resolves to usermod/particles, which is the same
-    #  answer that add-on gives, so on a normal install the order does not
-    #  matter. It matters the moment somebody writes a path into
-    #  `customizedconfig.json` - a shared library on a network drive, say -
-    #  because a preference stated by hand has to beat one inferred by another
-    #  add-on, or stating it does nothing.
+    #THE CONFIG LEADS, AHEAD OF THE PARTICLE ADD-ON'S OWN FOLDER.
+    #`_startupconfig.json` resolves to usermod/particles, which is the same
+    #answer that add-on gives, so on a normal install the order does not
+    #matter. It matters the moment somebody writes a path into
+    #`customizedconfig.json` - a shared library on a network drive, say -
+    #because a preference stated by hand has to beat one inferred by another
+    #add-on, or stating it does nothing
     try:
         from ..core import config as _config
         from . import Import_Session as _IS
@@ -163,13 +163,13 @@ def particle_dirs():
     try:
         from . import Import_Session
         from ..core import paths as _paths
-        #  EVERY mount under game/ of EVERY configured install, not the four
-        #  mod names that were hardcoded here.
-        #  usermod comes back first from mod_dirs, so the priority order is
-        #  unchanged and this can only add folders. A Workshop effect lives in
-        #  `game/workshop/particles` - that one WAS on the old list, but
-        #  `ep2_workshop`, `left4dead2_movies` and whatever else an install
-        #  has picked up were not, and no list of names could have known.
+        # every mount under game/ of every configured install, not the four
+        # mod names that were hardcoded here
+        # usermod comes back first from mod_dirs, so the priority order is
+        # unchanged and this can only add folders. A Workshop effect lives in
+        # `game/workshop/particles` - that one WAS on the old list, but
+        # `ep2_workshop`, `left4dead2_movies` and whatever else an install
+        # has picked up were not, and no list of names could have known.
         for base in Import_Session.usermod_bases():
             for mount in _paths.mod_dirs(base):
                 p = mount / "particles"
@@ -219,7 +219,7 @@ def _index_pcfs(api, dirs, wanted=None, report=print):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Reading the session
+# Reading the session
 # ─────────────────────────────────────────────────────────────────────────────
 
 def sfm_position(v, scale=1.0):
@@ -240,7 +240,7 @@ def world_position(v, parent_mat, scale=1.0):
     return sfm_position(parent_mat @ local, scale)
 
 
-#  The world map as a rotation. (x, y, z) -> (y, -x, z) is Rz(-90).
+# the world map as a rotation. (x, y, z) -> (y, -x, z) is Rz(-90)
 WORLD_ROT = Matrix.Rotation(-math.pi / 2.0, 3, 'Z')
 
 
@@ -438,14 +438,14 @@ def describe(elem, parents=None):
         out["system"] = str(elem.get("particleSystemType") or "") or None
     except Exception:
         pass
-    #  THESE TWO ARE A SNAPSHOT AND MUST NOT BE TRUSTED ON THEIR OWN.
-    #  `emitting` and `visible` on the element are whatever they happened to be
-    #  at the frame the artist left the playhead on - the same class of trap as
-    #  a session having no bind pose. Measured in `new session.dmx`: two of the
-    #  three effects carry visible=False statically while their CHANNELS say
-    #  they are on for hundreds of frames. Hiding from the snapshot is what
-    #  made every imported effect invisible.
-    #  Kept for reporting only; `_visibility_spans` reads the channels.
+    # these two are a snapshot and must not be trusted on their own.
+    # `emitting` and `visible` on the element are whatever they happened to be
+    # at the frame the artist left the playhead on - the same class of trap as
+    # a session having no bind pose. Measured in `new session.dmx`: two of the
+    # three effects carry visible=False statically while their CHANNELS say
+    # they are on for hundreds of frames. Hiding from the snapshot is what
+    # made every imported effect invisible.
+    # Kept for reporting only; `_visibility_spans` reads the channels
     for key, dst in (("emitting", "emitting"), ("visible", "visible")):
         try:
             v = elem.get(key)
@@ -464,18 +464,18 @@ def describe(elem, parents=None):
         out["seed"] = int(elem.get("randomSeed"))
     except Exception:
         pass
-    # THE TRANSFORM IS AN ELEMENT, AND IT IS ANIMATED.
+    # the transform is an element, and it is animated.
     #
     # Only its static position/orientation used to be read, so an effect that
-    # MOVES arrived parked wherever the session's transform happened to sit.
+    # MOVES arrived parked wherever the session's transform happened to sit
     # Probed from `new session.dmx`: every DmeGameParticleSystem's transform
     # carries `transform_pos` and `transform_rot` channels - the same names,
     # and the same arrangement, as a LIGHT's transform. AA__Beam-Thor_A_25CM1
     # is the case that showed it: it has TRANSFORM + CONTROLPOINT0 +
-    # CONTROLPOINT1, and only the two control points were being animated.
+    # CONTROLPOINT1, and only the two control points were being animated
     #
-    # The element has to be kept, not just its values, because a channel is
-    # found by matching `toElement` identity - see _channel_index.
+    # The element has to be kept, not just its values, bc a channel is
+    # found by matching `toElement` identity - see _channel_index
     tr = elem.get("transform")
     out["transform_elem"] = tr
     if tr is not None:
@@ -488,12 +488,12 @@ def describe(elem, parents=None):
 
     # CONTROL POINTS. Source effects are driven by them - a beam runs from
     # CP0 to CP1, a fire tracks whatever CP0 follows - so an effect imported
-    # without them is a static prop, not the thing the session showed.
+    # without them is a static prop, not the thing the session showed
     #
     # They are plain DmeTransforms holding a LOCAL offset from the effect
     # origin: measured against system positions of 140-250 units, the control
     # points sit within about +/-100. So they get the same world map as
-    # everything else, applied as a local offset rather than a placement.
+    # everything else, applied as a local offset rather than a placement
     cps = []
     for i, cp in enumerate(elem.get("controlPoints") or []):
         pos = cp.get("position") if cp is not None else None
@@ -588,7 +588,7 @@ def _apply_control_points(w, chans, cps, fps, scale, report=print, shift=0.0):
         if ob is None:
             continue
 
-        # TWO INSTANCES OF THE SAME EFFECT SHARE ONE CONTROL POINT EMPTY.
+        # two instances of the same effect share one control point empty.
         # The add-on names them after the SYSTEM, not the instance, so the
         # session's second `AA__Gasoline-Fire_A_100CM` lands on the first
         # one's `· CP0`. Say so instead of silently letting the second
@@ -662,10 +662,10 @@ def _apply_transform(w, chans, roots, fps, scale, report=print, shift=0.0):
         channels += 1
         if attr == "position":
             for t, v in zip(times, values):
-                #  The CHANNEL drives the system's own local transform, so its
-                #  keys are local too and need the same lift. Miss this and a
-                #  moving effect snaps to a different place the instant its
-                #  first key lands.
+                # The CHANNEL drives the system's own local transform, so its
+                # keys are local too and need the same lift. Miss this and a
+                # moving effect snaps to a different place the instant its
+                # first key lands
                 loc = world_position(v, w["parent_matrix"], scale)
                 for r in roots:
                     r.location = loc
@@ -715,8 +715,8 @@ def claim_instance_names(fresh, system, label, report=print):
         elif nm.startswith(system):
             new = label + nm[len(system):]
         else:
-            #  Not named after the system at all - still make it unique, or a
-            #  second instance will collide on it just the same.
+            # Not named after the system at all - still make it unique, or a
+            # second instance will collide on it just the same.
             new = "%s %s" % (label, nm)
         if new == nm:
             continue
@@ -761,9 +761,9 @@ def _visibility_spans(elem, chans, fps, shift=0.0):
             else:
                 changes.append((fr, vis))
 
-        #  The pair said "off, then on, at this instant". Snapping collapsed
-        #  the off; put it back a frame earlier so the state before the effect
-        #  starts is the state SFM actually stored.
+        # the pair said "off, then on, at this instant". Snapping collapsed
+        # the off; put it back a frame earlier so the state before the effect
+        # starts is the state SFM actually stored
         if changes and changes[0][1] and any(not v for _f, v in raw[:1]):
             changes.insert(0, (changes[0][0] - 1, False))
         return changes
@@ -808,7 +808,7 @@ def apply_visibility(w, chans, objs, fps, mode='KEYED', report=print, shift=0.0)
     if mode == 'STATIC':
         if not w["visible"]:
             for o in objs:
-                if o.type != 'EMPTY':          # see the note below
+                if o.type != 'EMPTY':          #see the note below
                     o.hide_viewport = True
                     o.hide_render = True
         return 0, "static %s" % ("visible" if w["visible"] else "HIDDEN")
@@ -821,10 +821,10 @@ def apply_visibility(w, chans, objs, fps, mode='KEYED', report=print, shift=0.0)
 
     spans = _visibility_spans(w.get("elem"), chans, fps, shift=shift)
     if not spans:
-        #  No channel: the snapshot is all there is, and an effect placed in a
-        #  session is there to be seen. Show it rather than hide it - an
-        #  unwanted visible effect is obvious and fixable, an invisible one
-        #  looks like the importer failed.
+        #no channel: the snapshot is all there's, and an effect placed in a
+        #session is there to be seen. Show it rather than hide it - an
+        #unwanted visible effect is obvious and fixable, an invisible one
+        #looks like the importer failed
         for o in objs:
             o.hide_viewport = False
             o.hide_render = False
@@ -838,8 +838,8 @@ def apply_visibility(w, chans, objs, fps, mode='KEYED', report=print, shift=0.0)
             o.keyframe_insert("hide_viewport", frame=frame)
             o.keyframe_insert("hide_render", frame=frame)
             keys += 2
-        #  Booleans must step, never ramp. Blender will happily interpolate a
-        #  hide flag through 0.5 otherwise, which reads as a flicker.
+        #booleans must step, never ramp. Blender will happily interpolate a
+        #hide flag through 0.5 otherwise, which reads as a flicker.
         ad = o.animation_data
         act = ad.action if ad else None
         if act is not None:
@@ -870,7 +870,7 @@ def _get_collection():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Public
+# Public
 # ─────────────────────────────────────────────────────────────────────────────
 
 def import_session_particles(session_path, scale=1.0, time_scale=None,
@@ -896,11 +896,11 @@ def import_session_particles(session_path, scale=1.0, time_scale=None,
     total_in_file = len(systems)
     shot_note = ""
     time_shot = None          # 1.17.0: the chosen shot, for its timeline shift
-    #  NARROW TO ONE CUT, the same doctrine as import_lights: only when a
-    #  shot was actually chosen; whole-file stays the no-choice behaviour.
-    #  Unlike lights there is NO fallback to the whole file when the shot
-    #  owns nothing - most cuts genuinely have no effects, and importing
-    #  another shot's fires into them is the exact reported leak.
+    #NARROW TO one CUT, the same doctrine as import_lights: only when a
+    #shot was actually chosen; whole-file stays the no-choice behaviour
+    #Unlike lights there is no fallback to the whole file when the shot
+    #owns nothing - most cuts genuinely have no effects, and importing
+    #another shot's fires into them is the exact reported leak
     if shot_index is not None and int(shot_index) >= 0:
         try:
             from . import Session_Reader as _SR, Session_Paths as _SP
@@ -933,12 +933,12 @@ def import_session_particles(session_path, scale=1.0, time_scale=None,
     fps = Session_Reader.session_fps(model.root)
     report(f"[PARTICLES]  session fps {fps:g}")
 
-    #  1.17.0: WHERE AN EFFECT'S KEYS LAND. Raw seconds used to go straight
-    #  to `t * fps`, which was right only while an effect's channels clip
-    #  matched its shot's reference AND the shot sat on extract time. Now the
-    #  same shift the rigs get: the clip's rebase + the shot's placement on
-    #  SFM's movie clock (Session_Reader.clip_timeline_shift). A whole-session
-    #  import times each effect through its own shot.
+    #1.17.0: where AN EFFECT'S KEYS LAND. Raw seconds used to go straight
+    #to `t * fps`, which was right only while an effect's channels clip
+    #matched its shot's reference AND the shot sat on extract time. Now the
+    #same shift the rigs get: the clip's rebase + the shot's placement on
+    #SFM's movie clock (Session_Reader.clip_timeline_shift). A whole-session
+    #import times each effect through its own shot.
     _mode = Session_Reader.timing_mode()
     _own_shot = {}
     if time_shot is None and _mode == Session_Reader.TIMING_MOVIE:
@@ -1000,23 +1000,23 @@ def import_session_particles(session_path, scale=1.0, time_scale=None,
 
         before = set(bpy.data.objects)
         try:
-            #  NAME THE INSTANCE UP FRONT.
+            # NAME THE INSTANCE UP FRONT.
             #
-            #  The particle add-on RE-FINDS its objects by name -
-            #  `bpy.data.objects.get(f"{name} . CONTROL")` and the same for
-            #  . TRANSFORM, . CP<n>, container anchors and CP overrides. That
-            #  is deliberate and right for a person re-importing one effect.
+            # The particle add-on RE-FINDS its objects by name -
+            # `bpy.data.objects.get(f"{name} . CONTROL")` and the same for
+            # . TRANSFORM, . CP<n>, container anchors and CP overrides. That
+            # is deliberate and right for a person re-importing one effect
             #
-            #  It is wrong for a session holding TWO of one definition: the
-            #  second build re-finds the first one's objects and one of the two
-            #  fires stops existing. Renaming afterwards does NOT fix it -
-            #  every one of those lookups happens at its own moment inside the
-            #  build, so a post-hoc rename is always racing one of them. The
-            #  name has to be right BEFORE the build starts.
+            # It is wrong for a session holding TWO of one definition: the
+            # second build re-finds the first one's objects and one of the two
+            # fires stops existing. Renaming afterwards does not fix it -
+            # every one of those lookups happens at its own moment inside the
+            # build, so a post-hoc rename is always racing one of them. The
+            # name has to be right BEFORE the build starts
             #
-            #  `name_prefix` was added to the add-on's api for exactly this.
-            #  Older copies of it do not have the parameter, so fall back to
-            #  the rename rather than failing outright.
+            # `name_prefix` was added to the add-on's api for exactly this
+            # Older copies of it do not have the parameter, so fall back to
+            # the rename rather than failing outright
             build_kw = dict(
                 system=w["system"], collection=col,
                 time_scale=(w["time_scale"] if time_scale is None
@@ -1040,13 +1040,13 @@ def import_session_particles(session_path, scale=1.0, time_scale=None,
             continue
         fresh = [o for o in bpy.data.objects if o not in before]
 
-        #  Only needed on the fallback path - with name_prefix the add-on
-        #  already built everything under this instance's name.
+        # only needed on the fallback path - with name_prefix the add-on
+        # already built everything under this instance's name
         if not prefixed:
             claim_instance_names(fresh, w["system"], label, report=report)
 
-        # Place it. The effect's own root is whichever created object has no
-        # parent inside the set; move that and the tree follows.
+        # place it. The effect's own root is whichever created object has no
+        # parent inside the set; move that and the tree follows
         roots = [o for o in objs if o.parent is None or o.parent not in objs]
 
         # the control points, which are what actually drive the effect
@@ -1057,11 +1057,11 @@ def import_session_particles(session_path, scale=1.0, time_scale=None,
                    f"Blender timeline")
         cp_placed, cp_keyed = _apply_control_points(
             w, chans, cp_objs, fps, scale, report=report, shift=tshift)
-        #  The ownership stamp stays as a BACKSTOP. claim_instance_names()
-        #  above should mean no two instances ever reach the same object now,
-        #  so this loop is expected to keep everything - if it ever starts
-        #  warning again, the renaming did not take, and that is worth knowing
-        #  immediately rather than discovering it as a missing effect.
+        # The ownership stamp stays as a BACKSTOP. claim_instance_names()
+        # above should mean no two instances ever reach the same object now,
+        # so this loop is expected to keep everything - if it ever starts
+        # warning again, the renaming did not take, and that is worth knowing
+        # immediately rather than discovering it as a missing effect
         owned = []
         for r in roots:
             owner = r.get("ht_effect_owner")
@@ -1075,10 +1075,10 @@ def import_session_particles(session_path, scale=1.0, time_scale=None,
             r["ht_effect_owner"] = label
             owned.append(r)
 
-        # Static placement FIRST, then the transform channels key over it.
+        # static placement FIRST, then the transform channels key over it
         # In that order a system whose transform carries no channels at all
         # still lands where the session put it, and one that is animated is
-        # not left with a stale un-keyed value underneath its curves.
+        # not left with a stale un-keyed value underneath its curves
         if w["pos"] is not None:
             loc = world_position(w["pos"], w["parent_matrix"], scale)
             for r in owned:
@@ -1093,20 +1093,20 @@ def import_session_particles(session_path, scale=1.0, time_scale=None,
             w, chans, owned, fps, scale, report=report, shift=tshift)
         shared_root = len(roots) - len(owned)
 
-        #  EVERYTHING this instance owns, not just what build_effect chose to
-        #  return. `fresh` catches the carriers and helper objects that hang
-        #  off the emitters - object-level hide_viewport does NOT cascade to
-        #  children in Blender, so a parent-only hide leaves them on screen.
+        #EVERYTHING this instance owns, not just what build_effect chose to
+        #return. `fresh` catches the carriers and helper objects that hang
+        #off the emitters - object-level hide_viewport does not cascade to
+        #children in Blender, so a parent-only hide leaves them on screen.
         mine = list(objs) + [o for o in fresh if o not in set(objs)]
         vis_keys, vis_note = apply_visibility(
             w, chans, mine, fps, mode=visibility, report=report, shift=tshift)
         report(f"[PARTICLES]    visibility: {vis_note}"
                + (f"  ({vis_keys} key(s))" if vis_keys else ""))
 
-        #  WHICH .pcf DEFINED IT. The session names a system; the
-        #  definition lives in a .pcf found by searching thousands of files,
-        #  and which one won is the thing you need to open when an effect
-        #  looks wrong.
+        #which .pcf DEFINED IT. The session names a system; the
+        #definition lives in a .pcf found by searching thousands of files,
+        #and which one won is the thing you need to open when an effect
+        #looks wrong.
         try:
             from ..core import sources
             sources.add("particle", f"{label}  ({w['system']})", pcf)
@@ -1133,15 +1133,15 @@ def import_session_particles(session_path, scale=1.0, time_scale=None,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operator
+# Operator
 # ─────────────────────────────────────────────────────────────────────────────
 
-#  THE THREE OPTIONS, DEFINED ONCE AND USED BY BOTH OPERATORS. The step and
-#  the standalone file importer must offer the same choices with the same
-#  defaults and the same wording - two copies of a description this long drift
-#  the first time one of them is edited. Blender is happy for one property
-#  definition to be annotated onto more than one class; each gets its own
-#  storage, they only share the declaration.
+# THE THREE OPTIONS, DEFINED once AND USED BY both OPERATORS. The step and
+# the standalone file importer must offer the same choices with the same
+# defaults and the same wording - two copies of a description this long drift
+# the first time one of them is edited. Blender is happy for one property
+# definition to be annotated onto more than one class; each gets its own
+# storage, they only share the declaration.
 _P_SCALE = FloatProperty(  # type: ignore
     name="Scale",
     description="World scale - match the rest of the session import",
@@ -1202,18 +1202,18 @@ cameras, lights and characters use
         """
     bl_idname = "ht.step_particles"
     bl_label = "7  Import Particles"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     reads_session = True
 
-    #  PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
-    #  and empty means "use the session this .blend is wired to".
+    # PICKED, NOT CONNECTED. Set by the Tools drawer; empty everywhere else,
+    # and empty means "use the session this .blend is wired to".
     pick_session: BoolProperty(default=False, options={"HIDDEN"})  # type: ignore
     filepath:    StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})  # type: ignore
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})  # type: ignore
@@ -1279,9 +1279,9 @@ def _run_particles(op, context, session, scale, only_emitting, visibility):
     cp_keys = sum(m.get("cp_keys", 0) for m in r["made"])
     shared = [m for m in r["made"] if m.get("shared_root")]
     lines.append(f"Keys       : {tf_keys} transform, {cp_keys} control pt")
-    #  WHERE TO SCRUB. An effect keyed to appear at frame 504 is invisible
-    #  at frame 1 and that is correct - but "I imported particles and saw
-    #  nothing" is the same sentence either way, so say the frames out loud.
+    # WHERE TO SCRUB. An effect keyed to appear at frame 504 is invisible
+    # at frame 1 and that's correct - but "I imported particles and saw
+    # nothing" is the same sentence either way, so say the frames out loud
     for m in r["made"]:
         if m.get("vis_note"):
             lines.append(f"  {m['name'][:22]:<24}{m['vis_note'][:34]}")
@@ -1343,8 +1343,8 @@ Scale, visibility and only-emitting are whatever step 8 last ran with"""
     filepath:    StringProperty(subtype="FILE_PATH")  # type: ignore
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})  # type: ignore
 
-    #  THE SAME THREE OPTIONS AS THE STEP, from the same definitions - so the
-    #  two entries cannot offer different defaults or different wording.
+    # the same THREE OPTIONS AS the STEP, from the same definitions - so the
+    # two entries cannot offer different defaults or different wording
     scale: _P_SCALE  # type: ignore
     only_emitting: _P_ONLY_EMITTING  # type: ignore
     visibility: _P_VISIBILITY  # type: ignore
@@ -1363,9 +1363,9 @@ Scale, visibility and only-emitting are whatever step 8 last ran with"""
         if not session.is_file():
             self.report({"ERROR"}, f"Not a file: {session}")
             return {"CANCELLED"}
-        #  The shared function, NOT bpy.ops.ht.step_particles. Calling the step
-        #  fails its own poll when no session is connected, which is exactly
-        #  when someone reaches for this entry.
+        #the shared function, NOT bpy.ops.ht.step_particles. Calling the step
+        #fails its own poll when no session is connected, which is exactly
+        #when someone reaches for this entry
         return _run_particles(self, context, session, self.scale,
                               self.only_emitting, self.visibility)
 

@@ -45,7 +45,7 @@ from bpy.props import StringProperty, BoolProperty, FloatProperty
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONFIG
+# config
 # ──────────────────────────────────────────────────────────────────────────────
 
 SHOT_FILTER        = "shot1"
@@ -56,12 +56,12 @@ COLOR_CAMERA_COL   = "COLOR_05"   # blue  — camera collection
 COLOR_OK           = "COLOR_04"   # green — camera successfully imported
 COLOR_FAIL         = "COLOR_06"   # red   — import failed
 
-# Keywords used to identify camera DMX files by stem (after shot prefix stripped)
+#Keywords used to identify camera DMX files by stem (after shot prefix stripped)
 _CAM_KEYWORDS = ("camera", "cam")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -73,7 +73,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  COLLECTION HELPER
+# COLLECTION HELPER
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _get_or_create_camera_collection() -> bpy.types.Collection:
@@ -100,7 +100,7 @@ def _move_object_to_collection(obj: bpy.types.Object,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FILE DETECTION
+# FILE DETECTION
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _strip_shot_prefix(stem: str, shot_filter: str, ignore_shot: bool) -> str:
@@ -141,7 +141,7 @@ def _collect_camera_dmx_files(folder: Path, shot_filter: str,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  PUBLIC API
+# public api
 # ──────────────────────────────────────────────────────────────────────────────
 
 def run_camera_harvester(folder: Path,
@@ -188,7 +188,7 @@ def run_camera_harvester(folder: Path,
             root_empty = result["root_empty"]
             axis_empty = result["axis_empty"]
 
-            # Move all three hierarchy objects into the camera collection
+            # move all three hierarchy objects into the camera collection
             for obj in (axis_empty, root_empty, cam_obj):
                 _move_object_to_collection(obj, cam_col)
 
@@ -221,7 +221,7 @@ def run_camera_harvester(folder: Path,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_ImportCameraAnimations(Operator):
@@ -238,12 +238,12 @@ Use the Shot filter to take one shot out of a folder holding several.
 Files that are not cameras are reported, not silently skipped"""
     bl_idname  = "ht.import_camera_animations"
     bl_label   = "Camera Animations (Folder)"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filepath:    StringProperty(subtype="FILE_PATH")
@@ -254,13 +254,13 @@ Files that are not cameras are reported, not silently skipped"""
     scale:        FloatProperty( name="Scale",
                                  description="World scale — match your session import",
                                  default=1.0, min=0.001)
-    #  DEFAULT FALSE, MATCHING THE SINGLE-FILE DMX CAMERA OPERATOR. The flag
-    #  selects a whole import path, not just a sign fix: False = resample onto
-    #  integer frames (stepped cuts survive), True = keys at SFM's fractional
-    #  times, where Blender merges each cut's key pair and the cut smears into
-    #  a slow spin. The two camera entry points defaulting differently is
-    #  exactly the bug that made session imports look broken while hand
-    #  imports of the same data were clean.
+    # DEFAULT FALSE, MATCHING THE SINGLE-FILE DMX CAMERA OPERATOR. The flag
+    # selects a whole import path, not just a sign fix: False = resample onto
+    # integer frames (stepped cuts survive), True = keys at SFM's fractional
+    # times, where Blender merges each cut's key pair and the cut smears into
+    # a slow spin. The two camera entry points defaulting differently is
+    # exactly the bug that made session imports look broken while hand
+    # imports of the same data were clean
     fix_quat_flips: BoolProperty(name="Fix Quaternion Flips",
                                  description="OFF (default): one key on every whole frame, in-betweens slerped, hard cuts kept instant. ON: keys at SFM's own sample times (cuts smear). Both are sign-walked - no flips either way (1.17.3). The same default as the single-file DMX Camera importer",
                                  default=False)
@@ -320,7 +320,7 @@ Files that are not cameras are reported, not silently skipped"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU ITEMS
+# menu items
 # ──────────────────────────────────────────────────────────────────────────────
 
 def draw_menu_item(layout):
@@ -342,7 +342,7 @@ def draw_session_entry(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (HT_OT_ImportCameraAnimations,)

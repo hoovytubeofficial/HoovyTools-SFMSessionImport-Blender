@@ -53,7 +53,7 @@ from ..core import Progress
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Matching files to armatures
+# Matching files to armatures
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _norm(name):
@@ -86,7 +86,7 @@ def find_armature(stem, scene=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Plan
+# Plan
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Import order. Animation before facial, cameras last.
@@ -150,7 +150,7 @@ def plan(paths, scene=None, deep="auto", allow_proxy=False):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Run
+# Run
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _armature_meshes(arm):
@@ -190,9 +190,9 @@ def run(entries, anim_scale=1.0, add_root_helpers=True, camera_scale=1.0,
                             anim_scale=anim_scale, up_axis=up_axis,
                             stepped_keys=stepped_keys,
                             rot_mode=rot_mode)
-                    #  1.17.2: a SESSION extract onto a rig Fix All has fixed lands through the model's rest and is
-                    #  re-keyed onto Fix All's - on that rest directly its legs crossed in an X (x140). An SFM
-                    #  export (no session stamp) goes straight on: Fix All's rest is its own basis.
+                    # 1.17.2: a SESSION extract onto a rig Fix All has fixed lands through the model's rest and is
+                    # re-keyed onto Fix All's - on that rest directly its legs crossed in an X (x140). An SFM
+                    # export (no session stamp) goes straight on: Fix All's rest is its own basis
                     from . import Import_Session
                     arm_ = e["armature"]
                     if Import_Session.has_two_rests(arm_) and Import_Session.is_session_extract(e["path"]):
@@ -205,16 +205,16 @@ def run(entries, anim_scale=1.0, add_root_helpers=True, camera_scale=1.0,
                     stats["rows"].append((e["name"], "anim", how))
 
                 elif action == DA.CAMERA:
-                    #  fix_quat_flips=False EXPLICITLY, not by default.
-                    #  This call used to inherit the function's old default of
-                    #  True - the "smooth" path - while the standalone DMX
-                    #  Camera operator shipped False - the raw/stepped path.
-                    #  Same file, two behaviours: a session import smeared
-                    #  every hard cut into a slow spin and keyed off-frame,
-                    #  while a hand import of the SAME extracted data was
-                    #  clean. The extraction was never wrong (measured
-                    #  identical to an SFM export of the same take); the
-                    #  entry point was.
+                    # fix_quat_flips=False EXPLICITLY, not by default
+                    # This call used to inherit the function's old default of
+                    # True - the "smooth" path - while the standalone DMX
+                    # Camera operator shipped False - the raw/stepped path
+                    # Same file, two behaviours: a session import smeared
+                    # every hard cut into a slow spin and keyed off-frame,
+                    # while a hand import of the same extracted data was
+                    # clean. The extraction was never wrong (measured
+                    # identical to an SFM export of the same take); the
+                    # entry point was
                     Import_DMX_Camera.import_dmx_camera(
                         str(e["path"]), scale=camera_scale,
                         fix_quat_flips=False)
@@ -251,10 +251,10 @@ def run(entries, anim_scale=1.0, add_root_helpers=True, camera_scale=1.0,
                                 do_import_flex=True,
                                 do_bake_hwm=bake_hwm)
                             done += 1
-                            # import_shape_keys returns bake_result, not
-                            # "bake" - reading the wrong key made every run
-                            # report "bake found no QC" while the console
-                            # showed [HWM_BAKE] baked:140.
+                            #import_shape_keys returns bake_result, not
+                            #"bake" - reading the wrong key made every run
+                            #report "bake found no QC" while the console
+                            #showed [HWM_BAKE] baked:140
                             if isinstance(r, dict) and r.get("bake_result"):
                                 baked += 1
                     except ValueError as exc:
@@ -290,20 +290,20 @@ def run(entries, anim_scale=1.0, add_root_helpers=True, camera_scale=1.0,
                 stats["rows"].append(
                     (e["name"], "FAIL", f"{action}: {type(exc).__name__}: {exc}"))
                 report(f"[ORCHESTRATOR]  {e['name']} {action} FAILED: {exc}")
-                # Print the stack. A per-file guard that swallows WHERE it
+                # print the stack. A per-file guard that swallows WHERE it
                 # broke turns a five minute fix into an afternoon - the
                 # summary line alone told us a camera raised IndexError and
                 # nothing about which line.
                 import traceback
                 traceback.print_exc()
 
-    #  AUTO-SPLIT BELONGS HERE, NOT ONLY ON THE STEP OPERATOR.
-    #  This orchestrator calls Import_DMX_Camera directly, so the one-click and
-    #  Import All paths never reach HT_OT_step_cameras.execute - hooking the
-    #  step alone meant the toggle did nothing for anyone importing a whole
-    #  session, which is the case it exists for. The helper skips anything
-    #  already inside the split collection, so being called from both paths
-    #  cannot split a shot into shots.
+    # AUTO-SPLIT BELONGS HERE, NOT ONLY ON THE STEP OPERATOR.
+    # This orchestrator calls Import_DMX_Camera directly, so the one-click and
+    # Import All paths never reach HT_OT_step_cameras.execute - hooking the
+    # step alone meant the toggle did nothing for anyone importing a whole
+    # session, which is the case it exists for. The helper skips anything
+    # already inside the split collection, so being called from both paths
+    # can't split a shot into shots
     if any(DA.CAMERA in (e.get("actions") or ()) for e in entries):
         try:
             from .Session_Steps import _auto_split_cameras
@@ -337,7 +337,7 @@ def run(entries, anim_scale=1.0, add_root_helpers=True, camera_scale=1.0,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operators
+# Operators
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_session_plan(Operator):
@@ -422,12 +422,12 @@ For a whole session prefer Import Whole Session; this one is for a folder
 you have curated by hand"""
     bl_idname = "ht.session_import_all"
     bl_label = "Import Session Animations"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     allow_proxy: BoolProperty(  # type: ignore
@@ -576,12 +576,12 @@ cannot be found the run stops there and says so, rather than carrying on
 and importing animation onto nothing"""
     bl_idname = "ht.session_one_click"
     bl_label = "Import Whole Session"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     do_models: BoolProperty(  # type: ignore
@@ -711,10 +711,10 @@ and importing animation onto nothing"""
         col.separator()
 
     def execute(self, context):
-        #  NOT the @jobbed decorator: register_class inspects execute's
-        #  own argument count and a (*args, **kwargs) wrapper reads as 0
-        #  [MEASURED: ValueError at registration]. A two-line trampoline
-        #  keeps the signature Blender checks.
+        # not the @jobbed decorator: register_class inspects execute's
+        # own argument count and a (*args, **kwargs) wrapper reads as 0
+        # [MEASURED: ValueError at registration]. A two-line trampoline
+        # keeps the signature Blender checks
         with Progress.job("SFM Session Importer - Import Whole Session",
                           phase_total=11):
             return self._execute(context)
@@ -728,19 +728,19 @@ and importing animation onto nothing"""
             self.report({"ERROR"}, "No session connected")
             return {"CANCELLED"}
 
-        #  ONE REPORT FOR THE WHOLE RUN.
+        # ONE REPORT FOR THE WHOLE RUN.
         #
-        #  Every step below is an operator or a function that reports for
-        #  itself, and each of those reports used to open its own dialog. A
-        #  whole-session import therefore ended in a stack of popups that had
-        #  to be clicked through one at a time - and because a popup blocks,
-        #  the next step did not even start until the previous dialog was
-        #  dismissed. One click was not one click.
+        # Every step below is an operator or a function that reports for
+        # itself, and each of those reports used to open its own dialog. A
+        # whole-session import therefore ended in a stack of popups that had
+        # to be clicked thru one at a time - and because a popup blocks,
+        # the next step did not even start until the previous dialog was
+        # dismissed. One click was not one click
         #
-        #  Inside this quiet scope every nested report still prints its full
-        #  text to the console and is collected; nothing opens and nothing
-        #  blocks. The single summary at the bottom is the only dialog, and it
-        #  carries its own off switch like every other report in the addon.
+        # Inside this quiet scope every nested report still prints its full
+        # text to the console and is collected; nothing opens and nothing
+        # blocks. The single summary at the bottom is the only dialog, and it
+        # carries its own off switch like every other report in the addon
         from ..core import Report_UI
         with Report_UI.quiet():
             steps = []
@@ -752,8 +752,8 @@ and importing animation onto nothing"""
                 if fatal:
                     steps.append((label, "skipped", "an earlier step failed"))
                     return None
-                #  The overlay names the stage: '5 Animation' advances the
-                #  10-phase bar to position 5 whatever was switched off.
+                # the overlay names the stage: '5 Animation' advances the
+                # 10-phase bar to position 5 whatever was switched off.
                 head = label.split()
                 Progress.phase(label, number=(int(head[0])
                                               if head and head[0].isdigit()
@@ -766,9 +766,9 @@ and importing animation onto nothing"""
                     steps.append((label, "FAILED", f"{type(exc).__name__}: {exc}"))
                     return None
 
-            #  ONE IMPORT, ONE MANIFEST. Cleared here rather than appended
-            #  to, because a list naming files from a previous import would
-            #  send somebody to open the wrong .pcf - worse than no list.
+            # ONE IMPORT, ONE MANIFEST. Cleared here rather than appended
+            # to, because a list naming files from a previous import would
+            # send somebody to open the wrong .pcf - worse than no list
             try:
                 from ..core import sources
                 sources.begin()
@@ -798,7 +798,7 @@ and importing animation onto nothing"""
                          "Animation would have nothing to land on - check that "
                          "SourceIO is enabled and the .mdl files are findable.")
 
-            # 3 ── extract ───────────────────────────────────────────────────
+            #3 ── extract ───────────────────────────────────────────────────
             out_dir = None
 
             if self.do_extract:
@@ -807,11 +807,11 @@ and importing animation onto nothing"""
                     r = Session_Steps.ensure_extracted(context, session,
                                                        rebase=False)
                     out_dir = r["out_dir"]
-                    # Print the FULL path, not just the folder name. These files
+                    # print the FULL path, not just the folder name. These files
                     # are the thing to hand to the standalone importer when the
                     # question is "is the extraction wrong or is the session
                     # import wrong", and a bare "anims/" is not something you can
-                    # paste into a file browser.
+                    # paste into a file browser
                     print(f"[ONE_CLICK]  anims folder: {out_dir}")
                     for w in r["written"]:
                         print(f"[ONE_CLICK]     {Path(w['path']).name}")
@@ -850,16 +850,16 @@ and importing animation onto nothing"""
 
             # 6 ── sounds ────────────────────────────────────────────────────
             #
-            #  Sounds and lights were reachable only as separate buttons, so
-            #  "Import Whole Session" quietly imported most of a session and the
-            #  rest had to be remembered. A whole session means the whole scene.
+            # Sounds and lights were reachable only as separate buttons, so
+            # "Import Whole Session" quietly imported most of a session and the
+            # rest had to be remembered. A whole session means the whole scene.
             if self.do_sounds:
                 def _sounds():
                     # Count sound DATABLOCKS, not sequencer strips. Blender 5.x
                     # renamed sequence_editor.sequences_all to strips_all, and
                     # reaching for the old name here would turn a working import
                     # into a reported failure on exactly the versions this addon
-                    # targets. bpy.data.sounds is stable across both.
+                    # targets. bpy.data.sounds is stable across both
                     before = {s.name for s in bpy.data.sounds}
                     r = bpy.ops.ht.import_session_sounds(filepath=str(session))
                     if "FINISHED" not in r:
@@ -881,15 +881,15 @@ and importing animation onto nothing"""
 
             # 8 ── particles ─────────────────────────────────────────────────
             #
-            #  Handed to the Particle Import add-on through its api module. It is
-            #  a separate add-on and may not be enabled, so a failure here reports
-            #  and never takes the session down with it.
+            # Handed to the Particle Import add-on thru its api module. It is
+            # a separate add-on and may not be enabled, so a failure here reports
+            # and never takes the session down with it.
             if self.do_particles:
                 def _particles():
                     from . import Session_Particles, Session_Paths
-                    #  The shot filter, in BOTH import paths (the lesson
-                    #  auto-split taught: a per-step hook wired into the
-                    #  step operator alone does nothing for one-click).
+                    # the shot filter, in both import paths (the lesson
+                    # auto-split taught: a per-step hook wired into the
+                    # step operator alone does nothing for one-click).
                     idx, nm = Session_Paths.shot_choice(context.scene)
                     r = Session_Particles.import_session_particles(
                         session, shot_index=idx, shot_name=nm)
@@ -953,25 +953,25 @@ and importing animation onto nothing"""
                     return "%s - %s" % (Path(r["map"]).name, r.get("note", ""))
                 step("11 Map", _map)
 
-        #  THE MANIFEST, LAST, so it lists what this run actually brought
-        #  in. Purple = provenance; see core/sources.py.
+        # the MANIFEST, LAST, so it lists what this run actually brought
+        # in. Purple = provenance; see core/sources.py
         try:
             from ..core import sources
             sources.report(context)
         except Exception as exc:                              # noqa: BLE001
             print(f"[SOURCES]  manifest unavailable ({exc})")
 
-        #  THE SHOT OWNS THE FRAME RANGE, AND IT GETS THE LAST WORD.
+        # THE SHOT OWNS THE FRAME RANGE, AND IT GETS THE LAST WORD.
         #
-        #  Every importer between here and the extract may push `frame_end`
-        #  out to cover what it just brought in - Blender Source Tools does it
-        #  per model, the shape-key importer does it per face, the sound
-        #  importer does it per strip. That is right when nobody has said
-        #  which cut this is. Once somebody has, the cut is the answer, and
-        #  the keys that run past it are not part of it.
+        # Every importer between here and the extract may push `frame_end`
+        # out to cover what it just brought in - Blender Source Tools does it
+        # per model, the shape-key importer does it per face, the sound
+        # importer does it per strip. That is right when nobody has said
+        # which cut this is. Once somebody has, the cut is the answer, and
+        # the keys that run past it are not part of it
         #
-        #  Measured on shot1: the shot ends at 312 and the range had grown to
-        #  339, because `combine_rifle_ammo12` keeps keying past the cut.
+        # Measured on shot1: the shot ends at 312 and the range had grown to
+        # 339, bc `combine_rifle_ammo12` keeps keying past the cut.
         rng = Session_Steps.apply_shot_frame_range(context, session)
         if rng:
             steps.append(("Frame range", "ok", f"{rng[0]}-{rng[1]}"))
@@ -985,12 +985,12 @@ and importing animation onto nothing"""
         except Exception as exc:                              # noqa: BLE001
             print(f"[ONE_CLICK]  camera jump failed: {exc}")
 
-        #  BUILD THE CHOSEN WORKSPACE LAYOUT, if the Developer tab's Layouts
-        #  box picked one for "after session import" (default Off). The
-        #  rebuild runs on a UI timer AFTER this operator returns, so it can
-        #  never slow or break the import - a background run refuses cleanly.
-        #  Its 3D views also open in camera view, because the jump above
-        #  already set scene.camera and the builder honours it at DONE.
+        # BUILD the CHOSEN WORKSPACE LAYOUT, if the Developer tab's Layouts
+        # box picked one for "after session import" (default Off). The
+        # rebuild runs on a UI timer after this operator returns, so it can
+        # never slow or break the import - a background run refuses cleanly
+        # Its 3D views also open in camera view, bc the jump above
+        # already set scene.camera and the builder honours it at DONE.
         try:
             from ..tools import Layout_Builder
             ll = Layout_Builder.launch_after_import(context)
@@ -1026,11 +1026,11 @@ and importing animation onto nothing"""
         else:
             level = 'INFO'
 
-        #  report_collected folds everything the quiet scope caught into this
-        #  one dialog, under the per-step summary built above. The level it
-        #  would have chosen on its own is overridden here: a step that
-        #  reported INFO can still have FAILED as far as the pipeline is
-        #  concerned, and `steps` is what knows that.
+        #report_collected folds everything the quiet scope caught into this
+        #one dialog, under the per-step summary built above. The level it
+        #would have chosen on its own is overridden here: a step that
+        #reported INFO can still have FAILED as far as the pipeline is
+        #concerned, and `steps` is what knows that
         Report_UI.report_collected(
             context, "session_one_click", "Session Import",
             header_lines=lines, level=level, operator=self,

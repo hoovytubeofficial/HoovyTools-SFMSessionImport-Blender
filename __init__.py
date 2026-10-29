@@ -59,9 +59,9 @@ from bpy.types import AddonPreferences
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from . import SST
 
-#  ONE LINE PER PACKAGE. What each one is for is in its own __init__.py; the
-#  layering rule is that `core` knows about nothing, `ui` knows about
-#  everything, and the three in between only reach downwards.
+# one LINE PER PACKAGE. What each one is for is in its own __init__.py; the
+# layering rule is that `core` knows about nothing, `ui` knows about
+# everything, and the three in between only reach downwards
 from .core import (Report_UI, Common_Props, DMX_Analyzer,
                    anim_compat, paths, config, user_paths, sources,
                    console_mark)
@@ -79,10 +79,10 @@ from .tools import (Camera_Tools, ShapeKey_Proxy, Utils_Shape_Keys, Utils_MDL,
                     Session_Visibility)
 from .ui import Panel, Developer
 
-#  OPTIONAL, AND THAT IS ENFORCED RATHER THAN DOCUMENTED. A folder whose name
-#  starts with a single underscore is one the add-on runs without, so deleting
-#  `experimental/` has to be a supported thing to do - not a traceback on
-#  startup. Hence the guard, not a plain import.
+# OPTIONAL, and THAT IS ENFORCED RATHER THAN DOCUMENTED. A folder whose name
+# starts with a single underscore is one the add-on runs w/o, so deleting
+# `experimental/` has to be a supported thing to do - not a traceback on
+# startup. Hence the guard, not a plain import
 try:
     from .experimental import Playground, Session_Locks
     _HAS_EXPERIMENTAL = True
@@ -94,7 +94,7 @@ except Exception as _exc:                                   # noqa: BLE001
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ADDON PREFERENCES
+# addon preferences
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HoovyToolsPreferences(AddonPreferences):
@@ -268,28 +268,28 @@ def _pref_folder_row(col, prefs, prop_name, shipped, pattern):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CUSTOM ICONS
+# custom icons
 # ──────────────────────────────────────────────────────────────────────────────
 
-#  `images` is optional: every lookup falls back to a stock Blender icon, so
-#  a build without the folder looks plainer and works identically.
-#  core/paths.py knows where it is, and accepts the old `_Icons` name too.
+# `images` is optional: every lookup falls back to a stock Blender icon, so
+# a build without the folder looks plainer and works identically.
+# core/paths.py knows where it's, and accepts the old `_Icons` name too
 _ICONS_DIR = paths.icons()
 
-#  SOURCE-STYLE ICONS: foreground colour identifies the file/utility type.
-#  Models: crowbar green; lights: muted yellow; animation: muted blue;
-#  cameras: cyan; shape keys: orange; sounds: violet; particles: red;
-#  complete DMX sessions: saturated orange. Miscellaneous types retain
-#  the add-on's associations in a muted Source-inspired palette.
+#SOURCE-STYLE ICONS: foreground colour identifies the file/utility type
+#Models: crowbar green; lights: muted yellow; animation: muted blue;
+#cameras: cyan; shape keys: orange; sounds: violet; particles: red;
+#complete DMX sessions: saturated orange. Miscellaneous types retain
+#the add-on's associations in a muted Source-inspired palette
 #
-#  Background shape identifies input scope: folder inputs use a folder;
-#  DMX-session operations use a solid-centre gear; other tools use circles.
-#  Circle colours further distinguish single-file, selected-data, batch,
-#  configuration, report and navigation contexts. Status variants retain
-#  their subject colour and add a green check, amber warning or red cross.
+#Background shape identifies input scope: folder inputs use a folder;
+#DMX-session operations use a solid-centre gear; other tools use circles
+#Circle colours further distinguish single-file, selected-data, batch,
+#configuration, report and navigation contexts. Status variants retain
+#their subject colour and add a green check, amber warning or red cross
 #
-#  Every key resolves to images/<key>.png. Generated art, prompts, colour
-#  legend and usage map live in images/source-style; originals in images/old.
+#Every key resolves to images/<key>.png. Generated art, prompts, colour
+#legend and usage map live in images/source-style; originals in images/old
 _ICON_KEYS = (
     'hoovy_logo', 'session_load', 'import_session',
     'import_session_models', 'import_animations', 'import_camera_animations',
@@ -322,7 +322,7 @@ _ICON_KEYS = (
     'status_bad', 'session_animations', 'session_camera_animations',
     'session_shape_key_animations', 'import_pcf', 'offset_everything',
     'match_sfm_visibility', 'render_presets', 'shot_timing',
-    #  3.0.0: the tabs, Main Tools, HoovyTools Importers (MDL / VMT / VTF), the slug shots
+    # 3.0.0: the tabs, Main Tools, HoovyTools Importers (MDL / VMT / VTF), the slug shots
     'tab_main', 'tab_tools', 'tab_dev', 'sec_main_tools', 'sec_hoovy_importers',
     'import_vmt', 'import_vtf', 'shot_slug',
     'import_map',
@@ -338,10 +338,10 @@ def _load_icons():
     if not _ICONS_DIR.is_dir():
         print(f"[HoovyTools]  images/ not found at {_ICONS_DIR} - using Blender defaults")
         return
-    #  ONE LINE, NOT ONE PER ICON. Twenty-five "icon loaded" lines and three
-    #  "icon missing" lines on every startup buried anything that mattered.
-    #  A missing icon is not an error - every lookup falls back to a stock
-    #  Blender one - so it is worth a mention, not a paragraph.
+    # ONE LINE, not ONE PER ICON. Twenty-five "icon loaded" lines and three
+    # "icon missing" lines on every startup buried anything that mattered
+    # A missing icon isn't an error - every lookup falls back to a stock
+    # Blender one - so it's worth a mention, not a paragraph
     loaded, missing = [], []
     for key in _ICON_KEYS:
         path = _ICONS_DIR / f"{key}.png"
@@ -369,7 +369,7 @@ def icon_id(key: str, fallback: str = "NONE") -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENUS
+# MENUS
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_MT_session_submenu(bpy.types.Menu):
@@ -377,11 +377,11 @@ class HT_MT_session_submenu(bpy.types.Menu):
     bl_label  = "Import Session"
 
     def draw(self, context):
-        #  THE WHOLE WORKFLOW, 1 TO 7, NUMBERED THE SAME AS THE MAIN TAB.
-        #  Sounds and particles used to sit in the standalone block one level
-        #  up, next to Import MDL - which put two SESSION importers among the
-        #  one-file importers and left this submenu stopping at 5. Everything
-        #  in here takes a session .dmx; that is what makes it a submenu.
+        # THE WHOLE WORKFLOW, 1 TO 7, NUMBERED THE SAME AS THE MAIN TAB.
+        # Sounds and particles used to sit in the standalone block one level
+        # up, next to Import MDL - which put two SESSION importers among the
+        # one-file importers and left this submenu stopping at 5. Everything
+        # in here takes a session .dmx; that is what makes it a submenu.
         Import_Session.draw_submenu(self.layout)
         Import_Animations.draw_session_entry(self.layout)
         Import_Camera_Animations.draw_session_entry(self.layout)
@@ -445,7 +445,7 @@ def _draw_ht_submenu(self, context):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _write_startup_config():
@@ -476,11 +476,11 @@ def _write_startup_config():
 
 
 def register():
-    #  FIRST: every line printed from here on starts with [SFM Session Importer] (3.0.0).
+    # first: every line printed from here on starts with [SFM Session Importer] (3.0.0)
     console_mark.install()
     bpy.utils.register_class(HoovyToolsPreferences)
 
-    # Ensure import_scene.smd is available — uses BST if present, SST bundle otherwise
+    # ensure import_scene.smd is available — uses BST if present, SST bundle otherwise
     SST.ensure_smd_importer()
 
     _load_icons()
@@ -502,7 +502,7 @@ def register():
     Utils_Misc.register(icon_id_fn=icon_id)
     Layout_Builder.register(icon_id_fn=icon_id)
     Import_MDL.register(icon_id_fn=icon_id)
-    Import_Materials.register(icon_id_fn=icon_id)                     # 3.0.0: Import VMT / Import VTF
+    Import_Materials.register(icon_id_fn=icon_id)                     #3.0.0: Import VMT / Import VTF
     Import_Shape_Key_Animations.register(icon_id_fn=icon_id)
     Import_Session_Sounds.register(icon_id_fn=icon_id)
     DMX_Analyzer.register(icon_id_fn=icon_id)
@@ -515,14 +515,14 @@ def register():
     Session_Reader.register(icon_id_fn=icon_id)
     Session_Steps.register(icon_id_fn=icon_id)
     Session_Particles.register(icon_id_fn=icon_id)
-    Session_Map.register()                                            # 3.0.0: 8 Import Map
+    Session_Map.register()                                            #3.0.0: 8 Import Map
     if _HAS_EXPERIMENTAL:
         Playground.register(icon_id_fn=icon_id)
         Session_Locks.register(icon_id_fn=icon_id)
     Developer.register(icon_id_fn=icon_id)
     Panel.register(icon_id_fn=icon_id)
-    #  AFTER Panel: ht_panel exists only now, so the stored layout choice
-    #  could not land during Layout_Builder.register above.
+    # after Panel: ht_panel exists only now, so the stored layout choice
+    # could not land during Layout_Builder.register above.
     try:
         Layout_Builder.ensure_synced(bpy.context.scene)
     except Exception:                                         # noqa: BLE001
@@ -533,9 +533,9 @@ def register():
     bpy.utils.register_class(HT_MT_import_submenu)
     bpy.types.TOPBAR_MT_file_import.append(_draw_ht_submenu)
 
-    #  LAST, because it asks Import_Session where the installs are and that
-    #  reads the preferences, which only exist once the class above is
-    #  registered.
+    # LAST, bc it asks Import_Session where the installs are and that
+    # reads the preferences, which only exist once the class above is
+    # registered.
     _write_startup_config()
 
 

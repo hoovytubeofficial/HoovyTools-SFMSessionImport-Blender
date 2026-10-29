@@ -77,13 +77,13 @@ from bpy.props import FloatProperty, IntProperty, BoolProperty
 try:
     from ..core.anim_compat import iter_fcurves
 except ImportError:
-    #  1.17.3: the Text Editor camera standalone embeds THIS file (as
-    #  `camera_splitter`) and hands it its own iter_fcurves after import.
+    #1.17.3: the Text Editor camera standalone embeds this file (as
+    #`camera_splitter`) and hands it its own iter_fcurves after import.
     iter_fcurves = None
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONFIG DEFAULTS  (also exposed as operator properties)
+# CONFIG DEFAULTS  (also exposed as operator properties)
 # ──────────────────────────────────────────────────────────────────────────────
 
 ROT_EPSILON_DEG  = 15.0   # rotation FLOOR (deg) - a turn smaller never cuts
@@ -97,23 +97,23 @@ POS_MIN_EXTENT   = 0.02   # ...or 2% of the take's own extent, whichever is more
 COOLDOWN_FRAMES  = 10     # suppress new cuts for this many frames after one
 ROLLING_WINDOW   = 4      # how many recent moves the baseline average uses
 
-#  Continuation handles
+# continuation handles
 HANDLE_SECONDS   = 3.0    # runway written on EACH side of every cut
 HOLD_FRACTION    = 0.30   # fraction of the handle held at full speed
 VELOCITY_SAMPLES = 5      # keys least-squares-fitted to measure speed at a cut
-LENS_MIN_MM      = 1.0    # focal length is physically bounded; position is not
+LENS_MIN_MM      = 1.0    # focal length is physically bounded; position isn't
 LENS_MAX_MM      = 5000.0
 
-#  Splits live in their OWN collection, not the importer's camera collection.
-#  Session re-import deletes the importer's collections (see
-#  Session_Steps._clear_imported_cameras), which would silently throw away every
-#  split the moment the session was re-imported.
+# Splits live in their own collection, not the importer's camera collection
+# Session re-import deletes the importer's collections (see
+# Session_Steps._clear_imported_cameras), which would silently throw away every
+# split the moment the session was re-imported
 SPLIT_COLLECTION = "__HoovyTools Camera Split__"
-SPLIT_COLOR      = "COLOR_06"   # purple
+SPLIT_COLOR      = "COLOR_06"   #purple
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -125,7 +125,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  SELECTION → ROOT
+# selection → root
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _resolve_root(obj):
@@ -162,7 +162,7 @@ def _hierarchy_from_root(root):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  READ KEYFRAMES
+# read keyframes
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _read_transform_keys(root):
@@ -182,26 +182,26 @@ def _read_transform_keys(root):
     if not all(quat_fc):
         return [], [], []
 
-    #  POSITION IS SAMPLED BY FRAME, NOT BY KEY INDEX.
+    #position is sampled by frame, not by key index.
     #
-    #  This used to take n from the QUATERNION curves alone and then index the
-    #  LOCATION curves with the same i:
+    #This used to take n from the QUATERNION curves alone and then index the
+    #LOCATION curves with the same i:
     #
-    #      n = min(len(fc.keyframe_points) for fc in quat_fc)
-    #      positions.append(loc_fc[c].keyframe_points[i]...)
+    #n = min(len(fc.keyframe_points) for fc in quat_fc)
+    #positions.append(loc_fc[c].keyframe_points[i]...)
     #
-    #  which crashes the moment a location curve is one key shorter than a
-    #  rotation curve - reported from a real camera as
-    #  "bpy_prop_collection[index]: index 539 out of range, size 539".
+    #which crashes the moment a location curve is one key shorter than a
+    #rotation curve - reported from a real camera as
+    #"bpy_prop_collection[index]: index 539 out of range, size 539"
     #
-    #  It was also wrong in a quieter way even when it did not crash: it
-    #  assumed key #i on rotation sits at the same FRAME as key #i on location.
-    #  SFM does not promise that - channels are keyed independently and a
-    #  trimmed or repaired curve breaks the alignment - so a mismatch silently
-    #  paired a rotation with somebody else's position and moved every cut.
+    #It was also wrong in a quieter way even when it did not crash: it
+    #assumed key #i on rotation sits at the same FRAME as key #i on location.
+    #SFM doesn't promise that - channels are keyed independently and a
+    #trimmed or repaired curve breaks the alignment - so a mismatch silently
+    #paired a rotation with somebody else's position and moved every cut.
     #
-    #  Evaluating the location curves AT the rotation key's frame is immune to
-    #  both: different key counts, and keys that do not line up.
+    #Evaluating the location curves AT the rotation key's frame is immune to
+    #both: different key counts, and keys that do not line up
     n = min(len(fc.keyframe_points) for fc in quat_fc)
     have_loc = all(loc_fc)
     frames, eulers, positions = [], [], []
@@ -218,7 +218,7 @@ def _read_transform_keys(root):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CUT DETECTION
+# cut detection
 # ──────────────────────────────────────────────────────────────────────────────
 
 def detect_cuts(frames, eulers, positions,
@@ -241,9 +241,9 @@ def detect_cuts(frames, eulers, positions,
     if n == 0:
         return [], []
 
-    #  A cut teleports the camera, so it must move a real fraction of the whole
-    #  path in ONE frame - not merely more than it was moving a moment ago,
-    #  which is also true every single time it starts moving.
+    # A cut teleports the camera, so it must move a real fraction of the whole
+    # path in one frame - not merely more than it was moving a moment ago,
+    # which is also true every single time it starts moving
     xs = [p[0] for p in positions]
     ys = [p[1] for p in positions]
     zs = [p[2] for p in positions]
@@ -261,18 +261,18 @@ def detect_cuts(frames, eulers, positions,
     last_cut_frame = None
 
     for i in range(1, n):
-        #  INSIDE A TELEPORT ALREADY COUNTED. Its remaining frames must not
-        #  reach the rolling baseline either - one 155-unit frame in the
-        #  window raises the average enough to hide the next real cut.
+        # INSIDE A TELEPORT ALREADY COUNTED. Its remaining frames must not
+        # reach the rolling baseline either - one 155-unit frame in the
+        # window raises the average enough to hide the next real cut
         if i <= skip_until:
             continue
         in_cooldown = (last_cut_frame is not None and
                        (frames[i] - last_cut_frame) < cooldown)
 
-        #  ROTATION, when enabled: the same relative rule as position. The turn
-        #  is the TRUE angle between consecutive orientations, taken from the
-        #  quaternion difference - always in [0, pi] and wrap-free, so the
-        #  gimbal jumps that made the old absolute test useless cannot recur.
+        #ROTATION, when enabled: the same relative rule as position. The turn
+        #is the TRUE angle between consecutive orientations, taken from the
+        #quaternion difference - always in [0, pi] and wrap-free, so the
+        #gimbal jumps that made the old absolute test useless can't recur.
         rot_hit, turn = False, 0.0
         if use_rotation:
             q_prev = Euler(eulers[i - 1], "XYZ").to_quaternion()
@@ -282,8 +282,8 @@ def detect_cuts(frames, eulers, positions,
                 turn = 2.0 * math.pi - turn
             if len(recent_turns) >= pos_min_samples:
                 avg_t = sum(recent_turns) / len(recent_turns)
-                #  Same shape as the position rule: the floor is mandatory, the
-                #  ratio is waived when the camera was not turning at all.
+                # Same shape as the position rule: the floor is mandatory, the
+                # ratio is waived when the camera was not turning at all.
                 if turn >= rot_eps and (avg_t < 1e-9 or turn > rot_factor * avg_t):
                     rot_hit = True
             recent_turns.append(turn)
@@ -296,13 +296,13 @@ def detect_cuts(frames, eulers, positions,
         if len(recent_moves) >= pos_min_samples:
             avg = sum(recent_moves) / len(recent_moves)
             ratio = move / avg if avg > pos_min_baseline else float("inf")
-            #  THE FLOOR IS MANDATORY, THE RATIO IS WAIVED WHEN THERE IS NO
-            #  BASELINE. A cut out of a HOLD has a rolling average of zero, so
-            #  requiring `avg >= baseline` first threw those away - measured:
-            #  9 shots found on a 12-shot take, and the three missing ones were
-            #  exactly the three that followed a still camera. When the camera
-            #  was not moving, any move big enough to clear the extent floor is
-            #  a teleport by definition; the floor is doing the work there.
+            # the floor is mandatory, the ratio is waived when there is no
+            # BASELINE. A cut out of a HOLD has a rolling average of zero, so
+            # requiring `avg >= baseline` first threw those away - measured:
+            # 9 shots found on a 12-shot take, and the three missing ones were
+            # exactly the three that followed a still camera. When the camera
+            # was not moving, any move big enough to clear the extent floor is
+            # a teleport by definition; the floor is doing the work there
             if move >= floor and (avg < pos_min_baseline
                                   or move > pos_factor * avg):
                 pos_hit = True
@@ -316,22 +316,22 @@ def detect_cuts(frames, eulers, positions,
                    and math.dist(positions[j + 1], positions[j]) >= floor):
                 j += 1
             skip_until = j
-            #  THE TRANSIT FRAMES BELONG TO NEITHER SHOT.
+            # the transit frames belong to neither shot.
             #
-            #  Frames i..j are the camera IN FLIGHT between two shots. The
-            #  outgoing segment therefore ends at i-1 - its last frame that
-            #  is still honestly the old shot - and the incoming one starts
-            #  at j, the first frame that has arrived. Whatever lies between
-            #  is dropped, and the trimmed outgoing action simply holds its
-            #  final value across it.
+            # Frames i..j are the camera in FLIGHT between two shots. The
+            # outgoing segment therefore ends at i-1 - its last frame that
+            # is still honestly the old shot - and the incoming one starts
+            # at j, the first frame that has arrived. Whatever lies between
+            # is dropped, and the trimmed outgoing action simply holds its
+            # final value across it
             #
-            #  Segments stop being contiguous when that happens, which is
-            #  fine: the caller reads `frames[s] .. frames[e - 1]` per
-            #  segment and never assumes one ends where the next begins.
+            # Segments stop being contiguous when that happens, which is
+            # fine: the caller reads `frames[s] .. frames[e - 1]` per
+            # segment and never assumes one ends where the next begins
             #
-            #  A ONE-FRAME CUT IS THE SAME ARITHMETIC with j == i, giving
-            #  end=i and start=i exactly as before - so the thirteen clean
-            #  cuts in the measured take do not move.
+            # A ONE-FRAME CUT IS THE same ARITHMETIC with j == i, giving
+            # end=i and start=i exactly as before - so the thirteen clean
+            # cuts in the measured take do not move
             seg_ends.append(max(i, seg_starts[-1] + 1))
             seg_starts.append(j)
             last_cut_frame = frames[j]
@@ -351,7 +351,7 @@ def detect_cuts(frames, eulers, positions,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONTINUATION HANDLES
+# CONTINUATION HANDLES
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _sorted_keys(fc):
@@ -392,7 +392,7 @@ def _velocity_multiplier(u, hold=HOLD_FRACTION):
         return 1.0
     span = 1.0 - hold
     t = 0.0 if span <= 1e-9 else min(1.0, max(0.0, (u - hold) / span))
-    #  Quintic: zero 1st AND 2nd derivative at both ends.
+    # quintic: zero 1st and 2nd derivative at both ends
     return 1.0 - (6.0 * t ** 5 - 15.0 * t ** 4 + 10.0 * t ** 3)
 
 
@@ -412,7 +412,7 @@ def _extend_scalar(fc, at_start, frames, table, clamp=None):
     if edge is None or abs(per_frame) < 1e-12:
         return 0.0
     if not at_start and edge.interpolation == "CONSTANT":
-        edge.interpolation = "LINEAR"      # 1.17.3: a shot ending on a held cut key
+        edge.interpolation = "LINEAR"      #1.17.3: a shot ending on a held cut key
     direction = -1.0 if at_start else 1.0
     base_f, base_v = edge.co[0], edge.co[1]
     for i in range(1, frames + 1):
@@ -453,7 +453,7 @@ def _extend_quaternion(fcs, at_start, frames, table):
 
     direction = -1.0 if at_start else 1.0
     if not at_start:
-        for c in range(4):                 # 1.17.3: a shot ending on a held cut key
+        for c in range(4):                 #1.17.3: a shot ending on a held cut key
             if keys[c][i0].interpolation == "CONSTANT":
                 keys[c][i0].interpolation = "LINEAR"
     base_f = keys[0][i0].co[0]
@@ -463,8 +463,8 @@ def _extend_quaternion(fcs, at_start, frames, table):
         step = table[i - 1] - (table[i - 2] if i > 1 else 0.0)
         running = Quaternion(axis, angle * step * direction) @ running
         running.normalize()
-        #  Sign-align or the shortest-path interpolation flips and the camera
-        #  spins the long way round.
+        # sign-align or the shortest-path interpolation flips and the camera
+        # spins the long way round.
         if running.dot(prev_written) < 0.0:
             running = Quaternion([-v for v in running])
         for c in range(4):
@@ -521,7 +521,7 @@ def add_handles(root, cam, fps, seconds=HANDLE_SECONDS, hold=HOLD_FRACTION):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  COLLECTION + DUPLICATION
+# COLLECTION + DUPLICATION
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _get_split_collection():
@@ -541,7 +541,7 @@ def _move_to(obj, target):
         target.objects.link(obj)
 
 
-# Keys exported by SFM do not land on integer frames. Measured on the
+# keys exported by SFM don't land on integer frames. Measured on the
 # corpus: a 24 fps camera take keys at 4.0008, 4.9992, 6.0000, 7.0008 -
 # a drift of about +/-0.0008 of a frame. Anything closer than this to a
 # whole frame was meant to BE that whole frame.        [roadmap #9]
@@ -593,9 +593,9 @@ def _trim_action(action, owner, f_start, f_end, snap=True):
                 "easing": kp.easing,
                 "lt": kp.handle_left_type,
                 "rt": kp.handle_right_type,
-                # Handles are stored RELATIVE to the key, so a snapped
-                # frame carries its handles with it instead of shearing
-                # the tangent by the snap distance.
+                #handles are stored RELATIVE to the key, so a snapped
+                #frame carries its handles with it instead of shearing
+                #the tangent by the snap distance.
                 "ldx": float(kp.handle_left[0]) - float(kp.co[0]),
                 "ldy": float(kp.handle_left[1]) - float(kp.co[1]),
                 "rdx": float(kp.handle_right[0]) - float(kp.co[0]),
@@ -731,7 +731,7 @@ def _dup_hierarchy(axis, root, cam, suffix, collection):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  PUBLIC API
+# public api
 # ──────────────────────────────────────────────────────────────────────────────
 
 def shot_bounds_of(root):
@@ -798,9 +798,9 @@ def split_camera_cuts(selected, rot_eps_deg=ROT_EPSILON_DEG,
     if not frames:
         raise RuntimeError("No rotation_quaternion keyframes on the root empty.")
 
-    # Authoritative data beats inference. Only fall back to detect_cuts when
+    # authoritative data beats inference. Only fall back to detect_cuts when
     # the file never told us, or told us about a single shot that the take
-    # clearly outgrew (one exported clip holding several shots).
+    # clearly outgrew (one exported clip holding several shots)
     source = "detected"
     segs, reasons = [], []
     spans = shot_bounds_of(root) if use_shot_bounds else []
@@ -844,10 +844,10 @@ def split_camera_cuts(selected, rot_eps_deg=ROT_EPSILON_DEG,
             _trim_action(n_cam.data.animation_data.action, n_cam.data,
                          f_start, f_end, snap=snap_frames)
 
-        # [roadmap #9] Look at what the trim actually produced instead of
-        # trusting it. The lens curve is the usual offender: its keys are
-        # not the root's keys, so a range taken from the root can leave the
-        # focal length with nothing at a shot edge.
+        #[roadmap #9] Look at what the trim actually produced instead of
+        #trusting it. The lens curve is the usual offender: its keys are
+        #not the root's keys, so a range taken from the root can leave the
+        #focal length with nothing at a shot edge
         shot_objs = [n_root, n_cam]
         problems = validate_boundaries(shot_objs, f_start, f_end)
         if problems and fix_boundaries:
@@ -862,9 +862,9 @@ def split_camera_cuts(selected, rot_eps_deg=ROT_EPSILON_DEG,
             for msg in problems:
                 problems_total.append(f"shot {k:02d}: {msg}")
 
-        #  Continuation handles LAST, after the trim and the boundary repair -
-        #  they read the velocity at the shot's edge key, so anything that
-        #  moves or adds an edge key has to have happened already.
+        # continuation handles last, after the trim and the boundary repair -
+        # they read the velocity at the shot's edge key, so anything that
+        # moves or adds an edge key has to have happened already
         handle_frames = drift = turn = 0.0
         if handle_seconds > 0.0:
             fps = (bpy.context.scene.render.fps
@@ -911,7 +911,7 @@ def split_camera_cuts(selected, rot_eps_deg=ROT_EPSILON_DEG,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_SplitCameraCuts(Operator):
@@ -930,12 +930,12 @@ found; Camera Shot Report afterwards shows whether any boundary is
 ragged"""
     bl_idname  = "ht.split_camera_cuts"
     bl_label   = "Split Camera Cuts (Intelligent)"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     use_rotation: BoolProperty(
@@ -1112,7 +1112,7 @@ ragged"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU
+# menu
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_MT_utils_camera_submenu(bpy.types.Menu):
@@ -1137,7 +1137,7 @@ def draw_utils_camera_entry(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (

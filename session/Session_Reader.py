@@ -81,23 +81,23 @@ class CameraNotResolved(Exception):
 
 BONE_NAME = re.compile(r"^bone \d+ \((.+)\)$")
 
-# The game-model root transform - the character's world position and
-# orientation. A session names these rootTransform_p / rootTransform_o; an
-# SFM export names them unnamed_p / unnamed_o, which is what
-# Import_DMX_Animation looks for. Renaming keeps root motion alive.
+#The game-model root transform - the character's world position and
+#orientation. A session names these rootTransform_p / rootTransform_o; an
+#SFM export names them unnamed_p / unnamed_o, which is what
+#Import_DMX_Animation looks for. Renaming keeps root motion alive.
 #
-# NOT transform_pos / transform_rot: those are the CAMERA and LIGHT
-# transforms. Mapping those by mistake silently dropped every character's
-# root motion while appearing to work, because bone animation was fine.
-# rootTransform_scale is deliberately left alone - the importer already
-# recognises that name.
+#NOT transform_pos / transform_rot: those are the CAMERA and LIGHT
+#transforms. Mapping those by mistake silently dropped every character's
+#root motion while appearing to work, bc bone animation was fine.
+#rootTransform_scale is deliberately left alone - the importer already
+#recognises that name
 ROOT_CHANNELS = {"rootTransform_p": "unnamed_p",
                  "rootTransform_o": "unnamed_o"}
 
 # A CAMERA set names its transform channels differently again, and
 # Import_DMX_Camera matches channels by NAME SUFFIX (_p, _o, fieldOfView,
 # aperture, focalDistance) - so these have to carry the names SFM's own
-# exporter would have written.
+# exporter would have written
 CAMERA_ROOT_CHANNELS = {"transform_pos": "unnamed_p",
                         "transform_rot": "unnamed_o"}
 
@@ -118,7 +118,7 @@ def plain_bone_name(name):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Reading
+# Reading
 # ─────────────────────────────────────────────────────────────────────────────
 
 def session_fps(root):
@@ -309,14 +309,14 @@ def load_session_model(path):
     except UnicodeDecodeError:
         pass
     except Exception:
-        #  Anything else is a real failure; converting would only hide it.
+        # anything else is a real failure; converting would only hide it
         raise
 
     import tempfile
     from . import Import_Session
     with tempfile.TemporaryDirectory() as tmp:
         text = Import_Session._convert_to_tex(Path(path), tmp)
-        #  _convert_to_tex hands back the TEXT, not a path.
+        # _convert_to_tex hands back the TEXT, not a path
         tex = Path(tmp) / "session_reader.dmx"
         tex.write_text(text, encoding="utf-8")
         print(f"[SESSION]  {Path(path).name} is not UTF-8 - read via dmxconvert")
@@ -343,8 +343,8 @@ def read_session(path):
             duration = float(tf.get("duration") or 0.0)
             start = float(tf.get("start") or 0.0)
 
-    #  Shots FIRST, sets second: each set's channels clip can only be
-    #  resolved safely inside the shot that owns it (see _clip_for_set).
+    # Shots first, sets second: each set's channels clip can only be
+    # resolved safely inside the shot that owns it (see _clip_for_set)
     shot_list = shots(model, fps)
     shot_of = {}
     for sh in shot_list:
@@ -372,53 +372,53 @@ def read_session(path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  SHOTS
+# shots
 # ─────────────────────────────────────────────────────────────────────────────
 #
-#  WHAT A SESSION ACTUALLY CONTAINS, AND WHY IMPORTING ONE WAS ALL-OR-NOTHING
+# what a session actually contains, and why importing one was all-or-nothing
 #  --------------------------------------------------------------------------
-#  Everything in this add-on that finds animation sets does it the same way:
+# Everything in this add-on that finds animation sets does it the same way:
 #
-#      [e for e in model.elements if e.type == "DmeAnimationSet"]
+# [e for e in model.elements if e.type == "DmeAnimationSet"]
 #
-#  On a one-shot session that is exactly right. On a real film it is a
-#  catastrophe, and the measurement is not close:
+# On a one-shot session that's exactly right. On a real film it's a
+# catastrophe, and the measurement is not close:
 #
-#      test session (v1).dmx      1 shot     8 sets      8 elements
-#      new session2.dmx           1 shot    17 sets     17 elements
-#      particlestest.dmx          1 shot    28 sets     28 elements
-#      gothic2 - gomez - v3.dmx  17 shots   21-31 each  706 elements
+# test session (v1).dmx      1 shot     8 sets      8 elements
+# new session2.dmx           1 shot    17 sets     17 elements
+# particlestest.dmx          1 shot    28 sets     28 elements
+# gothic2 - gomez - v3.dmx  17 shots   21-31 each  706 elements
 #
-#  A SET IS PER SHOT, NOT PER SESSION. `gomez` in shot 2 and `gomez` in shot 3
-#  are two DIFFERENT DmeAnimationSet elements carrying two different sets of
-#  channels, because that is how SFM stores a cut. So scanning the element list
-#  on the gothic session finds 706 sets holding 51 distinct NAMES - seventeen
-#  overlapping copies of the same characters, every one of them imported on top
-#  of the last. That is why the workflow has been "strip the DMX down to one
-#  shot first": not a preference, the only thing that works.
+# A SET is PER SHOT, NOT PER SESSION. `gomez` in shot 2 and `gomez` in shot 3
+# are two DIFFERENT DmeAnimationSet elements carrying two different sets of
+# channels, bc that's how SFM stores a cut. So scanning the element list
+# on the gothic session finds 706 sets holding 51 distinct NAMES - seventeen
+# overlapping copies of the same characters, every one of them imported on top
+# of the last. That is why the workflow has been "strip the DMX down to one
+# shot first": not a preference, the only thing that works
 #
-#  WHERE THE SHOTS LIVE
+# WHERE THE SHOTS LIVE
 #  --------------------
-#      root.activeClip                      DmeFilmClip - the MOVIE
-#        .subClipTrackGroup                 DmeTrackGroup, always this name
-#          .tracks -> DmeTrack "Film"       clipType 3
-#            .children -> [DmeFilmClip]     THE SHOTS, in cut order
+# root.activeClip                      DmeFilmClip - the MOVIE
+# .subClipTrackGroup                 DmeTrackGroup, always this name
+# .tracks -> DmeTrack "Film"       clipType 3
+# .children -> [DmeFilmClip]     the SHOTS, in cut order
 #
-#  Each shot carries its own `animationSets`, its own `camera`, and a
-#  `timeFrame` whose `start` is in MOVIE seconds. Measured on all four sessions
-#  above: `subClipTrackGroup` is present every time, and the movie clip's own
-#  `animationSets` list is EMPTY every time - the sets only ever hang off shots.
+# Each shot carries its own `animationSets`, its own `camera`, and a
+# `timeFrame` whose `start` is in MOVIE seconds. Measured on all four sessions
+# above: `subClipTrackGroup` is present every time, and the movie clip's own
+# `animationSets` list is EMPTY every time - the sets only ever hang off shots
 #
-#  THE PROPERTY THAT MAKES THIS SAFE TO ADOPT
+# the property that makes this safe to adopt
 #  ------------------------------------------
-#  On a one-shot session `shot_sets(shots[0])` and "every DmeAnimationSet in
-#  the file" are the SAME SET OF ELEMENTS - verified by identity, not by count,
-#  on all three one-shot sessions. So every consumer can switch to asking a
-#  shot for its sets and nothing changes for anybody who is not affected by the
-#  bug. That is the whole design: no flag, no second code path, no "legacy
-#  mode". A session with one shot has one shot.
+# On a one-shot session `shot_sets(shots[0])` and "every DmeAnimationSet in
+# the file" are the SAME SET OF ELEMENTS - verified by identity, not by count,
+# on all three one-shot sessions. So every consumer can switch to asking a
+# shot for its sets and nothing changes for anybody who is not affected by the
+# bug. That is the whole design: no flag, no second code path, no "legacy
+# mode". A session with one shot has one shot
 
-FILM_TRACK_CLIP_TYPE = 3      # DMX_CLIP_FILM
+FILM_TRACK_CLIP_TYPE = 3      # dmx_clip_film
 
 
 def _tf(element):
@@ -464,9 +464,9 @@ def _film_tracks(clip):
             kids = list(tr.get("children") or [])
             if not kids:
                 continue
-            #  By TYPE of the children, not by the track's name. "Film" is the
-            #  English default and a track can be renamed; a DmeFilmClip child
-            #  is what a shot actually IS.
+            # By TYPE of the children, not by the track's name. "Film" is the
+            # English default and a track can be renamed; a DmeFilmClip child
+            # is what a shot actually is.
             if ctype == FILM_TRACK_CLIP_TYPE or \
                     all(getattr(k, "type", None) == "DmeFilmClip" for k in kids):
                 if tr not in out:
@@ -514,11 +514,11 @@ def shots(model, fps=None):
                 "duration":    dur,
                 "offset":      off,
                 "scale":       scale,
-                #  ROUNDED, NOT TRUNCATED. A shot boundary at 25.625s on a 24
-                #  fps timeline is frame 615.0 exactly; int() on the float that
-                #  comes back as 614.9999 would put the cut one frame early and
-                #  the error would be invisible until two shots disagreed about
-                #  who owns a frame.
+                # ROUNDED, NOT TRUNCATED. A shot boundary at 25.625s on a 24
+                # fps timeline is frame 615.0 exactly; int() on the float that
+                # comes back as 614.9999 would put the cut one frame early and
+                # the error would be invisible until two shots disagreed about
+                # who owns a frame.
                 "frame_start": int(round(start * fps)),
                 "frame_end":   int(round((start + dur) * fps)),
                 "sets":        sets,
@@ -526,7 +526,7 @@ def shots(model, fps=None):
                 "camera":      getattr(cam, "name", None),
                 "camera_element": cam,
                 "synthetic":   False,
-                #  3.0.0: SFM's placeholder cuts - a shot with no animation sets is a slug
+                # 3.0.0: SFM's placeholder cuts - a shot with no animation sets is a slug
                 "slug":        not sets,
                 "map":         str(element.get("mapname") or ""),
             })
@@ -534,8 +534,8 @@ def shots(model, fps=None):
     if out:
         return out
 
-    #  NO FILM TRACK. Present the whole session as one shot rather than
-    #  returning nothing, so no caller needs a special case for it.
+    # no FILM TRACK. Present the whole session as one shot rather than
+    # returning nothing, so no caller needs a special case for it.
     every = [e for e in model.elements if e.type == "DmeAnimationSet"]
     return [{
         "index": 0,
@@ -587,12 +587,12 @@ def shot_time_base(model, shot):
     triples = _clip_time_frames(model, shot)
     variants = sorted(set(triples))
     if triples:
-        #  Most common wins; ties break on the first in file order, which is
-        #  the same rule `shots()` uses for everything else.
+        # most common wins; ties break on the first in file order, which is
+        # the same rule `shots()` uses for everything else
         best = max(variants, key=lambda t: (triples.count(t), -variants.index(t)))
     else:
-        #  A shot with no channels clip at all - a slug. Identity is the only
-        #  honest answer, and it is never used, because a slug has no sets.
+        # A shot with no channels clip at all - a slug. Identity is the only
+        # honest answer, and it is never used, bc a slug has no sets
         best = (0.0, 0.0, 1.0)
 
     c_start, c_off, c_scale = best
@@ -602,12 +602,12 @@ def shot_time_base(model, shot):
         shot_local = (float(movie_seconds) - s_start) * s_scale + s_off
         return (shot_local - c_start) * c_scale + c_off
 
-    #  AGREEMENT IS ABOUT THE MAPPING, NOT THE NUMBERS. gman1 writes
-    #  `(-5.0, -0.0417)` where its twelve shot-mates write `(-4.9583, 0.0)`,
-    #  and those are the SAME affine map. Comparing the triples flags that as
-    #  a disagreement and sends somebody looking for a bug in the one file
-    #  that is behaving. Compare what the triples DO - two points settle an
-    #  affine map - and only differ when the result differs.
+    # AGREEMENT IS ABOUT THE MAPPING, not THE NUMBERS. gman1 writes
+    # `(-5.0, -0.0417)` where its twelve shot-mates write `(-4.9583, 0.0)`,
+    # and those are the SAME affine map. Comparing the triples flags that as
+    # a disagreement and sends somebody looking for a bug in the one file
+    # that is behaving. Compare what the triples do - two points settle an
+    # affine map - and only differ when the result differs
     def _map_of(t):
         cs, co, csc = t[0], t[1], (t[2] or 1.0)
         return (round((0.0 - cs) * csc + co, 6),
@@ -623,9 +623,9 @@ def shot_time_base(model, shot):
         "variants": variants,
         "clip_tf": best,
         "shot_tf": (s_start, s_off, s_scale),
-        #  What the whole mapping amounts to at movie second 0, in seconds.
-        #  Only meaningful when both scales are 1, which they are in every
-        #  session measured - it is for the report line, not for the maths.
+        # what the whole mapping amounts to at movie second 0, in seconds.
+        # Only meaningful when both scales are 1, which they are in every
+        # session measured - it's for the report line, not for the maths.
         "offset_seconds": to_raw(0.0),
     }
 
@@ -754,7 +754,7 @@ def shot_for_span(shot_list, movie_start, movie_duration=0.0):
     lo = float(movie_start)
     hi = lo + max(0.0, float(movie_duration))
     if hi <= lo:
-        hi = lo + 1e-6          # a zero-length clip still sits somewhere
+        hi = lo + 1e-6          #a zero-length clip still sits somewhere
 
     scored = []
     for s in shot_list:
@@ -839,7 +839,7 @@ def report_lines(info, max_sets=30):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Re-emitting an export-shaped DMX
+# Re-emitting an export-shaped DMX
 # ─────────────────────────────────────────────────────────────────────────────
 
 def extract_set(info, entry, out_path, rebase=True, rename_bones=True):
@@ -867,7 +867,7 @@ def extract_set(info, entry, out_path, rebase=True, rename_bones=True):
 
     # Bone DAG names must match an armature imported from the same model,
     # so strip SFM's "bone N (...)" decoration. This mutates the loaded
-    # session in memory only - it is discarded after the write.
+    # session in memory only - it's discarded after the write.
     if rename_bones:
         def walk(node, seen):
             if node is None or id(node) in seen:
@@ -888,9 +888,9 @@ def extract_set(info, entry, out_path, rebase=True, rename_bones=True):
             if nm:
                 b.name = plain_bone_name(nm)
 
-    # The root game-model transform: exports name these unnamed_p/unnamed_o
+    # the root game-model transform: exports name these unnamed_p/unnamed_o
     # and the importer keys them onto the root empty. Rename so that the
-    # existing code path recognises them.
+    # existing code path recognises them
     for ch in channels:
         nm = getattr(ch, "name", None)
         if nm in ROOT_CHANNELS:
@@ -902,8 +902,8 @@ def extract_set(info, entry, out_path, rebase=True, rename_bones=True):
     # with its shot, the Szturm-camera correction when it does not (see
     # clip_base_shift).
     lo = entry["time_lo"] or 0.0
-    #  1.17.0: timeline_shift = clip_base_shift + the shot's placement on
-    #  SFM's movie clock (see WHERE A SHOT LANDS).
+    #1.17.0: timeline_shift = clip_base_shift + the shot's placement on
+    #SFM's movie clock (see WHERE A SHOT LANDS).
     start = -lo if rebase else timeline_shift(info, entry)
     hi = entry["time_hi"] or 0.0
 
@@ -919,25 +919,25 @@ def extract_set(info, entry, out_path, rebase=True, rename_bones=True):
     # DECLARE WHAT WAS ACTUALLY WRITTEN, NOT WHAT SFM WRITES.
     #
     # A genuine SFM export says upAxis = 'Y', and this used to copy that
-    # because matching the export exactly looked like the safe choice. It is
+    # bc matching the export exactly looked like the safe choice. It is
     # not. SFM's EXPORTER converts to Y-up on the way out; the DAG transforms
     # copied here come straight out of the live session, which is ordinary
     # Source Z-up. Saying 'Y' asks the importer to correct data that needs no
     # correcting, and the character arrives lying on the ground.
     #
     # Measured on one scout rig, pelvis -> head:
-    #     genuine export  , corrected   : (-0.038,  0.030,  0.999)  upright
-    #     genuine export  , uncorrected : (-0.038,  0.999, -0.030)  on its side
-    #     session extract , corrected   : ( 0.008, -1.000,  0.000)  on its side
-    #     session extract , uncorrected : ( 0.008,  0.000,  1.000)  upright
+    # genuine export  , corrected   : (-0.038,  0.030,  0.999)  upright
+    # genuine export  , uncorrected : (-0.038,  0.999, -0.030)  on its side
+    # session extract , corrected   : ( 0.008, -1.000,  0.000)  on its side
+    # session extract , uncorrected : ( 0.008,  0.000,  1.000)  upright
     #
     # This is why a scene could arrive half upright and half flat: exported
     # animations and session-extracted ones were being told the same thing and
-    # only one of them was hurt by it.
+    # only one of them was hurt by it
     skeleton["upAxis"] = "Z"
-    # Genuine exports leave both of these EMPTY - verified against
-    # binder.dmx - so this matches, it does not cut a corner. BST rebuilds
-    # the skeleton from the DAG tree.
+    # genuine exports leave both of these EMPTY - verified against
+    # binder.dmx - so this matches, it doesn't cut a corner. BST rebuilds
+    # the skeleton from the DAG tree
     skeleton["jointList"] = dm.make_array([], dm.Element)
     skeleton["baseStates"] = dm.make_array([], dm.Element)
     skeleton["children"] = dm.make_array(
@@ -1045,11 +1045,11 @@ def _camera_of(model, clip, set_name=None):
     cams = [e for e in model.elements if e.type == "DmeCamera"]
 
     # 1b. a channel that drives a camera's TRANSFORM - the movement channels
-    #     (transform_pos / transform_rot) target the DmeTransform, not the
-    #     camera, so route 1 misses an animated camera whose value channels
-    #     are all behind operators. Identity again, never name: the Gomez
-    #     session holds 95 DmeCameras and thirty of them are called
-    #     "camera2".
+    # (transform_pos / transform_rot) target the DmeTransform, not the
+    # camera, so route 1 misses an animated camera whose value channels
+    # are all behind operators. Identity again, never name: the Gomez
+    # session holds 95 DmeCameras and thirty of them are called
+    # "camera2"
     by_transform = {id(c.get("transform")): c for c in cams
                     if c.get("transform") is not None}
     for ch in (clip.get("channels") or []):
@@ -1057,14 +1057,14 @@ def _camera_of(model, clip, set_name=None):
         if to is not None and id(to) in by_transform:
             return by_transform[id(to)]
 
-    # 2. a camera named after the set - SFM names them in step
+    #2. a camera named after the set - SFM names them in step
     if set_name:
         want = str(set_name).strip().lower()
         for c in cams:
             if (c.name or "").strip().lower() == want:
                 return c
 
-    # 3. an unambiguous session with exactly one camera
+    #3. an unambiguous session with exactly one camera
     return cams[0] if len(cams) == 1 else None
 
 
@@ -1112,7 +1112,7 @@ def clip_base_shift(info, entry, _cache={}):
     c_s, _d, c_o, c_scale = _tf(clip)
     C_s, C_o, C_scale = ref
     if abs((c_scale or 1.0) - 1.0) > 1e-6 or abs((C_scale or 1.0) - 1.0) > 1e-6:
-        #  A scaled clip needs the full affine treatment; none measured yet.
+        # A scaled clip needs the full affine treatment; none measured yet
         print(f"[EXTRACT]  {entry.get('name')}: scaled timeFrame - "
               f"base shift skipped")
         return 0.0
@@ -1161,8 +1161,8 @@ def extract_camera_set(info, entry, out_path):
     for ch in (clip.get("channels") or []):
         name = ch.name or ""
 
-        # the 0-key mirror channels SFM keeps between the operator and the
-        # camera - they carry nothing and their names match nothing
+        #the 0-key mirror channels SFM keeps between the operator and the
+        #camera - they carry nothing and their names match nothing
         if name.startswith("scaled_") and name.endswith("_channel"):
             continue
 
@@ -1205,10 +1205,10 @@ def extract_camera_set(info, entry, out_path):
     anim["channels"] = dm.make_array(kept, dm.Element)
     anim["frameRate"] = float(fps)
     tf = out.add_element("timeFrame", "DmeTimeFrame")
-    #  NOT 0.0 ANY MORE: the shift that puts this clip's raw times on the
-    #  same timeline as its shot-mates - see clip_base_shift(). Zero for
-    #  every clip that agrees with its shot, which is every set in every
-    #  session measured before the Gomez one.
+    # not 0.0 ANY MORE: the shift that puts this clip's raw times on the
+    # same timeline as its shot-mates - see clip_base_shift(). Zero for
+    # every clip that agrees with its shot, which is every set in every
+    # session measured before the Gomez one.
     tf["start"] = dm.Time(timeline_shift(info, entry))         # 1.17.0
     tf["duration"] = dm.Time(max(0.0, hi_t - lo_t))
     tf["offset"] = dm.Time(0.0)
@@ -1273,9 +1273,9 @@ def extract_session(path, out_dir=None, rebase=True, only_animated=True,
         shot, shot_note = Session_Paths.resolve_shot(
             info["shots"], index=shot_index, name=shot_name)
 
-    #  FILTER FIRST, THEN "only animated". The other order asks "is this set
-    #  animated anywhere in the film" and keeps a set that moves in some OTHER
-    #  cut but is a single static key in this one.
+    #FILTER FIRST, THEN "only animated". The other order asks "is this set
+    #animated anywhere in the film" and keeps a set that moves in some OTHER
+    #cut but is a single static key in this one
     sets = sets_for_shot(info, shot)
     if only_animated:
         sets = [e for e in sets if e["bones"] or e["flex"]]
@@ -1284,8 +1284,8 @@ def extract_session(path, out_dir=None, rebase=True, only_animated=True,
         sets = [s for s in sets if needle in s["name"].lower()]
 
     written, skipped, failed = [], [], []
-    #  1.26.0 SKIP HIDDEN OBJECTS: {set name: what hides it} - no file, so no
-    #  animation and no camera for a set SFM hides.
+    # 1.26.0 SKIP HIDDEN OBJECTS: {set name: what hides it} - no file, so no
+    # animation and no camera for a set SFM hides
     if skip_names:
         for s in sets:
             if s["name"] in skip_names:
@@ -1325,11 +1325,11 @@ def extract_session(path, out_dir=None, rebase=True, only_animated=True,
         # world origin with no rotation while every animated character around it
         # gets the SFM -> Blender map. In `new session.dmx` that left `pit_a1` -
         # the ground the whole shot stands on - exactly 90 degrees out from the
-        # six characters on top of it.
+        # six characters on top of it
         #
-        # So it is written like any other set. One key per channel is a shape
+        # So it's written like any other set. One key per channel is a shape
         # the importer already handles; it just lands as placement instead of
-        # motion.
+        # motion
         static = (entry["time_lo"] is not None
                   and abs(entry["time_hi"] - entry["time_lo"]) < 1e-9)
         target = out_dir / f"{safe_name(entry['name'])}.dmx"
@@ -1346,7 +1346,7 @@ def extract_session(path, out_dir=None, rebase=True, only_animated=True,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operators
+# Operators
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_session_shots(Operator):
@@ -1396,8 +1396,8 @@ which is exactly what importing it already does today"""
         sl = info["shots"]
         lines = shot_lines(info, sl)
 
-        #  The per-shot set names go to the console and the Text block only -
-        #  seventeen shots times twenty-four names is not a popup.
+        # the per-shot set names go to the console and the Text block only -
+        # seventeen shots times twenty-four names isn't a popup.
         full = list(lines) + ["", "── SETS PER SHOT " + "─" * 40]
         for s in sl:
             full.append(f"  {s['index'] + 1:>3}. {s['name']}")
@@ -1544,9 +1544,9 @@ matters"""
 
     def invoke(self, context, event):
         from . import Session_Paths
-        # Default beside the session, not into whatever folder happens to be
+        # default beside the session, not into whatever folder happens to be
         # connected - the extracted files belong with the file they came out
-        # of, and that keeps a re-extract idempotent.
+        # of, and that keeps a re-extract idempotent
         p = Session_Paths.session_file(context.scene)
         if p is not None:
             self.directory = str(default_out_dir(p))

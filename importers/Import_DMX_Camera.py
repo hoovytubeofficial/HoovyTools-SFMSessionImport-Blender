@@ -56,16 +56,16 @@ from ..core import camera_resample as CR
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MODULE CONSTANTS
+# module constants
 # ──────────────────────────────────────────────────────────────────────────────
 
 LENS_MODE = "SFM"
 
 LENS_OFFSET_MM = 10.0
 
-# Camera near/far clip presets, chosen per import scale (hand-tuned, not a single
-# formula). Each entry: scale -> (clip_start_m, clip_end_m). For other scales the
-# nearest preset by scale is used.
+#camera near/far clip presets, chosen per import scale (hand-tuned, not a single
+#formula). Each entry: scale -> (clip_start_m, clip_end_m). For other scales the
+#nearest preset by scale is used
 CLIP_PRESETS = {
     1.0:     (1.0,   150000.0),
     0.01905: (0.01,  1000.0),
@@ -77,15 +77,15 @@ def _clip_range_for_scale(scale: float):
     nearest = min(CLIP_PRESETS, key=lambda s: abs(s - scale))
     return CLIP_PRESETS[nearest]
 
-# Single-camera imports go in the blue collection; intelligent-split imports go
-# in the purple plural collection.
-COLLECTION_SINGLE = "___HoovyTools Camera___"     # blue
-COLOR_SINGLE      = "COLOR_05"   # blue
+# single-camera imports go in the blue collection; intelligent-split imports go
+# in the purple plural collection
+COLLECTION_SINGLE = "___HoovyTools Camera___"     #blue
+COLOR_SINGLE      = "COLOR_05"   #blue
 
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  DATAMODEL LOADER
+# datamodel loader
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _get_datamodel():
@@ -95,7 +95,7 @@ def _get_datamodel():
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  KEYFRAME HELPERS  (same as Import_DMX_Animation)
+# KEYFRAME HELPERS  (same as Import_DMX_Animation)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _fc(bag, data_path, index, group):
@@ -110,7 +110,7 @@ def _key(bag, data_path, index, group, frame, value, interp="LINEAR"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  HIERARCHY BUILDERS
+# HIERARCHY BUILDERS
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _get_or_create_axis_empty(cam_name: str, collection) -> bpy.types.Object:
@@ -200,7 +200,7 @@ def _get_or_create_camera(cam_name: str, root_empty, collection,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FOV → LENS CONVERSION  (same formula as camera_loader.py)
+# FOV → LENS CONVERSION  (same formula as camera_loader.py)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _fov_to_lens(fov_degrees: float, sensor_width: float = 36.0) -> float:
@@ -227,16 +227,16 @@ def _lens_for(fov_degrees: float, mode: str, offset: float) -> float:
     return max(1.0, _fov_to_lens_sfm(fov_degrees))
 
 
-# Aperture mapping (SFM aperture -> Blender DOF f-stop), exponential fit.
-#   f = 2.8 * exp(-k * aperture),  k chosen so SFM 10 -> f/0.075.
-#   Exact at SFM 0 (f/2.8) and SFM 10 (f/0.075); diverges past ~20.
+# Aperture mapping (SFM aperture -> Blender DOF f-stop), exponential fit
+# f = 2.8 * exp(-k * aperture),  k chosen so SFM 10 -> f/0.075.
+# Exact at SFM 0 (f/2.8) and SFM 10 (f/0.075); diverges past ~20.
 _APERTURE_F0 = 2.8
 _APERTURE_K  = -math.log(0.075 / 2.8) / 10.0   # ~0.36199
 
 def _aperture_to_fstop(aperture: float) -> float:
     """Convert SFM camera aperture to Blender DOF f-stop (exponential fit)."""
     f = _APERTURE_F0 * math.exp(-_APERTURE_K * float(aperture))
-    # Blender requires f-stop > 0; clamp to a tiny positive floor.
+    #Blender requires f-stop > 0; clamp to a tiny positive floor
     return max(f, 1e-4)
 
 
@@ -246,7 +246,7 @@ def _focal_distance(value: float, scale: float = 1.0) -> float:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  QUATERNION FLIP FIX
+# quaternion flip fix
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _fix_quaternion_flips(action, owner) -> int:
@@ -296,7 +296,7 @@ def _fix_quaternion_flips(action, owner) -> int:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CORE IMPORT
+# core import
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _get_or_create_collection(name: str, color_tag: str) -> bpy.types.Collection:
@@ -371,15 +371,15 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
     if camera_info is None:
         raise RuntimeError("No 'camera' element found in DMX root")
 
-    # Always use the filename stem as the unique identifier — SFM often gives
+    # always use the filename stem as the unique identifier — SFM often gives
     # every camera the same internal name (e.g. "camera"), which would cause
-    # _get_or_create_camera to reuse the same object for every file in a batch.
+    # _get_or_create_camera to reuse the same object for every file in a batch
     cam_name = dmx_path.stem or camera_info.name
     fov_static  = camera_info.get("fieldOfView", 75.0)
 
     # ── Resolve animation clip ────────────────────────────────────────────────
     # SFM writes either a top-level 'channelsClip' or nests it inside
-    # 'animationList'. Mirror camera_loader.py's fallback logic.
+    # 'animationList'. Mirror camera_loader.py's fallback logic
     if "channelsClip" in scene:
         clip = scene["channelsClip"]
     elif "animationList" in scene:
@@ -397,24 +397,24 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
     def frame_for(t):
         return (float(t) + start) * fps
 
-    # ── Build hierarchy ───────────────────────────────────────────────────────
+    #── Build hierarchy ───────────────────────────────────────────────────────
     target_col = collection or _get_or_create_collection(COLLECTION_SINGLE, COLOR_SINGLE)
     axis_empty  = _get_or_create_axis_empty(cam_name, target_col)
     root_empty  = _get_or_create_root_empty(cam_name, axis_empty, target_col)
 
-    # Camera keeps identity local rotation (no static aim offset).
+    # camera keeps identity local rotation (no static aim offset).
     local_align = None
 
     camera_obj  = _get_or_create_camera(cam_name, root_empty, target_col,
                                         local_align=local_align)
 
-    #  THE NAME SFM KNOWS IT BY, KEPT SEPARATELY.
-    #  The Blender objects are named after the FILE stem, deliberately - SFM
-    #  gives nearly every camera the same internal name ("camera"), so naming
-    #  from the element would collapse a whole batch onto one object. But that
-    #  means the name the user typed in SFM is nowhere in the scene, and
-    #  anything matching on it - the Developer tab's auto-split, a report, a
-    #  search - would never find it. Stamp it on all three so it survives.
+    # the name sfm knows it by, kept separately.
+    # The Blender objects are named after the FILE stem, deliberately - SFM
+    # gives nearly every camera the same internal name ("camera"), so naming
+    # from the element would collapse a whole batch onto one object. But that
+    # means the name the user typed in SFM is nowhere in the scene, and
+    # anything matching on it - the Developer tab's auto-split, a report, a
+    # search - would never find it. Stamp it on all three so it survives
     sfm_name = str(getattr(camera_info, "name", "") or "")
     for _obj in (axis_empty, root_empty, camera_obj):
         _obj["ht_sfm_name"] = sfm_name
@@ -430,12 +430,12 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
         camera_data.sensor_width = 36.0
     camera_data.lens = _lens_for(fov_static, _mode, _offset)
 
-    # Near/far clip planes, chosen by import scale.
+    # near/far clip planes, chosen by import scale
     clip_start, clip_end = _clip_range_for_scale(scale)
     camera_data.clip_start = clip_start
     camera_data.clip_end   = clip_end
 
-    # ── Create actions ────────────────────────────────────────────────────────
+    #── Create actions ────────────────────────────────────────────────────────
     root_action, root_bag = make_action(f"{cam_name}_root", root_empty)
     root_empty.rotation_mode = "QUATERNION"
 
@@ -466,9 +466,9 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
             print(f"[DMX_CAM]  ch '{ch_name}' log read failed: {e}")
             continue
 
-        # ── Position  (camera_loader.py formula — verified correct for cameras) ──
-        # SFM (x, y, z) → Blender (y, -x, z)
-        # Cameras use a different axis mapping than armature root transforms.
+        #── Position  (camera_loader.py formula — verified correct for cameras) ──
+        #SFM (x, y, z) → Blender (y, -x, z)
+        #Cameras use a different axis mapping than armature root transforms
         if ch_name.endswith("_p"):
             if fix_quat_flips:
                 # smooth path — original behaviour, key fractional sample times.
@@ -483,8 +483,8 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
                 # reasoning as orientation: keeps smooth moves smooth while a cut
                 # stays a near-vertical one-frame jump, and guarantees a keyframe
                 # on every whole frame so between-frame cuts aren't skipped.
-                #  1.17.3: core/camera_resample - the same linear in-between,
-                #  except at a cut pair (never blended; the frame before it held).
+                # 1.17.3: core/camera_resample - the same linear in-between,
+                # except at a cut pair (never blended; the frame before it held)
                 psamples = [(frame_for(t), (float(v[1]) * scale, -float(v[0]) * scale,
                                             float(v[2]) * scale))
                             for t, v in zip(times, values)]
@@ -496,13 +496,13 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
                         _key(root_bag, "location", i, group,
                              frame, loc[i], interp=hold)
 
-        # ── Orientation  (camera_loader.py formula — verified correct for cameras) ──
-        # Component reorder: DMX (x,y,z,w) → Quaternion(y, w, x, z)
+        #── Orientation  (camera_loader.py formula — verified correct for cameras) ──
+        #Component reorder: DMX (x,y,z,w) → Quaternion(y, w, x, z)
         elif ch_name.endswith("_o"):
             if fix_quat_flips:
                 # smooth/fixed path — mathutils canonicalises + LINEAR ramps,
-                # aligned per-key by rotate(); flip-fix pass runs later.
-                #  1.17.3: walked BEFORE keying, like every other path
+                # aligned per-key by rotate(); flip-fix pass runs later
+                # 1.17.3: walked before keying, like every other path
                 ssamples = []
                 for t, v in zip(times, values):
                     quat = Quaternion((float(v[1]), float(v[3]),
@@ -545,7 +545,7 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
                 # interpolation, same as rotation/position, so lens keyframes
                 # land on whole frames (a focal-length change between frames
                 # otherwise gets no keyframe on a whole frame). Interpolate FOV
-                # then convert to lens per frame.
+                # then convert to lens per frame
                 lkeys, linfo = CR.resample_values(
                     [(frame_for(t), float(v)) for t, v in zip(times, values)])  # FOV degrees
                 for frame, fov in lkeys:
@@ -590,17 +590,17 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
                          interp="CONSTANT" if frame in dinfo["cuts"] else "LINEAR")
 
     # ── Quaternion flip fix ──────────────────────────────────────────────────
-    #  ON BOTH PATHS SINCE 1.16.0. `fix_quat_flips` picks smooth vs raw, and
-    #  the hemisphere fix used to ride along with "smooth" only - so the raw
-    #  path, the one a session import uses, kept every sign flip SFM wrote.
-    #  Measured on the CSdeals session: camera wood_planks4 turned 1183
-    #  degrees inside frame 368 (one flip between two whole-frame keys,
-    #  LINEAR, so the in-between went the long way - which is what motion
-    #  blur and a scrub actually show). Negating a key is the SAME
-    #  orientation and moves nothing in time, so it cannot soften a cut; it
-    #  only stops the path between keys from going round the back.
-    #  1.17.3: the samples were walked BEFORE the resample, so this finds
-    #  nothing on a fresh import - it stays as the belt to those braces.
+    # ON both PATHS SINCE 1.16.0. `fix_quat_flips` picks smooth vs raw, and
+    # the hemisphere fix used to ride along with "smooth" only - so the raw
+    # path, the one a session import uses, kept every sign flip SFM wrote.
+    # Measured on the CSdeals session: camera wood_planks4 turned 1183
+    # degrees inside frame 368 (one flip between two whole-frame keys,
+    # LINEAR, so the in-between went the long way - which is what motion
+    # blur and a scrub actually show). Negating a key is the same
+    # orientation and moves nothing in time, so it cannot soften a cut; it
+    # only stops the path between keys from going round the back
+    # 1.17.3: the samples were walked before the resample, so this finds
+    # nothing on a fresh import - it stays as the belt to those braces
     quat_flips = _fix_quaternion_flips(root_action, root_empty)
 
     # ── Finalise F-curves ─────────────────────────────────────────────────────
@@ -612,14 +612,14 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
 
     # ── Stamp what the FILE said, for tools that run later ───────────────
     #
-    #  ShotBoundsChannel is a DmeBoolLog that SFM writes: it flips true while
-    #  a shot is live. That makes it an AUTHORITATIVE shot range - we are not
-    #  inferring it from motion. The camera splitter would otherwise have to
-    #  guess cuts from rotation and position spikes, so stash the real answer
-    #  on the root empty where it survives into the .blend.
+    # ShotBoundsChannel is a DmeBoolLog that SFM writes: it flips true while
+    # a shot is live. That makes it an AUTHORITATIVE shot range - we are not
+    # inferring it from motion. The camera splitter would otherwise have to
+    # guess cuts from rotation and position spikes, so stash the real answer
+    # on the root empty where it survives into the .blend
     #
-    #  Custom properties take plain Python types, so the spans go in as a
-    #  flat list of floats, two per shot.
+    # Custom properties take plain Python types, so the spans go in as a
+    # flat list of floats, two per shot
     try:
         from ..core import DMX_Analyzer
         spans = DMX_Analyzer.read_shot_bounds(clip, frame_for)
@@ -656,10 +656,10 @@ def import_dmx_camera(dmx_path, scale: float = 1.0, fix_quat_flips: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
-@start_folders.browser_at("camera")          # 3.0.0: opens where you work, learns your folder
+@start_folders.browser_at("camera")          #3.0.0: opens where you work, learns your folder
 class HT_OT_ImportDmxCamera(Operator, ImportHelper):
     """PICK .dmx (camera) - ONE SFM camera export, not a session
 
@@ -682,30 +682,30 @@ THE LENS IS SFM'S FRAMING (1.18.2)
   and you get the same file. The old lens (minus a 10 mm fudge)
   is Lens: Legacy.
     """
-    #  BELOW THE TOOLTIP CAP. Blender truncates an operator description
-    #  at 1023 characters, without a warning, mid-word. These paragraphs
-    #  were part of the docstring and were already being cut off before
-    #  anyone could read them, so they live here instead - kept, but out
-    #  of the tooltip's budget.
-    #  FROM A SESSION, camera settings are normalised 0..1 values behind rescale
-    #  operators, so extraction converts them; a raw read would give you a
-    #  0.2 degree camera
+    # BELOW the TOOLTIP CAP. Blender truncates an operator description
+    # at 1023 characters, without a warning, mid-word. These paragraphs
+    # were part of the docstring and were already being cut off before
+    # anyone could read them, so they live here instead - kept, but out
+    # of the tooltip's budget
+    # FROM A SESSION, camera settings are normalised 0..1 values behind rescale
+    # operators, so extraction converts them; a raw read would give you a
+    # 0.2 degree camera
     #
 
     bl_idname  = "ht.import_dmx_camera"
     bl_label   = "DMX Camera"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filename_ext = ".dmx"
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})
 
-    # [roadmap #1] same precision fix as the animation importers.
+    # [roadmap #1] same precision fix as the animation importers
     scale: FloatProperty(**Common_Props.scale_prop(
         name="Scale",
         description=("World scale - match to your session import scale. "
@@ -788,7 +788,7 @@ THE LENS IS SFM'S FRAMING (1.18.2)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU ITEM
+# menu item
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -809,7 +809,7 @@ def draw_menu_item(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (HT_OT_ImportDmxCamera,)

@@ -71,10 +71,10 @@ from bpy.types import Operator, PropertyGroup
 from bpy.props import BoolProperty
 
 
-#  Blender's own report levels. These three are the only ones used anywhere in
-#  the add-on, and Blender already colours them: INFO neutral, WARNING amber,
-#  ERROR red. That colouring is the reason this module no longer paints any of
-#  its own.
+# Blender's own report levels. These three are the only ones used anywhere in
+# the add-on, and Blender already colours them: INFO neutral, WARNING amber,
+# ERROR red. That colouring is the reason this module no longer paints any of
+# its own
 LEVELS = ('INFO', 'WARNING', 'ERROR')
 
 LEVEL_ICONS = {
@@ -85,16 +85,16 @@ LEVEL_ICONS = {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The switches
+# The switches
 # ─────────────────────────────────────────────────────────────────────────────
 #
-#  One entry per popup in the add-on. The KEY is what call sites pass; it is
-#  also the property name, so it must be a valid Python identifier and it must
-#  not change once shipped - a renamed key silently resets a user's choice.
+# One entry per popup in the add-on. The KEY is what call sites pass; it's
+# also the property name, so it must be a valid Python identifier and it must
+# not change once shipped - a renamed key silently resets a user's choice.
 #
-#  Anything that reports without a key registered here still works: it prints,
-#  it reports, and its popup is shown (unknown keys default to ON). Registering
-#  the key is what gives it a switch in the panel.
+# Anything that reports w/o a key registered here still works: it prints,
+# it reports, and its popup is shown (unknown keys default to ON). Registering
+# the key is what gives it a switch in the panel
 
 REPORTS = (
     # key                     label                     description
@@ -122,9 +122,9 @@ REPORTS = (
     ("session_locks",         "Session Locks",          "What the session attaches to what"),
     ("session_extract",       "Session Extract",        "Writing the anims/ folder out of a session"),
     ("dmx_analyzer",          "DMX Analyzer",           "The DMX file analysis report"),
-    #  OFF BY DEFAULT - see DEFAULT_OFF. Blender Source Tools raises its own
-    #  blocking dialog for every bone an animation names that the rig lacks,
-    #  and a session import runs it once per model.
+    # OFF BY DEFAULT - see DEFAULT_OFF. Blender Source Tools raises its own
+    # blocking dialog for every bone an animation names that the rig lacks,
+    # and a session import runs it once per model
     ("smd_warnings",          "Source Tools Warnings",  "Blender Source Tools' own error/warning dialog, raised once per imported file"),
     ("camera_tools",          "Camera Tools",           "Camera handles, splitting and extension"),
     ("shapekey_proxy",        "Shape Key Proxy",        "The proxy built when facial data has no rig"),
@@ -156,9 +156,9 @@ def _switch_changed(self, context):
     _persist(self)
 
 
-#  Report keys that ship with their dialog OFF. A report is only in here
-#  because it is raised by something OTHER than this add-on and fires per
-#  file rather than per action.
+# report keys that ship with their dialog OFF. A report is only in here
+# bc it is raised by something OTHER than this add-on and fires per
+# file rather than per action
 DEFAULT_OFF = frozenset({"smd_warnings"})
 
 
@@ -244,7 +244,7 @@ def log_prefs(context=None):
     return getattr(scene, "ht_logs", None)
 
 
-#  Scenes whose block has already been synced from the file this session.
+# scenes whose block has already been synced from the file this session
 _synced = set()
 
 
@@ -254,9 +254,9 @@ def popup_enabled(context, key):
     p = prefs(context)
     if p is None or key is None:
         return True
-    #  SYNC ON FIRST ASK, ONCE PER SCENE. Registration can only reach the
-    #  scene that exists at the time; open another .blend and its block is
-    #  fresh with everything on, which is the setting appearing not to stick.
+    # SYNC ON first ASK, ONCE PER SCENE. Registration can only reach the
+    # scene that exists at the time; open another .blend and its block is
+    # fresh with everything on, which is the setting appearing not to stick.
     try:
         ident = id(p.id_data)
         if ident not in _synced:
@@ -276,9 +276,9 @@ def all_popups_off(context=None):
     return bool(getattr(p, MASTER_KEY, False)) if p is not None else False
 
 
-#  Scenes whose LOG block has been synced from the file this session. Separate
-#  from _synced: the two blocks sync from different files, and sharing the set
-#  would mean whichever is asked first silently skips the other's sync.
+#scenes whose LOG block has been synced from the file this session. Separate
+#from _synced: the two blocks sync from different files, and sharing the set
+#would mean whichever is asked first silently skips the other's sync.
 _log_synced = set()
 
 
@@ -333,27 +333,27 @@ def load_switches(scene=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Quiet scope
+# Quiet scope
 # ─────────────────────────────────────────────────────────────────────────────
 
 _quiet_depth = 0
 _collected = []
 
-#  EVERY REPORT THE ADD-ON EMITS, LAST 80, IN MEMORY ONLY.
+#EVERY REPORT THE ADD-ON EMITS, LAST 80, IN MEMORY ONLY.
 #
-#  This exists for one thing: `Print Addon Behavior` writes a troubleshooting
-#  file, and a file listing only the CONFIGURATION answers "what is installed"
-#  when the question is always "what happened". A user who can say "it printed
-#  55 models then errored on step 3" is describing the bug; a user who can say
-#  "SourceIO is enabled" is not.
+#This exists for one thing: `Print Addon Behavior` writes a troubleshooting
+#file, and a file listing only the CONFIGURATION answers "what is installed"
+#when the question is always "what happened". A user who can say "it printed
+#55 models then errored on step 3" is describing the bug; a user who can say
+#"SourceIO is enabled" isn't
 #
-#  A RING, NOT A LOG. Nothing is written to disk until someone asks for it, so
-#  an add-on that is merely running costs no I/O and leaves nothing behind. 80
-#  is about two full session imports, which is as far back as anyone has ever
-#  needed to look.
+#A RING, not A LOG. Nothing is written to disk until someone asks for it, so
+#an add-on that's merely running costs no I/O and leaves nothing behind. 80
+#is about two full session imports, which is as far back as anyone has ever
+#needed to look
 #
-#  Cleared on unregister, so re-enabling the add-on starts a clean history and
-#  a stale entry can never outlive the code that wrote it.
+#Cleared on unregister, so re-enabling the add-on starts a clean history and
+#a stale entry can never outlive the code that wrote it
 from collections import deque
 _HISTORY = deque(maxlen=80)
 
@@ -395,7 +395,7 @@ def is_quiet():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The one entry point
+# The one entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _summarise(title, lines, limit=140):
@@ -410,25 +410,25 @@ def _summarise(title, lines, limit=140):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  THE LOG FILE
+# THE LOG FILE
 # ──────────────────────────────────────────────────────────────────────────────
 #
-#  Everything this add-on says goes through `report()`, which is the reason it
-#  is worth being the only reporting call an operator makes - one function to
-#  change and every step, every importer and every check starts writing itself
-#  down. The console already has all of it; the console is also gone the
-#  moment Blender closes, and a user reporting a problem cannot paste it.
+# Everything this add-on says goes thru `report()`, which is the reason it
+# is worth being the only reporting call an operator makes - one function to
+# change and every step, every importer and every check starts writing itself
+# down. The console already has all of it; the console is also gone the
+# moment Blender closes, and a user reporting a problem can't paste it.
 #
-#  ONE FILE PER BLENDER RUN, named at import time. Appending to a single
-#  rolling file means two Blenders open at once interleave their lines into
-#  something neither of them did, and the timestamp is what makes "the run
-#  where it broke" findable at all.
+# one FILE PER BLENDER RUN, named at import time. Appending to a single
+# rolling file means two Blenders open at once interleave their lines into
+# something neither of them did, and the timestamp is what makes "the run
+# where it broke" findable at all.
 #
-#  IT NEVER RAISES AND IT NEVER BLOCKS A REPORT. Opened per write rather than
-#  held open, because a handle kept across a crash is a truncated file, and
-#  because Blender can be killed at any point in a long import. The cost is a
-#  file open per report, which against a session import measured in minutes is
-#  not worth optimising away.
+# IT never RAISES AND IT never BLOCKS A REPORT. Opened per write rather than
+# held open, bc a handle kept across a crash is a truncated file, and
+# bc Blender can be killed at any point in a long import. The cost is a
+# file open per report, which against a session import measured in minutes is
+# not worth optimising away.
 
 LOG_KEEP = 20            # runs to keep; older files are pruned on startup
 
@@ -462,17 +462,17 @@ def log_path():
             "",
         ]
         _LOG_PATH.write_text("\n".join(header), encoding="utf-8")
-        #  PRUNE AFTER CREATING, NOT BEFORE. Pruning first keeps LOG_KEEP old
-        #  files and THEN adds this one, so the folder settles at LOG_KEEP + 1
-        #  and stays there for ever. Caught by the suite asserting the COUNT
-        #  rather than the constant, which is the only version of that test
-        #  worth having - and it took twenty runs to trip.
+        # PRUNE after CREATING, not before. Pruning first keeps LOG_KEEP old
+        # files and THEN adds this one, so the folder settles at LOG_KEEP + 1
+        # and stays there for ever. Caught by the suite asserting the COUNT
+        # rather than the constant, which is the only version of that test
+        # worth having - and it took twenty runs to trip.
         _prune_logs(d)
         return _LOG_PATH
     except Exception as exc:                                   # noqa: BLE001
-        #  Said ONCE. A read-only add-on folder would otherwise print this
-        #  line on every report for the rest of the session, which is worse
-        #  than the missing log.
+        # Said once. A read-only add-on folder would otherwise print this
+        # line on every report for the rest of the session, which is worse
+        # than the missing log
         print(f"[REPORT_UI]  log file unavailable, console only: {exc}")
         _LOG_FAILED = True
         return None
@@ -536,36 +536,36 @@ def report(context, key, title, lines, level='INFO', icon=None,
     level = level if level in LEVELS else 'INFO'
     icon = icon or LEVEL_ICONS[level]
 
-    #  THE DOT GOES ON THE HEADER LINE, NOT ON ALL OF THEM. A colour on every
-    #  line of a forty-line report is a colour on nothing - the eye needs one
-    #  place to land per block, and that place is the title.
+    # the DOT GOES ON the HEADER LINE, not ON all OF THEM. A colour on every
+    # line of a forty-line report is a colour on nothing - the eye needs one
+    # place to land per block, and that place is the title
     from . import marks
     print(f"[{prefix}]  {marks.mark(level)}{title}")
     for ln in lines:
         print(f"[{prefix}]  {ln}")
 
-    #  AND TO THE FILE. Beside the print, not instead of it, and before
-    #  anything that can return early - a report suppressed by a popup switch
-    #  or collected inside a quiet scope is exactly the one somebody will want
-    #  to read afterwards.
-    #  BEHIND ITS OWN SWITCH, separate from the popup one: the Developer
-    #  tab's LOGS box decides per key what the FILE receives. The console
-    #  print above is unconditional either way.
+    # AND TO the FILE. Beside the print, not instead of it, and before
+    # anything that can return early - a report suppressed by a popup switch
+    # or collected inside a quiet scope is exactly the one somebody will want
+    # to read afterwards.
+    # BEHIND ITS own SWITCH, separate from the popup one: the Developer
+    # tab's LOGS box decides per key what the FILE receives. The console
+    # print above is unconditional either way.
     if log_enabled(context, key):
         _log_write(level, title, lines, prefix=prefix)
 
     bar = summary or _summarise(title, lines)
 
-    #  Recorded BEFORE the popup, so a report still lands in the history when
-    #  its popup is switched off - which is the case that most needs it.
+    # Recorded before the popup, so a report still lands in the history when
+    # its popup is switched off - which is the case that most needs it
     import time as _time
     _HISTORY.append({"t": _time.strftime("%H:%M:%S"), "key": key,
                      "level": level, "title": title, "summary": bar,
                      "lines": lines})
 
-    #  Blender's own channel. Deliberately NOT conditional on the quiet scope:
-    #  a batch run still wants its steps in the Info editor, and unlike a popup
-    #  this costs the user nothing and blocks nothing.
+    # Blender's own channel. Deliberately not conditional on the quiet scope:
+    # a batch run still wants its steps in the Info editor, and unlike a popup
+    # this costs the user nothing and blocks nothing
     if operator is not None:
         try:
             operator.report({level}, bar)
@@ -596,9 +596,9 @@ def report(context, key, title, lines, level='INFO', icon=None,
                     col.label(text=ln)
                 else:
                     col.separator()
-        #  The off switch lives IN the popup. This is the whole point: the
-        #  moment a report becomes noise, it can be silenced from the dialog
-        #  that is being complained about, without hunting for a preference.
+        # the off switch lives in the popup. This is the whole point: the
+        # moment a report becomes noise, it can be silenced from the dialog
+        # that is being complained about, w/o hunting for a preference
         p = prefs(_ctx)
         if p is not None and hasattr(p, key or ""):
             layout.separator()
@@ -635,7 +635,7 @@ def report_collected(context, key, title, header_lines=None, level=None,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Panel + operators
+# Panel + operators
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_reports_all(Operator):
@@ -752,10 +752,10 @@ def register(icon_id_fn=None):
     bpy.types.Scene.ht_logs = bpy.props.PointerProperty(
         type=HoovyToolsLogSettings)
 
-    #  PULL THE SAVED SWITCHES ONTO THE CURRENT SCENE. A scene opened later
-    #  gets its own fresh block, which is why every popup ALSO checks the
-    #  file lazily the first time it is asked - see popup_enabled, and the
-    #  log switches do the same in log_enabled.
+    # PULL the SAVED SWITCHES ONTO the CURRENT SCENE. A scene opened later
+    # gets its own fresh block, which is why every popup ALSO checks the
+    # file lazily the first time it's asked - see popup_enabled, and the
+    # log switches do the same in log_enabled
     try:
         load_switches()
     except Exception:                                         # noqa: BLE001

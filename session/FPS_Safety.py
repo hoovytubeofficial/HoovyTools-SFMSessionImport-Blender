@@ -42,11 +42,11 @@ from bpy.types import Operator
 from bpy.props import FloatProperty, StringProperty, BoolProperty
 
 
-# Two rates count as the same if they are closer than this. Chosen so that
+# two rates count as the same if they are closer than this. Chosen so that
 # 29.97 and 30 stay DIFFERENT - they are, and conflating them is the bug.
 FPS_EPSILON = 0.01
 
-# Exact (fps, fps_base) pairs, so NTSC rates round-trip.
+#exact (fps, fps_base) pairs, so NTSC rates round-trip
 _EXACT = {
     23.976: (24000, 1001.0),
     24.0:   (24, 1.0),
@@ -87,7 +87,7 @@ def set_scene_fps(scene, fps):
             scene.render.fps = i
             scene.render.fps_base = b
             return i, b
-    # Non-standard rate: keep it exactly, as a fraction over 1.
+    # non-standard rate: keep it exactly, as a fraction over 1
     scene.render.fps = int(round(fps))
     scene.render.fps_base = (int(round(fps))) / fps if fps else 1.0
     return scene.render.fps, scene.render.fps_base
@@ -106,7 +106,7 @@ def rescale_factor(source_fps, blender_fps):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Status
+# Status
 # ─────────────────────────────────────────────────────────────────────────────
 
 OK = 'OK'
@@ -195,7 +195,7 @@ def check_folder(folder, scene=None, limit=40):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Actions
+# Actions
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_set_scene_fps(Operator):
@@ -290,9 +290,9 @@ actions are both handled"""
                 actions.add(act.name)
                 for fc in iter_fcurves(act, owner):
                     for kp in fc.keyframe_points:
-                        # Handles move WITH the key, or the curve shape is
-                        # destroyed - the same mistake the camera splitter
-                        # used to make. [roadmap #9]
+                        #handles move WITH the key, or the curve shape is
+                        #destroyed - the same mistake the camera splitter
+                        #used to make. [roadmap #9]
                         kp.co[0] *= factor
                         kp.handle_left[0] *= factor
                         kp.handle_right[0] *= factor
@@ -370,7 +370,7 @@ fault. When it says MIXED, split the folder or import in two passes"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Draw helper - the status block reused by Main and Dev tabs
+# Draw helper - the status block reused by Main and Dev tabs
 # ─────────────────────────────────────────────────────────────────────────────
 
 def draw_fps_status(layout, context, result, compact=False):

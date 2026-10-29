@@ -124,7 +124,7 @@ def import_mdl(abs_path, texture_mode="FULL", scale=1.0, eng=None):
             ok, note = False, "embedded importer: %s" % exc
     fresh = [o for o in bpy.data.objects if o not in before]
     if ok:
-        #  3.0.0: the model's face rules as a .qc, so the HWM bake runs on any model (importers/Import_Shape_Keys)
+        # 3.0.0: the model's face rules as a .qc, so the HWM bake runs on any model (importers/Import_Shape_Keys)
         try:
             from ..importers import Import_Shape_Keys
             _qc, qnote, qstate = Import_Shape_Keys.ensure_face_qc(abs_path, fresh)

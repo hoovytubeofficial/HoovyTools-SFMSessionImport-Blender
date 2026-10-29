@@ -1,11 +1,18 @@
 # SFM Session Importer
+### the session half of HoovyTools - its twin, [Source Particle Import](https://github.com/hoovytubeofficial/HoovyTools-ParticleImport-Blender), brings the particles
 
 Bring a Source Filmmaker session into Blender - the whole film or a single shot: models, animation, facial
-animation, cameras, lights, sounds, particles and the map, on SFM's own timeline.
+animation, cameras, lights, sounds, particles and the map, on SFM's own timeline. The two add-ons share one sidebar
+tab, and a session's particle effects come in through the twin.
 
-![An SFM scene, rendered in Blender](docs/preview.gif)
+![The add-on's test session - G-Man, Alyx and a vortigaunt - rendered in Blender](docs/preview.gif)
 
-*(full quality: [hoovytools.mp4](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases/download/v3.0.0/hoovytools.mp4))*
+*The add-on's own test session (shot 1), imported with one click and rendered in EEVEE.*
+
+**Video tutorial:** [SFM Session to BLENDER Importer](https://www.youtube.com/watch?v=SGEVbgdZYaY) on SourceFilmmakerTube -
+and for the twin, [Import Particles into Blender](https://www.youtube.com/watch?v=-NGdPxKTsJA).
+
+[![SFM Session to BLENDER Importer - video tutorial](https://img.youtube.com/vi/SGEVbgdZYaY/hqdefault.jpg)](https://www.youtube.com/watch?v=SGEVbgdZYaY)
 
 **[Download 3.0.0](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases/download/v3.0.0/HoovyTools-SFMSessionImport-Blender-3.0.0.zip)** - then drag the zip onto Blender. ([All releases](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases))
 

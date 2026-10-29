@@ -32,8 +32,8 @@ import struct
 
 import bpy
 
-_CACHE = {}          # path -> (mtime, families)
-_ITEMS_KEEP = []     # Blender needs dynamic enum items kept alive
+_CACHE = {}          #path -> (mtime, families)
+_ITEMS_KEEP = []     #Blender needs dynamic enum items kept alive
 
 
 def read_skins(path):
@@ -139,9 +139,9 @@ def apply_skin(objects, index):
         old = [str(x) if not hasattr(x, "name") else x.name for x in groups[cur_key]]
         new = [str(x) if not hasattr(x, "name") else x.name for x in groups[key]]
         slots = ob.data.materials
-        #  THE WHOLE MAP FIRST, then each slot once: a skin may swap two
-        #  materials (A->B and B->A), and replacing as we go would swap the
-        #  first one straight back.
+        # THE WHOLE MAP first, then each slot once: a skin may swap two
+        # materials (A->B and B->A), and replacing as we go would swap the
+        # first one straight back
         remap = {}
         for o_name, n_name in zip(old, new):
             if o_name.lower() == n_name.lower():

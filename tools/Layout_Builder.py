@@ -147,7 +147,7 @@ def existing_workspace(base):
     return bpy.data.workspaces.get(copies[0]) if copies else None
 
 
-#  The sidebar tab the add-on lives in (Panel.HT_PT_sidebar.bl_category).
+#The sidebar tab the add-on lives in (Panel.HT_PT_sidebar.bl_category)
 SIDEBAR_CATEGORY = "HoovyTools"                    # 3.0.0: the HoovyTools tab (1.20.0-1.26: "SFM to Blender")
 
 
@@ -283,7 +283,7 @@ def _apply_leaf(area, node):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The timer state machine
+# The timer state machine
 # ─────────────────────────────────────────────────────────────────────────────
 
 _STATE = {"window": None, "workspace": None, "stage": "START", "queue": [],
@@ -331,9 +331,9 @@ def _rebuild_step():
                 screen.show_statusbar = SHOW_STATUSBAR
             except Exception:                                 # noqa: BLE001
                 pass
-            #  LOOK THROUGH THE SCENE CAMERA, if there is one. A freshly
-            #  built layout full of 3D views showing the world origin is a
-            #  wall of grey; through the session's camera it is the film.
+            #LOOK THROUGH THE SCENE CAMERA, if there's one. A freshly
+            #built layout full of 3D views showing the world origin is a
+            #wall of grey; thru the session's camera it's the film
             try:
                 if bpy.context.scene.camera is not None:
                     set_viewports_to_camera(window=window)
@@ -364,8 +364,8 @@ def _rebuild_step():
         if "FINISHED" not in result:
             print(f"[LAYOUT]  split cancelled: {direction} {factor}")
             return None
-        #  Children are found spatially on later ticks - a held Area
-        #  reference dies the moment the topology changes.
+        # children are found spatially on later ticks - a held Area
+        # reference dies the moment the topology changes
         _STATE["queue"].insert(0, node["second"])
         _STATE["queue"].insert(0, node["first"])
         return STEP_DELAY
@@ -389,7 +389,7 @@ def rebuild_layout(layout_key, window=None):
     base_name, tree = LAYOUTS[layout_key]
     have = existing_workspace(base_name)
     if have is not None:
-        #  ONE PER LAYOUT: a second press goes to it, never builds a copy.
+        # one PER LAYOUT: a second press goes to it, never builds a copy
         window.workspace = have
         _show_hoovytools_later(window)
         return True, f"switched to '{have.name}' (already built)"
@@ -418,21 +418,21 @@ def tree_leaves(node):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Persistence - the choice survives the .blend
+# Persistence - the choice survives the .blend
 # ─────────────────────────────────────────────────────────────────────────────
 #
-#  layout_after_import is a SCENE property, and a scene property lasts
-#  exactly one .blend - "I picked Two Screen" would silently reset to Off
-#  in every new file, which reads as a broken setting (the popup switches
-#  taught this lesson first). Same doctrine as core/popups.py: the scene
-#  block is the live value Blender's UI binds to, the JSON in _config is
-#  what SURVIVES - written whenever the choice changes, applied back onto
-#  each scene the first time anything asks.
+# layout_after_import is a SCENE property, and a scene property lasts
+# exactly one .blend - "I picked Two Screen" would silently reset to Off
+# in every new file, which reads as a broken setting (the popup switches
+# taught this lesson first). Same doctrine as core/popups.py: the scene
+# block is the live value Blender's UI binds to, the JSON in _config is
+# what SURVIVES - written whenever the choice changes, applied back onto
+# each scene the first time anything asks
 
 STORE_NAME = "_layoutvariables.json"
 
-#  Scenes already synced from the file this session - one apply per scene,
-#  so an in-session change to Off is respected until the next file.
+# scenes already synced from the file this session - one apply per scene,
+# so an in-session change to Off is respected until the next file
 _synced = set()
 
 
@@ -547,12 +547,12 @@ def apply_render_after_import(context):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  The camera jump - the session ends looking through its own lens
+# The camera jump - the session ends looking thru its own lens
 # ─────────────────────────────────────────────────────────────────────────────
 
-#  Collections searched for the camera to jump into, MOST REFINED FIRST:
-#  the splitter's shots are the cut-up, handled cameras; the importer
-#  collections hold the raw takes; anything else is a fallback.
+# collections searched for the camera to jump into, MOST REFINED FIRST:
+# the splitter's shots are the cut-up, handled cameras; the importer
+# collections hold the raw takes; anything else is a fallback.
 _CAMERA_HOMES = ("__HoovyTools Camera Split__",
                  "___HoovyTools Camera___",
                  "__Hoovy Camera Import__")
@@ -631,7 +631,7 @@ def jump_to_session_camera(context):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Render presets - EEVEE / Cycles, tuned for a render you can still orbit
+# Render presets - EEVEE / Cycles, tuned for a render you can still orbit
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _set_all(obj, pairs):
@@ -660,11 +660,11 @@ persistent data so re-renders skip the sync.
 
 Default resets the same knobs back to Blender's factory numbers on
 EEVEE. Only settings that exist on this Blender build are touched"""
-    #  NOT ht.render_preset: ui/Developer.py owns that name for the four
-    #  quality presets, and two classes on one idname means the one
-    #  registered last silently replaces the other - this row's buttons
-    #  then set a preset the survivor does not have and the panel draw
-    #  raised, cutting off everything drawn after it.
+    # not ht.render_preset: ui/Developer.py owns that name for the four
+    # quality presets, and two classes on one idname means the one
+    # registered last silently replaces the other - this row's buttons
+    # then set a preset the survivor doesn't have and the panel draw
+    # raised, cutting off everything drawn after it
     bl_idname = "ht.engine_preset"
     bl_label = "Engine Preset"
     bl_options = {"REGISTER", "UNDO"}
@@ -711,19 +711,19 @@ EEVEE. Only settings that exist on this Blender build are touched"""
                 ("use_preview_denoising", True),
                 ("preview_denoiser", 'AUTO'),
                 ("device", 'GPU'),
-                #  Source scenes are huge in Hammer units; short light
-                #  paths keep them interactive without visibly dimming.
+                # Source scenes are huge in Hammer units; short light
+                # paths keep them interactive w/o visibly dimming
                 ("max_bounces", 8),
                 ("volume_bounces", 8),
                 ("sample_clamp_direct", 4.2),
                 ("caustics_reflective", False),
                 ("caustics_refractive", False),
-                #  Exposure is Cycles-only film math - anything but 1.0
-                #  makes Cycles brighter/darker than EEVEE by a constant
-                #  factor nothing else explains.
+                # exposure is Cycles-only film math - anything but 1.0
+                # makes Cycles brighter/darker than EEVEE by a constant
+                # factor nothing else explains
                 ("film_exposure", 1.0),
-                #  Volume march quality, matched against EEVEE's numbers
-                #  below - a giant box needs the steps.
+                # volume march quality, matched against EEVEE's numbers
+                # below - a giant box needs the steps
                 ("volume_step_rate", 1.0),
                 ("volume_preview_step_rate", 1.0),
                 ("volume_max_steps", 1024),
@@ -738,22 +738,22 @@ EEVEE. Only settings that exist on this Blender build are touched"""
                 ("use_shadows", True),
                 ("shadow_ray_count", 2 if tuned else 1),
                 ("shadow_step_count", 4 if tuned else 3),
-                #  ALWAYS on: fog that ignores shadows in EEVEE and honours
-                #  them in Cycles is the single loudest between-engine
-                #  difference in a light-shafts scene.
+                # ALWAYS on: fog that ignores shadows in EEVEE and honours
+                # them in Cycles is the single loudest between-engine
+                # difference in a light-shafts scene
                 ("use_volumetric_shadows", True),
                 ("volumetric_shadow_samples", 32 if tuned else 16),
                 ("volumetric_tile_size", '4' if tuned else '8'),
                 ("volumetric_samples", 96 if tuned else 64),
                 ("volumetric_start", 0.1),
                 ("use_fast_gi", tuned),
-                #  Distant strong lights: EEVEE culls a light's influence at
-                #  this threshold, and at Hammer-unit distances the default
-                #  0.01 amputates beams Cycles happily draws.
+                # distant strong lights: EEVEE culls a light's influence at
+                # this threshold, and at Hammer-unit distances the default
+                # 0.01 amputates beams Cycles happily draws
                 ("light_threshold", 0.001 if tuned else 0.01),
             ]
-            #  Volumetric range must contain the imported fog box, or EEVEE
-            #  shows fog for exactly volumetric_end units and then air.
+            # volumetric range must contain the imported fog box, or EEVEE
+            # shows fog for exactly volumetric_end units and then air
             if reach is not None and tuned:
                 try:
                     if float(getattr(ee, "volumetric_end", 0.0)) < reach:
@@ -772,8 +772,8 @@ EEVEE. Only settings that exist on this Blender build are touched"""
                 ("use_persistent_data", True),
             ))
         else:
-            #  DEFAULT and EEVEE both land on EEVEE; DEFAULT with factory
-            #  numbers, EEVEE with the render-tuned ones.
+            #DEFAULT and EEVEE both land on EEVEE; DEFAULT with factory
+            #numbers, EEVEE with the render-tuned ones
             try:
                 scene.render.engine = 'BLENDER_EEVEE'
             except Exception:                                 # noqa: BLE001
@@ -794,7 +794,7 @@ EEVEE. Only settings that exist on this Blender build are touched"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Operator
+# Operator
 # ─────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_build_layout(Operator):
@@ -841,8 +841,8 @@ def register(icon_id_fn=None):
         except Exception:                                     # noqa: BLE001
             pass
         bpy.utils.register_class(cls)
-    #  The stored choice onto the current scene now, and onto every scene a
-    #  file load brings in later.
+    # the stored choice onto the current scene now, and onto every scene a
+    # file load brings in later
     try:
         if _on_load not in bpy.app.handlers.load_post:
             bpy.app.handlers.load_post.append(_on_load)

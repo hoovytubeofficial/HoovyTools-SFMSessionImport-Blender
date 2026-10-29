@@ -39,11 +39,11 @@ to offer a feature fails to load at all. Import late, catch, degrade.
 import importlib
 import sys
 
-#  kind -> candidate module names, best first.
+# kind -> candidate module names, best first
 CANDIDATES = {
     "particles": (
         "HoovyTools-ParticleImport-Blender-Master",
-        #  3.0.0: what the GitHub repository's "Download ZIP" unpacks to
+        #3.0.0: what the GitHub repository's "Download ZIP" unpacks to
         "HoovyTools-ParticleImport-Blender-master",
         "HoovyTools-ParticleImport-Blender-main",
         "HoovyToolsParticleImport",

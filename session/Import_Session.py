@@ -53,10 +53,10 @@ from bpy.props import StringProperty
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONFIG
+# config
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Default paths — used as fallback when addon preferences are not set.
+# default paths — used as fallback when addon preferences are not set
 _DEFAULT_SFM_USERMOD = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\SourceFilmmaker\game\usermod"
 )
@@ -143,7 +143,7 @@ def get_faulty_rigs_sfm_folder() -> Path:
     p = Path(bpy.path.abspath(raw)) if raw else _DEFAULT_FAULTY_RIGS_SFM
     if p.is_dir():
         return p
-    #  Pointed at the parent, or at the name that is no longer there.
+    #pointed at the parent, or at the name that's no longer there
     return _paths.data_dir_at(p.parent, p.name.lstrip("_"))
 
 
@@ -160,7 +160,7 @@ def get_faulty_rigs_override() -> Path | None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FOLDER HELPERS
+# FOLDER HELPERS
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _addon_faulty_rigs_folder() -> Path:
@@ -183,8 +183,8 @@ def _faulty_rigs_search_folders() -> list:
                   + _user_paths.folders("faulty_rigs")
                   + [_addon_faulty_rigs_folder(),
                      get_faulty_rigs_sfm_folder()]
-                  #  The SFM-side copy inside EVERY install, not just the
-                  #  primary - someone with two SFMs has two of these.
+                  #The SFM-side copy inside EVERY install, not just the
+                  #primary - someone with two SFMs has two of these
                   + [_paths.data_dir_at(b / "plugins"
                                         / "___SFM to Blender Session Importer"
                                         / "_Dev", "Faulty Rigs")
@@ -197,7 +197,7 @@ def _faulty_rigs_search_folders() -> list:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None   # injected by __init__.py via register(icon_id_fn=...)
@@ -209,7 +209,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  SOURCEIO ENABLE
+# sourceio enable
 # ──────────────────────────────────────────────────────────────────────────────
 
 # SourceIO is usually installed straight from its GitHub zip, which unpacks as
@@ -217,7 +217,7 @@ def _icon_id(key, fallback="NONE"):
 # it by. Enabling by the pretty name works only once something else has already
 # loaded it, which is why this never showed up interactively and always did in
 # a headless run: "No module named 'SourceIO'", then every model import failing
-# with "operator bpy.ops.sourceio.mdl could not be found".
+# with "operator bpy.ops.sourceio.mdl could not be found"
 _SOURCEIO_MODULES = ("SourceIO", "SourceIO-master")
 
 
@@ -238,7 +238,7 @@ def _ensure_sourceio():
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  DMX → TEX CONVERSION
+# dmx → tex conversion
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _dmxconvert_folders() -> list:
@@ -255,18 +255,18 @@ def _dmxconvert_folders() -> list:
 
 
 def _find_dmxconvert(gameinfo_base: Path = None) -> Path:
-    #  THE USER'S OWN FOLDERS FIRST. Someone with a broken SFM and a working
-    #  Source SDK can point at the SDK's copy, which is the whole reason this
-    #  is overridable - the exe is Valve's and identical everywhere.
+    # the USER'S OWN FOLDERS FIRST. Someone with a broken SFM and a working
+    # Source SDK can point at the SDK's copy, which is the whole reason this
+    # is overridable - the exe is Valve's and identical everywhere
     for folder in _dmxconvert_folders():
         c = folder / "dmxconvert.exe"
         if c.is_file():
             return c.resolve()
 
-    #  ACROSS ALL INSTALLS. A second SFM added because the first one is broken
-    #  is exactly the case where the first one's bin/ is the missing thing, so
-    #  looking only next to the primary usermod would report "not found" while
-    #  a working copy sat one slot down the list.
+    # ACROSS all INSTALLS. A second SFM added bc the first one is broken
+    # is exactly the case where the first one's bin/ is the missing thing, so
+    # looking only next to the primary usermod would report "not found" while
+    # a working copy sat one slot down the list
     bases = [gameinfo_base] if gameinfo_base else (usermod_bases()
                                                    or [_pref_usermod()])
     for base in bases:
@@ -308,9 +308,9 @@ def _convert_to_tex(dmx: Path, tmp_dir: str, gameinfo_base: Path = None) -> str:
     result  = subprocess.run(cmd, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:
-        # dmxconvert can fail with NOTHING on stderr. Raising an empty
-        # RuntimeError made the operator's own error handler blow up on
-        # err_lines[0] - a crash inside a crash, which hid the real cause.
+        #dmxconvert can fail with NOTHING on stderr. Raising an empty
+        #RuntimeError made the operator's own error handler blow up on
+        #err_lines[0] - a crash inside a crash, which hid the real cause.
         detail = (result.stderr or "").strip() or (result.stdout or "").strip()
         if not detail:
             detail = (f"dmxconvert exited with code {result.returncode} and "
@@ -324,14 +324,14 @@ def _convert_to_tex(dmx: Path, tmp_dir: str, gameinfo_base: Path = None) -> str:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  V12 ELEMENT SCANNER
+# v12 element scanner
 # ──────────────────────────────────────────────────────────────────────────────
 
 _TYPE_RE = re.compile(r'^\s*"([A-Za-z_][A-Za-z0-9_]*)"\s*$')
 _ID_RE   = re.compile(r'^\s*"id"\s+"elementid"\s+"([^"]+)"')
 _STR_RE  = re.compile(r'^\s*"([^"]+)"\s+"string"\s+"([^"]*)"')
 _ELEM_RE = re.compile(r'^\s*"([^"]+)"\s+"element"\s+"([^"]+)"')
-#  1.16.0: DmeGameModel's "body" - every bodygroup choice packed in one int
+#1.16.0: DmeGameModel's "body" - every bodygroup choice packed in one int
 _INT_RE  = re.compile(r'^\s*"([^"]+)"\s+"int"\s+"(-?\d+)"')
 _MDL_KEYS = {"modelname", "modelfilename", "modelfile", "modelpath"}
 _WANTED   = {"DmeAnimationSet", "CDmeAnimationSet",
@@ -397,9 +397,9 @@ def _scan_elements(tex: str) -> list:
     return results
 
 
-#  (model, animset name) -> the session's `body` for it. Filled by
-#  _collect_import_list; read by run_session_import. A side table rather than
-#  a third tuple member, so nothing that unpacks (rel, name) has to change.
+#(model, animset name) -> the session's `body` for it. Filled by
+#_collect_import_list; read by run_session_import. A side table rather than
+#a third tuple member, so nothing that unpacks (rel, name) has to change
 SESSION_BODIES = {}
 
 
@@ -462,7 +462,7 @@ def _collect_import_list(tex: str, keep_names=None) -> list:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  SEARCH PATHS + MODEL RESOLVER
+# SEARCH PATHS + MODEL RESOLVER
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _scan_game_mounts() -> bool:
@@ -498,9 +498,9 @@ def _build_search_paths(gameinfo_base: Path = None) -> list:
     look, never re-order the places that were already being looked at.
     """
     if gameinfo_base is None:
-        #  EVERY install, not only the first. An explicit override still means
-        #  "just this one" - that is what an override is for, and the session
-        #  dialog's per-import override depends on it.
+        # EVERY install, not only the first. An explicit override still means
+        # "just this one" - that's what an override is for, and the session
+        # dialog's per-import override depends on it
         out = []
         for base in (usermod_bases() or [_pref_usermod()]):
             for d in _build_search_paths(base):
@@ -575,13 +575,13 @@ def _resolve_model(rel: str, search_dirs: list) -> Path | None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  SOURCEIO IMPORT + ARMATURE RENAME
+# sourceio import + armature rename
 # ──────────────────────────────────────────────────────────────────────────────
 
-#  Valve's convention: a model compiled with $staticprop has exactly one bone
-#  and it is called "static_prop". Confirmed in a real session -
-#  `models/props_badlands/barrel01.mdl` animates `static_prop_p` (82 keys) and
-#  `static_prop_o` against a DAG child named `bone 0 (static_prop)`.
+# Valve's convention: a model compiled with $staticprop has exactly one bone
+# and it is called "static_prop". Confirmed in a real session -
+# `models/props_badlands/barrel01.mdl` animates `static_prop_p` (82 keys) and
+# `static_prop_o` against a DAG child named `bone 0 (static_prop)`
 STATIC_PROP_BONE = "static_prop"
 
 
@@ -620,9 +620,9 @@ def build_static_prop_rig(meshes, rig_name, bone_name=STATIC_PROP_BONE):
     arm_data = bpy.data.armatures.new(rig_name)
     arm_obj = bpy.data.objects.new(rig_name, arm_data)
 
-    #  Land it in the same collection the meshes went into, so a static prop
-    #  does not end up somewhere else in the outliner from everything else the
-    #  same import produced.
+    # land it in the same collection the meshes went into, so a static prop
+    # doesn't end up somewhere else in the outliner from everything else the
+    # same import produced.
     colls = meshes[0].users_collection
     (colls[0] if colls else bpy.context.scene.collection).objects.link(arm_obj)
 
@@ -639,8 +639,8 @@ def build_static_prop_rig(meshes, rig_name, bone_name=STATIC_PROP_BONE):
     finally:
         bpy.context.view_layer.objects.active = prev
 
-    #  Weight every vertex to the one bone. A static prop is rigid by
-    #  definition, so full weight on everything is not an approximation.
+    # weight every vertex to the one bone. A static prop is rigid by
+    # definition, so full weight on everything isn't an approximation
     for mesh in meshes:
         if mesh.parent is None:
             mesh.parent = arm_obj
@@ -661,13 +661,13 @@ def _import_and_rename(abs_path: Path, animset_name: str,
                        body: int = None, textures: str = "FULL",
                        engine: str = None, search_dirs=None):
     before = {obj.name for obj in bpy.data.objects if obj.type == "ARMATURE"}
-    #  ALL objects, not just armatures: a static prop produces no armature at
-    #  all, and the meshes it did produce are what we need to find.
+    #all objects, not just armatures: a static prop produces no armature at
+    #all, and the meshes it did produce are what we need to find
     before_all = set(bpy.data.objects)
 
-    #  1.21.0: SourceIO or the embedded importer (core/model_engine.py - DEVELOPER > Model Importer), at the
-    #  session's scale 1.0, with or without textures; the HT eye fix runs after either, so session imports get
-    #  the same eye rig treatment as Source Model (.mdl) manual imports.
+    # 1.21.0: SourceIO or the embedded importer (core/model_engine.py - DEVELOPER > Model Importer), at the
+    # session's scale 1.0, with or w/o textures; the HT eye fix runs after either, so session imports get
+    # the same eye rig treatment as Source Model (.mdl) manual imports.
     from ..core import model_engine
     ok_imp, _eng, _made, note = model_engine.import_mdl(abs_path, textures, scale=1.0, eng=engine)
     if not ok_imp:
@@ -680,7 +680,7 @@ def _import_and_rename(abs_path: Path, animset_name: str,
 
     proxy = None
     if str(textures).upper() == "PROXY":
-        #  1.21.0: a small copy of each material's own texture (core/proxy_textures.py)
+        #1.21.0: a small copy of each material's own texture (core/proxy_textures.py)
         try:
             from ..core import proxy_textures
             proxy = proxy_textures.apply(fresh, abs_path, search_dirs or _build_search_paths())
@@ -693,8 +693,8 @@ def _import_and_rename(abs_path: Path, animset_name: str,
         except Exception as exc:                              # noqa: BLE001
             print(f"  [WARN] plain materials skipped for '{animset_name}': {exc}")
 
-    #  1.16.0: SourceIO brings in every option of every bodygroup; SFM shows
-    #  one per bodygroup, chosen by the session's `body`. Hide the rest.
+    # 1.16.0: SourceIO brings in every option of every bodygroup; SFM shows
+    # one per bodygroup, chosen by the session's `body`. Hide the rest
     if body is not None:
         try:
             from ..tools import Session_Bodygroups
@@ -704,17 +704,17 @@ def _import_and_rename(abs_path: Path, animset_name: str,
             print(f"  [WARN] bodygroups skipped for '{animset_name}': {exc}")
 
     if not new_armatures:
-        #  NO ARMATURE IS NOT AUTOMATICALLY A FAILURE.
+        # NO ARMATURE IS NOT AUTOMATICALLY A FAILURE.
         #
-        #  A model compiled with $staticprop imports as meshes only - SourceIO
-        #  does not build a rig for its single bone. This used to return False,
-        #  so the model counted as failed AND its animation later reported
-        #  "NO MATCHING RIG", which reads as two problems when it is one and
-        #  neither of them is the model.
+        # A model compiled with $staticprop imports as meshes only - SourceIO
+        # does not build a rig for its single bone. This used to return False,
+        # so the model counted as failed AND its animation later reported
+        # "NO MATCHING RIG", which reads as two problems when it's one and
+        # neither of them is the model
         #
-        #  SFM animates it anyway: barrel011 carries `static_prop_p` with 82
-        #  keys. Give it the bone SourceIO left out and the ordinary animation
-        #  path handles it with no further special cases.
+        # SFM animates it anyway: barrel011 carries `static_prop_p` with 82
+        # keys. Give it the bone SourceIO left out and the ordinary animation
+        # path handles it with no further special cases
         meshes = [o for o in fresh if o.type == 'MESH']
         if meshes:
             arm_obj = build_static_prop_rig(meshes, animset_name)
@@ -736,13 +736,13 @@ def _import_and_rename(abs_path: Path, animset_name: str,
 
     # Apply HT eye fix — same result as importing via Source Model (.mdl) manually
     #
-    # apply_eye_fix REPORTS failure, it does not raise it, so the return value
+    # apply_eye_fix REPORTS failure, it doesn't raise it, so the return value
     # has to be read. Ignoring it hid the case that matters: no eye empties
     # means no viewTarget bone, and no viewTarget bone means the animation
     # importer later drops the session's viewTarget channel with nothing but a
     # console line. Import_DMX_Animation.ensure_file_root_bones() now creates
     # the bone from the file as a backstop, but a model that got no eye rig at
-    # all is still worth hearing about.
+    # all is still worth hearing about
     try:
         from ..importers import Import_MDL
         fix = Import_MDL.apply_eye_fix(arm_obj)
@@ -759,7 +759,7 @@ def _import_and_rename(abs_path: Path, animset_name: str,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  SESSION IMPORT — PUBLIC
+# SESSION IMPORT — PUBLIC
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _shot_set_names(session_path: Path, tex: str = None):
@@ -853,7 +853,7 @@ def run_session_import(session_path: Path,
     Progress.note("Parsing animation sets...")
     keep = _shot_set_names(session_path, tex)
     import_list = _collect_import_list(tex, keep_names=keep)
-    #  1.26.0 SKIP HIDDEN OBJECTS (Developer Mode): the sets SFM hides are not imported
+    # 1.26.0 SKIP HIDDEN OBJECTS (Developer Mode): the sets SFM hides are not imported
     from ..tools import Session_Visibility
     hidden = Session_Visibility.hidden_set_names(session_path)
     search_dirs = _build_search_paths(gameinfo_base)
@@ -884,9 +884,9 @@ def run_session_import(session_path: Path,
             missing += 1
             continue
         print(f"  [{i}/{total}] {name}  <-  {abs_path.name}")
-        #  Painted BEFORE the import call: this is the label that stays on
-        #  screen while a heavy model blocks everything, which is the
-        #  whole answer to "frozen or keeled over".
+        # Painted before the import call: this is the label that stays on
+        # screen while a heavy model blocks everything, which is the
+        # whole answer to "frozen or keeled over".
         Progress.update(i, total, f"{name}  <-  {abs_path.name}")
         try:
             done = _import_and_rename(abs_path, name, body=SESSION_BODIES.get((rel, name)),
@@ -897,10 +897,10 @@ def run_session_import(session_path: Path,
                     grey += done.get("grey", 0)
                 ok += 1
                 existing.add(name)
-                #  WHICH .mdl, recorded where it was RESOLVED. The name alone
-                #  is useless - three `scout.mdl` under three mods is normal -
-                #  and this is the only point in the pipeline that still knows
-                #  which one won the search.
+                #WHICH .mdl, recorded where it was RESOLVED. The name alone
+                #is useless - three `scout.mdl` under three mods is normal -
+                #and this is the only point in the pipeline that still knows
+                #which one won the search
                 try:
                     from ..core import sources
                     sources.add("model", name, abs_path)
@@ -926,9 +926,9 @@ def run_session_import(session_path: Path,
     if textures == "PROXY":
         msg += f" Proxy textures: {proxied} material(s), {grey} grey."
     print(f"\n  Done - imported:{ok}  missing:{missing}  ({engine.lower()}, textures {textures.lower()})")
-    #  `remaining` and `done` are kept in the result so a caller written
-    #  against the chunked version still reads sensibly; they are now always
-    #  0 and True.
+    # `remaining` and `done` are kept in the result so a caller written
+    # against the chunked version still reads sensibly; they are now always
+    # 0 and True
     return {"ok": True, "imported": ok, "skipped": skipped,
             "missing": missing, "remaining": 0, "done": True,
             "message": msg, "engine": engine, "textures": textures,
@@ -936,7 +936,7 @@ def run_session_import(session_path: Path,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  RIG FIXER HELPERS
+# rig fixer helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ARM_DATA_RE = re.compile(r'_arm_data.*$', re.IGNORECASE)
@@ -1129,12 +1129,12 @@ def pose_scale_ratio(armature) -> float:
 
 
 
-#  A vertex pair three times further apart than the model was built with is
-#  not a pose, it is a tear. Deliberately generous: a genuine bind-vs-rest
-#  difference is a few percent, and the measured bad case is 138x.
+# A vertex pair three times further apart than the model was built with is
+# not a pose, it is a tear. Deliberately generous: a genuine bind-vs-rest
+# difference is a few percent, and the measured bad case is 138x
 SKIN_TEAR_RATIO = 3.0
-#  One stray edge is a weight painted onto the wrong bone by the model's
-#  author and is not our business. Hundreds is the skin coming off.
+# one stray edge is a weight painted onto the wrong bone by the model's
+# author and is not our business. Hundreds is the skin coming off
 SKIN_TEAR_EDGES = 50
 
 
@@ -1178,8 +1178,8 @@ def skin_stretch(armature):
         except Exception:
             continue
         if len(posed) != len(rest):
-            #  A modifier that changes the vertex count sits between us and
-            #  the armature; there is nothing to compare edge-wise.
+            # A modifier that changes the vertex count sits between us and
+            # the armature; there's nothing to compare edge-wise
             continue
         for i, j in edges:
             r = (rest[i] - rest[j]).length
@@ -1286,9 +1286,9 @@ def _rest_delta(before: dict, after: dict) -> tuple:
     return move, rot
 
 
-#  A deforming bone whose AXIS turns this far while its head stays put is
-#  being re-framed, not repositioned. Every TF2 reference measures exactly
-#  90 deg on hip/knee/upperArm/lowerArm both sides with heads within 0.03u.
+# A deforming bone whose AXIS turns this far while its head stays put is
+# being re-framed, not repositioned. Every TF2 reference measures exactly
+# 90 deg on hip/knee/upperArm/lowerArm both sides with heads within 0.03u
 REFRAME_SWING_DEG = 30.0
 REFRAME_STILL_UNITS = 0.5
 
@@ -1518,19 +1518,19 @@ def _process_armature_rig_fix(armature, allow_reframe=True,
               "moved": 0.0, "rotated": 0.0, "had_action": False,
               "baked": 0, "scale_ratio": 1.0,
               "skin_stretch": 1.0, "skin_bad_edges": 0}
-    # Match on the OBJECT name too. Session imports name the object after
-    # the animation set while the armature DATA can keep the model name, or
-    # the other way round - whichever resolves is the right answer.
+    #Match on the OBJECT name too. Session imports name the object after
+    #the animation set while the armature DATA can keep the model name, or
+    #the other way round - whichever resolves is the right answer.
     base_name = _extract_base_name(armature.data.name)
     if resolve_reference(base_name)[0] is None:
         alt = _extract_base_name(armature.name)
         if resolve_reference(alt)[0] is not None:
             base_name = alt
     result["base"]  = base_name
-    #  1.18.0: a reference CHOSEN by hand (Fix Rig From Reference DMX) goes
-    #  through exactly this procedure - two rests stored, the existing
-    #  animation kept and re-keyed - instead of the older path that button
-    #  used to have of its own.
+    # 1.18.0: a reference CHOSEN by hand (Fix Rig From Reference DMX) goes
+    # thru exactly this procedure - two rests stored, the existing
+    # animation kept and re-keyed - instead of the older path that button
+    # used to have of its own
     ref_dmx         = (Path(reference) if reference
                        else _find_reference_dmx(base_name))
 
@@ -1549,15 +1549,15 @@ def _process_armature_rig_fix(armature, allow_reframe=True,
                                 and armature.animation_data.action)
 
     rest_before = _rest_snapshot(armature)
-    #  1.17.2: an animation already on the rig is KEPT - captured here, re-keyed onto the new rest below (it used to
-    #  be taken off with the reference and lost). And the model's rest is remembered the first time, for session
-    #  extracts (import_on_model_basis).
+    # 1.17.2: an animation already on the rig is KEPT - captured here, re-keyed onto the new rest below (it used to
+    # be taken off with the reference and lost). And the model's rest is remembered the first time, for session
+    # extracts (import_on_model_basis).
     ad0 = armature.animation_data
     own_action = ad0.action if ad0 is not None else None
     own_slot = ad0.action_slot if ad0 is not None and own_action is not None else None
     own_pose = _capture_pose(armature, _action_frames(own_action)) if own_action is not None else None
     if own_action is not None:
-        own_action.use_fake_user = True                 # it is off the rig while the reference poses it
+        own_action.use_fake_user = True                 #it's off the rig while the reference poses it
     if MODEL_REST not in armature.data:
         armature.data[MODEL_REST] = json.dumps(_rest_read(armature))
     action = None
@@ -1567,11 +1567,11 @@ def _process_armature_rig_fix(armature, allow_reframe=True,
             result["status"] = "✗  Import OK but no action created"
             return result
 
-        # REFUSE A SCALE MISMATCH RATHER THAN SHREDDING THE MODEL.
-        # The reference is in Source units; a model imported at SourceIO's
-        # 0.01905 default is in metres. Applying one to the other flings every
-        # bone ~52x too far and the mesh comes apart. That looked like "the rig
-        # fixer is broken" when the rig fixer was doing exactly as told.
+        #REFUSE A SCALE MISMATCH RATHER THAN SHREDDING THE MODEL.
+        #The reference is in Source units; a model imported at SourceIO's
+        #0.01905 default is in metres. Applying one to the other flings every
+        #bone ~52x too far and the mesh comes apart. That looked like "the rig
+        #fixer is broken" when the rig fixer was doing exactly as told.
         bpy.context.view_layer.update()
         ratio = pose_scale_ratio(armature)
         result["scale_ratio"] = ratio
@@ -1611,8 +1611,8 @@ def _process_armature_rig_fix(armature, allow_reframe=True,
                   f"{edges} edges (worst x{stretch:.1f}). That IS the "
                   f"mismatch being corrected, not a reason to stop.")
 
-        # Rest pose FIRST, while the reference action is still driving the
-        # pose - that pose is the whole point. Only then take it away.
+        # rest pose first, while the reference action is still driving the
+        # pose - that pose is the whole point. Only then take it away
         _apply_pose_as_rest(armature)
         gone = _detach_action(armature, action)
         gone += _purge_orphan_actions(before)
@@ -1620,26 +1620,26 @@ def _process_armature_rig_fix(armature, allow_reframe=True,
         result["marked_col"] = _mark_collection_yellow(armature)
         armature.data[REF_REST] = json.dumps(_rest_read(armature))
 
-        # THE POST-CONDITION, which is the one that can actually fail.
+        # the POST-CONDITION, which is the one that can actually fail.
         # With the action detached and the rest replaced, the rig is in its
         # own rest pose and the mesh should be undeformed: stretch ~1.0.
         # Anything else means the reference really did not belong to this
-        # model, and now it is observed rather than predicted.
+        # model, and now it's observed rather than predicted
         after, bad_after, _ = skin_stretch(armature)
         result["skin_stretch"] = after
         result["skin_stretch_after"] = after
 
         move, rot = _rest_delta(rest_before, _rest_snapshot(armature))
         result["moved"], result["rotated"] = move, rot
-        # Say what CHANGED, not just that something ran. A bare tick next to a
+        # say what CHANGED, not just that something ran. A bare tick next to a
         # rig that looks wrong is unfalsifiable; a number is not.
         if move < 1e-4 and rot < 0.5:
             result["status"] = "=  Already matched (no change)"
         else:
             result["status"] = f"✓  Applied  {rot:.0f}° / {move:.2f}u"
-        #  LAST WORD TO THE POST-CONDITION. Written after the tick above, so
-        #  a rig that still tears cannot report a clean tick - which is the
-        #  unfalsifiable thing the line above warns about.
+        # last WORD TO the POST-CONDITION. Written after the tick above, so
+        # a rig that still tears can't report a clean tick - which is the
+        # unfalsifiable thing the line above warns about
         if bad_after > SKIN_TEAR_EDGES and after > SKIN_TEAR_RATIO:
             result["status"] = f"⚠  Applied, skin still x{after:.0f}"
             print(f"[RIG_FIXER]  '{armature.name}': WARNING - with the rest "
@@ -1653,8 +1653,8 @@ def _process_armature_rig_fix(armature, allow_reframe=True,
     except Exception as exc:
         print(f"[RIG_FIXER]  ERROR on '{armature.name}': {exc}")
         result["status"] = f"✗  {exc}"
-        #  Never leave the reference posing the rig: the animation step
-        #  would key on top of it.
+        # never leave the reference posing the rig: the animation step
+        # would key on top of it
         if action is not None:
             try:
                 _detach_action(armature, action)
@@ -1694,7 +1694,7 @@ def _give_back(armature, own_action, own_slot, own_pose, result):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  RIG FIXER — PUBLIC
+# rig fixer — public
 # ──────────────────────────────────────────────────────────────────────────────
 
 @Progress.jobbed("HoovyTools - Fix Rig Rest Poses")
@@ -1759,7 +1759,7 @@ def run_rig_fixer(allow_reframe=True) -> dict:
     """
     # The bundled SST registers the importer as ht.import_smd; a separately
     # installed Blender Source Tools registers import_scene.smd. Either is
-    # fine - _import_reference_dmx uses ht.import_smd, which SST guarantees.
+    # fine - _import_reference_dmx uses ht.import_smd, which SST guarantees
     if not hasattr(bpy.ops.ht, "import_smd"):
         raise RuntimeError(
             "No SMD/DMX importer available. The bundled SST failed to "
@@ -1790,7 +1790,7 @@ def run_rig_fixer(allow_reframe=True) -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATORS
+# OPERATORS
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_ImportSession(Operator):
@@ -1814,29 +1814,29 @@ animation would have nothing to land on. A one-bone rig is created and
 the meshes weighted to it - a static prop is rigid, so full weight is
 exact, not an approximation.
     """
-    #  BELOW THE TOOLTIP CAP. Blender truncates an operator description
-    #  at 1023 characters, without a warning, mid-word. These paragraphs
-    #  were part of the docstring and were already being cut off before
-    #  anyone could read them, so they live here instead - kept, but out
-    #  of the tooltip's budget.
-    #  Missing models are counted and named. They usually mean the .mdl is not
-    #  under the configured usermod path
+    # BELOW the TOOLTIP CAP. Blender truncates an operator description
+    # at 1023 characters, without a warning, mid-word. These paragraphs
+    # were part of the docstring and were already being cut off before
+    # anyone could read them, so they live here instead - kept, but out
+    # of the tooltip's budget
+    # Missing models are counted and named. They usually mean the .mdl isn't
+    # under the configured usermod path
     #
 
     bl_idname  = "ht.import_session"
     bl_label   = "SFM Session"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filepath:    StringProperty(subtype="FILE_PATH")
     filter_glob: StringProperty(default="*.dmx", options={"HIDDEN"})
 
-    # Plain text field — no subtype="DIR_PATH" so it never opens a second
+    # plain text field — no subtype="DIR_PATH" so it never opens a second
     # file browser while the session DMX picker is already open.
     gameinfo_override: StringProperty(
         name        = "SFM Usermod Path Override",
@@ -1870,10 +1870,10 @@ exact, not an approximation.
         try:
             result = run_session_import(Path(self.filepath), gameinfo_base=override)
         except Exception as exc:
-            # Show a proper popup so the error is impossible to miss.
+            # show a proper popup so the error is impossible to miss.
             # NEVER index into this blind: an exception with an empty message
             # is exactly what used to turn a failed import into an
-            # IndexError inside the handler.
+            # IndexError inside the handler
             err_lines = [l for l in str(exc).splitlines() if l.strip()]
             if not err_lines:
                 err_lines = [f"{type(exc).__name__} with no message "
@@ -1930,12 +1930,12 @@ Reference files live in _Faulty Rigs as <model>_reference.dmx. SFM's
 instance numbers are stripped when matching, so scout1 finds scout"""
     bl_idname  = "ht.rig_fixer"
     bl_label   = "Fix Rig Rest Poses"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     def execute(self, context):
@@ -1964,7 +1964,7 @@ instance numbers are stripped when matching, so scout1 finds scout"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU ITEMS  (called directly from HT_MT_import_submenu.draw in __init__.py)
+# MENU ITEMS  (called directly from HT_MT_import_submenu.draw in __init__.py)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def draw_submenu(layout):
@@ -1988,7 +1988,7 @@ def draw_menu_item(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (HT_OT_ImportSession, HT_OT_RigFixer)

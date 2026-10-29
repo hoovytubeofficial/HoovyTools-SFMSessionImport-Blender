@@ -45,7 +45,7 @@ from ..core.anim_compat import make_action, get_channelbag, fc_find_or_new, iter
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  INTERNAL HELPERS
+# INTERNAL HELPERS
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _get_datamodel():
@@ -65,35 +65,35 @@ def _key(bag, data_path, index, group, frame, value):
     kp.interpolation = "LINEAR"
 
 
-# The SFM -> Blender WORLD MAP, and the only answer either source may land on.
+# The SFM -> Blender WORLD MAP, and the only answer either source may land on
 #
-#     (x, y, z)  ->  (y, -x, z)        which is Rz(-90)
+# (x, y, z)  ->  (y, -x, z)        which is Rz(-90)
 #
 # Import_DMX_Camera has always used it for camera position. Everything else has
 # to agree with it or the camera will not be looking at what it looked at in
-# SFM. Confirmed without assuming any convention, by the angle two objects
+# SFM. Confirmed w/o assuming any convention, by the angle two objects
 # subtend at the camera - a quantity no rigid mapping can change:
 #
-#     session truth                        39.966 deg
-#     (y,-x,z)  Rz(-90)                    39.966 deg   <-- the answer
-#     (y, z, x) raw session keys           33.851 deg
-#     (x, y, z) identity                   79.708 deg
-#     (x,-z, y) Rx(+90)                    77.590 deg
+# session truth                        39.966 deg
+# (y,-x,z)  Rz(-90)                    39.966 deg   <-- the answer
+# (y, z, x) raw session keys           33.851 deg
+# (x, y, z) identity                   79.708 deg
+# (x,-z, y) Rx(+90)                    77.590 deg
 #
 # The two SOURCES reach it from different places, which is the whole subtlety:
 #
-#   SFM EXPORT   model data is Y-up (SFM's exporter converted it), so the axis
-#                empty is Rx(+90) and the root keys carry the permutation
-#                (v1, v2, v0).   Rx(+90) @ (v1,v2,v0) == (y,-x,z).
-#   SESSION      model data is live Source Z-up (nothing converted it), so the
-#                axis empty is Rz(-90) and the root keys go in RAW.
-#                Rz(-90) @ (v0,v1,v2) == (y,-x,z).
+# SFM EXPORT   model data is Y-up (SFM's exporter converted it), so the axis
+# empty is Rx(+90) and the root keys carry the permutation
+# (v1, v2, v0).  Rx(+90) @ (v1,v2,v0) == (y,-x,z)
+# SESSION      model data is live Source Z-up (nothing converted it), so the
+# axis empty is Rz(-90) and the root keys go in RAW.
+# Rz(-90) @ (v0,v1,v2) == (y,-x,z).
 #
 # Same destination, different route. Mixing the routes up is what put half a
-# scene on its side and left the other half facing the wrong way.
+# scene on its side and left the other half facing the wrong way
 AXIS_EMPTY_EULER = {
-    'Y': (pi / 2, 0.0, 0.0),      # Y-up model data  (SFM export)
-    'Z': (0.0, 0.0, -pi / 2),     # Z-up model data  (session extract)
+    'Y': (pi / 2, 0.0, 0.0),      #Y-up model data  (SFM export)
+    'Z': (0.0, 0.0, -pi / 2),     #Z-up model data  (session extract)
 }
 
 
@@ -272,7 +272,7 @@ def ensure_file_root_bones(dmx_path, armature, up_axis=None):
         name = getattr(child, "name", None)
         if not name or name.lower() in existing:
             continue
-        # A Dag that only wraps a mesh is not a bone - same test BST uses.
+        #A Dag that only wraps a mesh is not a bone - same test BST uses
         shape = child.get("shape")
         if shape is not None and shape.get("currentState") is not None:
             continue
@@ -360,12 +360,12 @@ def _no_patch():
             "root_curves": 0, "root_action": None, "root_empty": None}
 
 
-#  Root-transform channel names. A session names the game model's own
-#  placement rootTransform_*; an SFM export names it unnamed_*. Session_Reader
-#  renames the first two on extraction, but not the scale one - so both spellings
-#  have to be recognised here, and both have to be kept OFF the bone path.
-#  Exception (1.16.1): "root_scale" on a rig with a bone named "root" is that
-#  bone's own scale channel - see the bone-scale guard in _patch_scale_and_root.
+# Root-transform channel names. A session names the game model's own
+# placement rootTransform_*; an SFM export names it unnamed_*. Session_Reader
+# renames the first two on extraction, but not the scale one - so both spellings
+# have to be recognised here, and both have to be kept OFF the bone path
+# Exception (1.16.1): "root_scale" on a rig with a bone named "root" is that
+# bone's own scale channel - see the bone-scale guard in _patch_scale_and_root.
 ROOT_SCALE_CHANNELS = ("rootTransform_scale", "root_scale")
 ROOT_TRANSFORM_CHANNELS = ("unnamed_p", "unnamed_o") + ROOT_SCALE_CHANNELS
 
@@ -469,20 +469,20 @@ def _patch_scale_and_root(dmx_path: Path, armature, action,
     scale_keys  = 0
     unresolved_scale = []
 
-    # The root branches below write HALF a transform: the keys live in the axis
-    # empty's own space and are finished by its rotation. Which half depends on
-    # where the file came from - see AXIS_EMPTY_EULER. Both halves must multiply
-    # out to the same world map, (x, y, z) -> (y, -x, z), or the characters and
-    # the camera watching them end up in different coordinate systems.
-    # Verified against session truth: rootTransform_p (-381.51, -10.48, 0)
-    # reaches world (-10.48, 381.51, 0).
+    #the root branches below write HALF a transform: the keys live in the axis
+    #empty's own space and are finished by its rotation. Which half depends on
+    #where the file came from - see AXIS_EMPTY_EULER. Both halves must multiply
+    #out to the same world map, (x, y, z) -> (y, -x, z), or the characters and
+    #the camera watching them end up in different coordinate systems.
+    #Verified against session truth: rootTransform_p (-381.51, -10.48, 0)
+    #reaches world (-10.48, 381.51, 0)
     session_source = (source_axis == 'Z')
 
-    # Create axis + root empty hierarchy so the armature gets the +90 X
-    # correction even if this DMX has no unnamed_p/unnamed_o channels (e.g.
+    # create axis + root empty hierarchy so the armature gets the +90 X
+    # correction even if this DMX has no unnamed_p/unnamed_o channels (e.g
     # models whose root motion lives on a bone instead of the game model).
     # When add_root_helpers is False (SMD-clean), skip it entirely: no empty,
-    # no parenting, bone + scale channels only.
+    # no parenting, bone + scale channels only
     if add_root_helpers:
         root_empty = _get_or_create_root_empty(armature, source_axis)
     else:
@@ -555,7 +555,7 @@ def _patch_scale_and_root(dmx_path: Path, armature, action,
         # channel, scaled_root_scale_channel, targets "bone 0 (root)").
         # Measured on the CSdeals Scene 2 session: 26 props - streetlamps,
         # skydomes, skyboxes - had their scale put on <prop>_root and 0 keys
-        # on the bone. The rig decides: a "root" bone takes it.
+        # on the bone. The rig decides: a "root" bone takes it
         is_scale_ch = (to_attr == "scale") or ch_name.endswith("_scale")
         is_root_scale = (ch_name in ROOT_SCALE_CHANNELS
                          and not (ch_name == "root_scale"
@@ -563,9 +563,9 @@ def _patch_scale_and_root(dmx_path: Path, armature, action,
         if not is_root_scale and is_scale_ch:
             bone = _bone_for_scale(ch_name, to_elem)
             if not bone:
-                # Worth one line each: a scale channel that resolves to no
+                # worth one line each: a scale channel that resolves to no
                 # bone is exactly the failure that made scale silently vanish,
-                # and silence is how it stayed unnoticed.
+                # and silence is how it stayed unnoticed
                 unresolved_scale.append(ch_name)
                 continue
             span = _rescale_span(ch)
@@ -583,7 +583,7 @@ def _patch_scale_and_root(dmx_path: Path, armature, action,
         if ch_name not in ROOT_TRANSFORM_CHANNELS:
             continue
 
-        # SMD-clean: no root empty was created, so skip root motion entirely.
+        # SMD-clean: no root empty was created, so skip root motion entirely
         if root_empty is None:
             continue
 
@@ -598,10 +598,10 @@ def _patch_scale_and_root(dmx_path: Path, armature, action,
                 if session_source:
                     # Session: the axis empty above is Rz(-90), which IS the
                     # world map, so the placement goes in exactly as the
-                    # session states it. Rz(-90) @ (x,y,z) == (y,-x,z).
+                    # session states it. Rz(-90) @ (x,y,z) == (y,-x,z)
                     loc = Vector((float(v[0]), float(v[1]), float(v[2])))
                 else:
-                    # Export: the axis empty is Rx(+90), so the key carries the
+                    # export: the axis empty is Rx(+90), so the key carries the
                     # permutation that turns it into the same world map.
                     # Rx(+90) @ (v1,v2,v0) == (y,-x,z).
                     loc = Vector((float(v[1]), float(v[2]), float(v[0])))
@@ -609,7 +609,7 @@ def _patch_scale_and_root(dmx_path: Path, armature, action,
                     _key(root_bag, "location", i, group, fr, loc[i])
             elif ch_name == "unnamed_o":
                 if session_source:
-                    # Session: the empty sits above the root AND the bones, and
+                    # session: the empty sits above the root and the bones, and
                     # the bones are raw session space too, so the whole stack is
                     # mapped once by the empty. The root's own rotation is then
                     # just the session's quaternion, DMX (x,y,z,w) reordered to
@@ -618,9 +618,9 @@ def _patch_scale_and_root(dmx_path: Path, armature, action,
                     q = Quaternion((float(v[3]), float(v[0]),
                                     float(v[1]), float(v[2])))
                 else:
-                    # Export: root quat needs conjugation + axis remap vs
+                    # export: root quat needs conjugation + axis remap vs
                     # per-bone quats (Evan Purr fix - world-space root vs BST
-                    # bone-space pipeline).
+                    # bone-space pipeline)
                     q_bst    = Quaternion((-float(v[3]), -float(v[1]), float(v[0]), -float(v[2])))
                     axis_mat = Matrix.Rotation(-pi / 2, 4, 'X')
                     q        = (axis_mat @ q_bst.to_matrix().to_4x4() @ axis_mat.inverted()).to_quaternion()
@@ -655,38 +655,38 @@ def _patch_scale_and_root(dmx_path: Path, armature, action,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  STEPPED KEYS
+# stepped keys
 # ──────────────────────────────────────────────────────────────────────────────
 #
-#  SFM DOES NOT KEY ON WHOLE FRAMES, AND IT WRITES A HOLD AS A PAIR.
+# SFM DOES NOT KEY ON WHOLE FRAMES, AND IT WRITES A HOLD AS A PAIR.
 #
-#  Measured on `new session.dmx` at 24 fps. One bone channel's key times, in
-#  frames:  123.1992  126.9984  127.0008  127.2000  127.9992 ...
-#  Two things are going on there and both hurt:
+# Measured on `new session.dmx` at 24 fps. One bone channel's key times, in
+# frames:  123.1992  126.9984  127.0008  127.2000  127.9992 ...
+# Two things are going on there and both hurt:
 #
-#    1  almost nothing lands on a whole frame. 267 of that channel's 719 keys
-#       are more than 0.01 of a frame off one.
-#    2  126.9984 and 127.0008 are 0.0024 of a frame apart. That pair IS the
-#       step - it is how SFM writes "hold, then jump". Blender only ever
-#       EVALUATES whole frames, so frame 127 lands exactly between the two
-#       keys and returns the halfway value. The step is not just softened, it
-#       is sampled at the one instant that belongs to neither side of it.
+# 1  almost nothing lands on a whole frame. 267 of that channel's 719 keys
+# are more than 0.01 of a frame off one
+# 2  126.9984 and 127.0008 are 0.0024 of a frame apart. That pair IS the
+# step - it's how SFM writes "hold, then jump". Blender only ever
+# EVALUATES whole frames, so frame 127 lands exactly between the two
+# keys and returns the halfway value. The step is not just softened, it
+# is sampled at the one instant that belongs to neither side of it.
 #
-#  Import_DMX_Camera has always dealt with this, in its raw/stepped path:
-#  resample onto every integer frame by linear interpolation between the
-#  bracketing SFM samples, and key LINEAR. The animation importer never did -
-#  it took whatever fractional key times BST wrote. Same data, same problem,
-#  and the fix is the same one, so it is the same shape of code here.
+# Import_DMX_Camera has always dealt with this, in its raw/stepped path:
+# resample onto every integer frame by linear interpolation between the
+# bracketing SFM samples, and key LINEAR. The animation importer never did -
+# it took whatever fractional key times BST wrote. Same data, same problem,
+# and the fix is the same one, so it is the same shape of code here
 #
-#  WHY LINEAR AND NOT CONSTANT. A hold-previous resample turns every smooth
-#  pan into a staircase, because SFM's data is a mix of smooth motion and hard
-#  cuts with nothing marking which is which. Linear between the surrounding
-#  samples keeps a smooth move smooth, while a step still reads as a
-#  near-vertical one-frame jump - its two samples are 0.0024 frames apart, so
-#  the ramp between them is invisible.
+# WHY LINEAR and not CONSTANT. A hold-previous resample turns every smooth
+# pan into a staircase, because SFM's data is a mix of smooth motion and hard
+# cuts with nothing marking which is which. Linear between the surrounding
+# samples keeps a smooth move smooth, while a step still reads as a
+# near-vertical one-frame jump - its two samples are 0.0024 frames apart, so
+# the ramp between them is invisible
 #
-#  AUTO only touches curves that actually contain a step, so an ordinary
-#  smooth take keeps its original keys and its original key count.
+# AUTO only touches curves that actually contain a step, so an ordinary
+# smooth take keeps its original keys and its original key count
 
 STEP_GAP_FRAMES = 0.5      # two keys closer than this are a step, not motion
 SNAP_EPS_FRAMES = 0.01     # SFM's own jitter is about +/-0.0008 of a frame
@@ -716,7 +716,7 @@ def count_stepped(fc, gap=STEP_GAP_FRAMES):
     for i in range(1, len(kps)):
         dx = kps[i].co[0] - kps[i - 1].co[0]
         if dx <= 0.0:
-            steps += 1                      # duplicate or out-of-order time
+            steps += 1                      #duplicate or out-of-order time
         elif dx < gap and abs(kps[i].co[1] - kps[i - 1].co[1]) > thresh:
             steps += 1
     return steps
@@ -757,9 +757,9 @@ def resample_integer(fc):
     f_hi = int(math.ceil(samples[-1][0]))
     span = f_hi - f_lo + 1
     if span < 2 or span > MAX_RESAMPLE_FRAMES:
-        #  A curve spanning more frames than this is not an SFM take; it is a
-        #  bad time conversion. Resampling it would hang Blender, so say so
-        #  and leave the original keys alone.
+        # A curve spanning more frames than this is not an SFM take; it's a
+        # bad time conversion. Resampling it would hang Blender, so say so
+        # and leave the original keys alone
         if span > MAX_RESAMPLE_FRAMES:
             print(f"[DMX_ANIM]  resample SKIPPED for {fc.data_path}[{fc.array_index}]"
                   f" - {span} frames is beyond MAX_RESAMPLE_FRAMES")
@@ -940,7 +940,7 @@ def _normalise_quat_group(fcs):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  PUBLIC API
+# public api
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _apply_anim_scale(action, root_action, factor: float) -> int:
@@ -1052,9 +1052,9 @@ def build_armature_from_dmx(model, name, collection=None):
         local = _joint_local_matrix(element)
         world.append(local if parent < 0 else world[parent] @ local)
 
-    #  Length is cosmetic - poses go through matrices - but a rig you cannot
-    #  see is a rig you cannot check: reach to the nearest child, else half
-    #  the parent.
+    #length is cosmetic - poses go thru matrices - but a rig you cannot
+    #see is a rig you cannot check: reach to the nearest child, else half
+    #the parent
     children_of = _collections.defaultdict(list)
     for index, (_n, _e, parent) in enumerate(joints):
         if parent >= 0:
@@ -1087,8 +1087,8 @@ def build_armature_from_dmx(model, name, collection=None):
     edit_bones = []
     for index, (bone_name, _e, _p) in enumerate(joints):
         eb = arm_data.edit_bones.new(bone_name)
-        #  Length FIRST: EditBone.matrix keeps the length it finds, and a
-        #  zero-length bone is dropped on the way out of edit mode.
+        #Length first: EditBone.matrix keeps the length it finds, and a
+        #zero-length bone is dropped on the way out of edit mode
         eb.tail = (0.0, lengths[index], 0.0)
         eb.matrix = world[index]
         edit_bones.append(eb)
@@ -1185,25 +1185,25 @@ def import_dmx_animation(dmx_path, armature, add_root_helpers: bool = True,
     elif up_axis in ("X", "Y", "Z"):
         resolved_axis = up_axis
 
-    # WHAT THE FILE SAYS vs WHO ACTS ON IT - two different questions.
+    # what THE FILE SAYS vs WHO ACTS ON IT - two different questions
     #
     # resolved_axis is the file's answer ('Y' for every SFM DMX). It decides
-    # whether a correction is NEEDED. It must NOT be handed to BST: on an
+    # whether a correction is NEEDED. It must not be handed to BST: on an
     # existing armature BST cannot apply it and only seeds the root bone with
     # the inverse, laying the character down (see _get_or_create_axis_empty for
     # the measurement). So BST is always run at its 'Z' no-op default and the
-    # axis empty performs the correction.
+    # axis empty performs the correction
     # 'Y' = SFM export (model data converted to Y-up by SFM's exporter)
     # 'Z' = session extract (raw Source Z-up, declared honestly by
-    #       Session_Reader.extract_set)
+    # Session_Reader.extract_set)
     # Anything unstated is treated as an export, which is what every file
-    # predating session extraction actually is.
+    # predating session extraction actually is
     source_axis = 'Z' if resolved_axis == 'Z' else 'Y'
 
     # Before BST runs: BST cannot add bones during an animation job, so any
     # root-level control the file animates - viewTarget above all - has to
     # exist on the rig first or its channel is dropped with a console line
-    # and nothing else.
+    # and nothing else
     try:
         added_bones = ensure_file_root_bones(dmx_path, armature,
                                              up_axis=resolved_axis)
@@ -1224,12 +1224,12 @@ def import_dmx_animation(dmx_path, armature, add_root_helpers: bool = True,
         print(f"[DMX_ANIM]  patch WARNING: {exc}")
         patch = _no_patch()
 
-    #  Quaternion sign flips. Must run BEFORE the stepped-key pass:
-    #  resample_integer lerps components, and lerping across a sign flip
-    #  passes through zero and bakes the artifact onto every integer frame
-    #  in the gap. Negating a key never changes a posed frame (q == -q as a
-    #  rotation), so this is safe on every file; unlike the camera's raw
-    #  path there is nothing here for it to destroy.
+    # Quaternion sign flips. Must run BEFORE the stepped-key pass:
+    # resample_integer lerps components, and lerping across a sign flip
+    # passes through zero and bakes the artifact onto every integer frame
+    # in the gap. Negating a key never changes a posed frame (q == -q as a
+    # rotation), so this is safe on every file; unlike the camera's raw
+    # path there's nothing here for it to destroy
     flips = {"groups": 0, "flipped_keys": 0, "skipped": 0}
     if fix_quat_flips:
         try:
@@ -1247,11 +1247,11 @@ def import_dmx_animation(dmx_path, armature, add_root_helpers: bool = True,
         except Exception as exc:
             print(f"[DMX_ANIM]  quat flip WARNING: {exc}")
 
-    #  Stepped keys. Must run AFTER the patch pass, so the scale and root
-    #  curves it writes get the same treatment as BST's bone curves - a root
-    #  transform cut on a fractional frame is exactly as invisible as a bone
-    #  one. Runs BEFORE _apply_anim_scale, which only multiplies values and
-    #  does not care how many keys there are.
+    # Stepped keys. Must run AFTER the patch pass, so the scale and root
+    # curves it writes get the same treatment as BST's bone curves - a root
+    # transform cut on a fractional frame is exactly as invisible as a bone
+    # one. Runs before _apply_anim_scale, which only multiplies values and
+    # does not care how many keys there are
     stepped = {"curves": 0, "stepped_curves": 0, "resampled_curves": 0,
                "keys_before": 0, "keys_after": 0, "snapped": 0, "steps": 0, "quat_groups_resampled": 0}
     if stepped_keys != 'OFF':
@@ -1279,10 +1279,10 @@ def import_dmx_animation(dmx_path, armature, add_root_helpers: bool = True,
         except Exception as exc:
             print(f"[DMX_ANIM]  stepped-key WARNING: {exc}")
 
-    #  1.16.0: the first flip pass ran on the keys as BST wrote them; the
-    #  stepped pass may then have rewritten some groups. One more walk on the
-    #  result costs nothing on a clean file and guarantees nothing leaves this
-    #  function going the long way round.
+    #1.16.0: the first flip pass ran on the keys as BST wrote them; the
+    #stepped pass may then have rewritten some groups. One more walk on the
+    #result costs nothing on a clean file and guarantees nothing leaves this
+    #function going the long way round
     if fix_quat_flips:
         try:
             late = 0
@@ -1326,10 +1326,10 @@ def import_dmx_animation(dmx_path, armature, add_root_helpers: bool = True,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
-@start_folders.browser_at("animation")          # 3.0.0: opens where you work, learns your folder
+@start_folders.browser_at("animation")          #3.0.0: opens where you work, learns your folder
 class HT_OT_ImportDmxAnimation(Operator, ImportHelper):
     """PICK .dmx (animation) - ONE file. Onto the SELECTED ARMATURE, or onto a
         rig built from the file's own skeleton when nothing matching is selected
@@ -1350,26 +1350,26 @@ WHAT COMES ACROSS
   eyes   a viewTarget the file animates is pre-created if the rig lacks
          it, because BST cannot add bones mid-animation
     """
-    #  BELOW THE TOOLTIP CAP. Blender truncates an operator description
-    #  at 1023 characters, without a warning, mid-word. These paragraphs
-    #  were part of the docstring and were already being cut off before
-    #  anyone could read them, so they live here instead - kept, but out
-    #  of the tooltip's budget.
-    #  STEPPED KEYS: SFM writes a HOLD as two keys a thousandth of a frame
-    #  apart and Blender evaluates only whole frames, so a step lands between
-    #  its own two keys and reads as a ramp. Stepped Keys resamples them.
+    # BELOW the TOOLTIP CAP. Blender truncates an operator description
+    # at 1023 characters, without a warning, mid-word. These paragraphs
+    # were part of the docstring and were already being cut off before
+    # anyone could read them, so they live here instead - kept, but out
+    # of the tooltip's budget
+    # STEPPED KEYS: SFM writes a HOLD as two keys a thousandth of a frame
+    # apart and Blender evaluates only whole frames, so a step lands between
+    # its own two keys and reads as a ramp. Stepped Keys resamples them
     #
-    #  Options live in the file browser sidebar; there is no redo panel
+    # Options live in the file browser sidebar; there's no redo panel
     #
 
     bl_idname  = "ht.import_dmx_animation"
     bl_label   = "DMX Animation"
-    #  NO "REGISTER" - see the note in Report_UI/the constitution.
-    #  REGISTER makes Blender draw the "Adjust Last Operation" panel, and
-    #  touching any field in it RE-RUNS this operator. Re-running an
-    #  import re-reads the DMX and rebuilds every f-curve; nudging Scale
-    #  there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
-    #  with the value you wanted is the safe way to change your mind.
+    # NO "REGISTER" - see the note in Report_UI/the constitution
+    # REGISTER makes Blender draw the "Adjust Last Operation" panel, and
+    # touching any field in it RE-RUNS this operator. Re-running an
+    # import re-reads the DMX and rebuilds every f-curve; nudging Scale
+    # there froze and then killed Blender. Undo (Ctrl+Z) plus a fresh run
+    # with the value you wanted is the safe way to change your mind
     bl_options = {"UNDO"}
 
     filename_ext = ".dmx"
@@ -1499,7 +1499,7 @@ WHAT COMES ACROSS
 
     def invoke(self, context, event):
         # [roadmap #2] Make the panel honest from the first draw: the profile
-        # says BST-like, so the settings under it must already BE BST-like.
+        # says BST-like, so the settings under it must already BE BST-like
         # Without this the enum would advertise one thing and the checkbox
         # below it would show another until the user touched the enum.
         for attr, value in Common_Props.profile_defaults(
@@ -1544,9 +1544,9 @@ WHAT COMES ACROSS
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
         if built and not self.add_root_helpers:
-            #  No axis empty is coming to carry the up-axis turn, so it goes on
-            #  the armature itself (BST's own new-armature behaviour). With Add
-            #  Root Transform on, the axis empty carries it - not twice.
+            # no axis empty is coming to carry the up-axis turn, so it goes on
+            # the armature itself (BST's own new-armature behaviour). With Add
+            # Root Transform on, the axis empty carries it - not twice.
             ax = read_file_up_axis(self.filepath) if self.up_axis in ('FILE', 'SCENE') \
                 else self.up_axis
             armature.matrix_basis = _UP_MATS.get((ax or "Y").upper(), _UP_MATS["Y"])
@@ -1593,8 +1593,8 @@ WHAT COMES ACROSS
             lines.append(f"Factor : x{self.anim_scale:.6g} on "
                          f"{result.get('scaled_curves', 0)} curve(s)")
         if result.get("added_bones"):
-            # Say it out loud. A rig that arrives without viewTarget looks
-            # exactly like a rig whose viewTarget simply is not animated.
+            #say it out loud. A rig that arrives without viewTarget looks
+            #exactly like a rig whose viewTarget simply is not animated
             lines.append(f"Bones  : added {', '.join(result['added_bones'])} "
                          f"(root control(s) the file animates, missing from "
                          f"the rig)")
@@ -1638,10 +1638,10 @@ WHAT COMES ACROSS
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU ITEM  (called directly by HT_MT_import_submenu.draw in __init__.py)
+# MENU ITEM  (called directly by HT_MT_import_submenu.draw in __init__.py)
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Set by __init__.py during register() — direct reference to icon_id().
+#Set by __init__.py during register() — direct reference to icon_id()
 _ht_icon_id = None
 
 def _icon_id(key, fallback="NONE"):
@@ -1660,7 +1660,7 @@ def draw_menu_item(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (HT_OT_ImportDmxAnimation,)

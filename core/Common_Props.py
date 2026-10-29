@@ -57,12 +57,12 @@ Blender's _PropertyDeferred internals, which are not API.
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Scale
+# Scale
 # ─────────────────────────────────────────────────────────────────────────────
 
-# 1 Hammer Unit = 1 inch = 0.0254 m.
+# 1 Hammer Unit = 1 inch = 0.0254 m
 # Valve's player-proportion convention treats 1 HU as 0.75 inch = 0.01905 m,
-# which is what SFM content is usually authored against.
+# which is what SFM content is usually authored against
 HU_INCH_TO_M = 0.0254
 HU_VALVE_TO_M = 0.01905
 M_TO_HU_INCH = 1.0 / HU_INCH_TO_M     # 39.370078740157481
@@ -155,7 +155,7 @@ def draw_scale(layout, op, attr="anim_scale"):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Import profiles                                          [roadmap #2, #3]
+# Import profiles                                          [roadmap #2, #3]
 # ─────────────────────────────────────────────────────────────────────────────
 
 PROFILE_BST = 'BST'
@@ -175,7 +175,7 @@ PROFILE_ITEMS = [
      "Nothing is forced. Your settings stand as you left them"),
 ]
 
-# The single source of truth for what each profile means.
+# the single source of truth for what each profile means.
 _PROFILE_DEFAULTS = {
     PROFILE_BST:     {"add_root_helpers": False, "anim_scale": 1.0},
     PROFILE_SESSION: {"add_root_helpers": True,  "anim_scale": 1.0},

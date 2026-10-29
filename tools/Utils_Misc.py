@@ -99,22 +99,22 @@ from bpy.props import BoolProperty, FloatProperty, EnumProperty, IntProperty
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CONFIG
+# config
 # ──────────────────────────────────────────────────────────────────────────────
 
 MODELS_ROOT     = "__Models__"
 CHARACTERS_ROOT = "__Characters__"
 PROPS_ROOT      = "__Props__"
 LEGACY_ROOTS    = ("___Models___", "___Characters___")   # pre-1.16.0 names
-COLOR_MODELS    = "COLOR_05"   # blue
-COLOR_CHARS     = "COLOR_04"   # green
-COLOR_PROPS     = "COLOR_03"   # yellow
+COLOR_MODELS    = "COLOR_05"   #blue
+COLOR_CHARS     = "COLOR_04"   #green
+COLOR_PROPS     = "COLOR_03"   #yellow
 
-#  "Props are animated, with at least 30 frames of animation on a single
-#  bone." Measured as the SPAN over which one bone's value really changes -
-#  first moving key to last - not as a key count: SFM bakes a static channel
-#  as a key on every frame (thousands of keys, no motion), and a two-key move
-#  sixty frames apart is a sixty-frame animation.
+# "Props are animated, with at least 30 frames of animation on a single
+# bone." Measured as the SPAN over which one bone's value really changes -
+# first moving key to last - not as a key count: SFM bakes a static channel
+# as a key on every frame (thousands of keys, no motion), and a two-key move
+# sixty frames apart is a sixty-frame animation.
 PROP_MIN_FRAMES = 30
 PROP_EPS = 1e-4
 
@@ -122,14 +122,14 @@ PROP_EPS = 1e-4
 EPS_ROTATION = 0.5     # degrees — orientation deviation for quaternion curves
 EPS_SHAPEKEY = 0.02    # shape-key value deviation (0..1 influence)
 
-# Armatures containing ANY of these bones are skipped by the epsilon filter
-# (these are the TF2/HL2 biped skeleton bones — i.e. character rigs, whose bone
-# animation we don't want to thin).
+#armatures containing any of these bones are skipped by the epsilon filter
+#(these are the TF2/HL2 biped skeleton bones — i.e. character rigs, whose bone
+#animation we don't want to thin)
 SKIP_IF_BONES = (
     "bip_spine_0", "bip_pelvis", "bip_head", "bip_neck", "bip_lowerArm_L",
 )
 
-# Acronyms that .title() would mangle (Tf2 → TF2). Extend as needed.
+#Acronyms that .title() would mangle (Tf2 → TF2). Extend as needed
 _ACRONYM_FIXUPS = {
     "Tf2": "TF2", "Hl2": "HL2", "Hl1": "HL1", "Csgo": "CSGO",
     "Cs2": "CS2", "Css": "CSS", "Hwm": "HWM", "Sfm": "SFM",
@@ -138,7 +138,7 @@ _ACRONYM_FIXUPS = {
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ICON HELPER
+# icon helper
 # ──────────────────────────────────────────────────────────────────────────────
 
 _ht_icon_id = None
@@ -150,7 +150,7 @@ def _icon_id(key, fallback="NONE"):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  ITER_FCURVES  (layered-action safe; reuse anim_compat, local fallback)
+# ITER_FCURVES  (layered-action safe; reuse anim_compat, local fallback)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _iter_fcurves(action, target_obj=None):
@@ -180,7 +180,7 @@ def _iter_fcurves(action, target_obj=None):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  FORMATTING + PATH PARSING
+# formatting + path parsing
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _fmt_segment(seg: str) -> str:
@@ -201,7 +201,7 @@ def _parse_source_path(mesh_name: str):
     """
     if mesh_name is None:
         return None
-    # SourceIO uses Windows-style backslash separators in the baked name
+    #SourceIO uses Windows-style backslash separators in the baked name
     raw = mesh_name.replace("/", "\\")
     if "\\" not in raw:
         return None
@@ -220,7 +220,7 @@ def _parse_source_path(mesh_name: str):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  CHARACTER MATCHING  (against HoovyTools/Faulty Rigs/)
+# CHARACTER MATCHING  (against HoovyTools/Faulty Rigs/)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _faulty_rigs_dir() -> Path:
@@ -267,7 +267,7 @@ def _match_character(rig_name: str, stems) -> str:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  COLLECTION HELPERS
+# collection helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _contains_collection(col, target, _seen=None):
@@ -293,8 +293,8 @@ def _linked_anywhere(col):
 
 def _get_or_create_child(name: str, parent_col, color=None):
     """Get/create a collection named *name* as a child of *parent_col*."""
-    #  A child called "name" or Blender's own "name.001" for it - a tree
-    #  re-organized after a name clash must find its own copy again.
+    # A child called "name" or Blender's own "name.001" for it - a tree
+    # re-organized after a name clash must find its own copy again
     existing = parent_col.children.get(name) or next(
         (c for c in parent_col.children
          if c.name.startswith(name + ".") and c.name[len(name) + 1:].isdigit()),
@@ -303,19 +303,19 @@ def _get_or_create_child(name: str, parent_col, color=None):
         if color:
             existing.color_tag = color
         return existing
-    #  Reuse a same-named collection ONLY if nothing else holds it. 1.16.0:
-    #  collection names are global, so "TF2 Enhanced" made under __Models__
-    #  was re-linked under __Props__ - one collection, two parents - and
-    #  every building showed up as a prop. A collection already in some
-    #  tree is someone else's; this tree gets its own ("TF2 Enhanced.001").
+    # Reuse a same-named collection ONLY if nothing else holds it. 1.16.0:
+    # collection names are global, so "TF2 Enhanced" made under __Models__
+    # was re-linked under __Props__ - one collection, two parents - and
+    # every building showed up as a prop. A collection already in some
+    # tree is someone else's; this tree gets its own ("TF2 Enhanced.001")
     col = bpy.data.collections.get(name)
     if col is not None and _linked_anywhere(col):
         col = None
-    #  ...unless reusing it would make a CYCLE: the by-name lookup can
-    #  return the parent itself (chain 'Axis'/'Axis') or an ancestor
-    #  (leaf named like a folder higher up), and children.link() then
-    #  raises and takes the whole Organize step down. A fresh collection
-    #  (Blender names it 'Axis.001') is always safe.
+    # ...unless reusing it would make a CYCLE: the by-name lookup can
+    # return the parent itself (chain 'Axis'/'Axis') or an ancestor
+    # (leaf named like a folder higher up), and children.link() then
+    # raises and takes the whole Organize step down. A fresh collection
+    # (Blender names it 'Axis.001') is always safe
     if col is not None and (col is parent_col
                             or _contains_collection(col, parent_col)):
         col = None
@@ -414,7 +414,7 @@ def _unlink_collection_tree(root_name):
             if obj.name not in scene_col.objects:
                 scene_col.objects.link(obj)
             moved += 1
-        # remove the now-empty collection
+        #remove the now-empty collection
         try:
             bpy.data.collections.remove(col)
         except Exception:
@@ -425,7 +425,7 @@ def _unlink_collection_tree(root_name):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  RIG DISCOVERY
+# rig discovery
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _channel_motion_span(fc):
@@ -446,7 +446,7 @@ def _channel_motion_span(fc):
         prev = v
     if first is None:
         return None
-    #  the move starts at the key BEFORE the first changed one
+    # the move starts at the key before the first changed one
     i = next(i for i, kp in enumerate(kps) if kp.co[0] == first)
     start = kps[max(0, i - 1)].co[0]
     return (start, last)
@@ -570,7 +570,7 @@ def _find_rig_collection(arm):
     """
     scene_col = bpy.context.scene.collection
 
-    # Build child -> parent map for all collections reachable from the scene.
+    # Build child -> parent map for all collections reachable from the scene
     parent_of = {}
     stack = [scene_col]
     while stack:
@@ -620,11 +620,11 @@ def _rig_source_path(members):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MAIN
+# MAIN
 # ──────────────────────────────────────────────────────────────────────────────
 
 def organize_scene(do_characters=True, do_models=True) -> dict:
-    # rerunnable: tear down previous organizer trees first (objects preserved)
+    #rerunnable: tear down previous organizer trees first (objects preserved)
     cleared = _unlink_collection_tree(MODELS_ROOT)
     cleared += _unlink_collection_tree(CHARACTERS_ROOT)
     cleared += _unlink_collection_tree(PROPS_ROOT)
@@ -638,13 +638,13 @@ def organize_scene(do_characters=True, do_models=True) -> dict:
 
     results = {"characters": [], "models": [], "props": [], "skipped": []}
     models_root = chars_root = props_root = None
-    claimed = set()        # objects already assigned this pass
-    source_cols = set()    # rig source collections to tear down afterward
+    claimed = set()        #objects already assigned this pass
+    source_cols = set()    #rig source collections to tear down afterward
 
     for arm in list(_iter_rigs()):
         # The rig already lives in its own SourceIO collection (e.g. 'scout_1')
         # holding the axis/root empties, armature, mesh + _ATTACHMENTS
-        # sub-collections, and the viewTarget empty with its constraints.
+        # sub-collections, and the viewTarget empty with its constraints
         # Grab that whole collection's objects — this captures everything.
         rig_col = _find_rig_collection(arm)
         if rig_col is not None:
@@ -664,12 +664,12 @@ def organize_scene(do_characters=True, do_models=True) -> dict:
         if char:
             if chars_root is None:
                 chars_root = _ensure_root(CHARACTERS_ROOT, COLOR_CHARS)
-            # Nest by character TYPE then INSTANCE so multiple rigs of the same
+            # nest by character TYPE then INSTANCE so multiple rigs of the same
             # character don't collapse into one folder:
             #   ___Characters___ / Scout / scout_1
             #   ___Characters___ / Scout / scout_2
-            # If the rig name IS just the bare stem (single instance), the
-            # instance folder equals the type and we don't double-nest.
+            # If the rig name is just the bare stem (single instance), the
+            # instance folder equals the type and we don't double-nest
             type_name = _fmt_segment(char)
             inst_name = arm.name
             chain = [type_name] if inst_name.lower() == char.lower() else \
@@ -713,7 +713,7 @@ def organize_scene(do_characters=True, do_models=True) -> dict:
         print(f"[ORGANIZE]  SKIP  '{arm.name}' (no character match, no parseable path)")
 
     # tear down the emptied SourceIO source collections, then sweep up any
-    # other empties left behind — so we don't leave hundreds of stale folders.
+    # other empties left behind — so we don't leave hundreds of stale folders
     scene_col = bpy.context.scene.collection
     for col in source_cols:
         _remove_collection_tree(col, protect_root=scene_col)
@@ -725,7 +725,7 @@ def organize_scene(do_characters=True, do_models=True) -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  OPERATOR
+# operator
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_OT_OrganizeScene(Operator):
@@ -797,7 +797,7 @@ are left where they are and reported, never moved somewhere wrong"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  EPSILON FILTER  (keyframe decimation — rotation + shape keys only)
+# EPSILON FILTER  (keyframe decimation — rotation + shape keys only)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _rdp_keep(frames, values, eps):
@@ -930,7 +930,7 @@ def _simplify_rotation_and_shapekeys(action, owner, eps_rot, eps_sk,
             for fc in fcs:
                 removed += _trim_fcurve(fc, keep)
 
-    # ── euler rotation (per-component, eps in radians) ──
+    #── euler rotation (per-component, eps in radians) ──
     if do_armatures:
         for fc in euler_curves:
             kps = fc.keyframe_points
@@ -968,7 +968,7 @@ def _process_mesh_shapekeys(mesh, eps_sk, diag=None, do_shapekeys=True):
         return 0, 0
     sk = mesh.data.shape_keys if mesh.data else None
     if sk and sk.animation_data and sk.animation_data.action:
-        # eps_rot is irrelevant here (no rotation on shape-key actions); pass 0.
+        # eps_rot is irrelevant here (no rotation on shape-key actions); pass 0
         # do_armatures=False since a shape-key action has no rotation curves.
         return _simplify_rotation_and_shapekeys(
             sk.animation_data.action, sk, 0.0, eps_sk, diag=diag,
@@ -1033,7 +1033,7 @@ def reduce_lag(eps_rot=EPS_ROTATION, eps_sk=EPS_SHAPEKEY,
           + f" [{scope}]  (skip_faulty={skip_faulty}, skip_biped={skip_biped}, "
           + f"armatures={do_armatures}, shapekeys={do_shapekeys})")
 
-    done_meshes = set()   # meshes whose shape keys were already processed
+    done_meshes = set()   #meshes whose shape keys were already processed
 
     for arm in arms:
         if skip_faulty and _match_character(arm.name, stems):
@@ -1065,9 +1065,9 @@ def reduce_lag(eps_rot=EPS_ROTATION, eps_sk=EPS_SHAPEKEY,
         pct = (100.0 * rr / rb) if rb else 0.0
         print(f"[EPSILON]  '{arm.name}': {rr}/{rb} keys removed ({pct:.1f}%)")
 
-    # ── directly-selected meshes → shape keys only ───────────────────────────
-    # (a mesh already handled via its armature above is skipped to avoid
-    #  double-processing)
+    #── directly-selected meshes → shape keys only ───────────────────────────
+    #(a mesh already handled via its armature above is skipped to avoid
+    #double-processing)
     for mesh in sel_meshes:
         if mesh.name in done_meshes:
             continue
@@ -1215,10 +1215,10 @@ before and after counts so you can see what it cost"""
 _TAU = 2.0 * math.pi
 _PI = math.pi
 
-#  A wrap worth fixing is most of a full turn. 180 is the theoretical boundary
-#  but a real 180-degree step between two keys is legitimate on a fast spin, so
-#  this sits well above it. Only used by the WRAP pass - the gimbal-flip pass
-#  has its own test and does not look at this at all.
+#A wrap worth fixing is most of a full turn. 180 is the theoretical boundary
+#but a real 180-degree step between two keys is legitimate on a fast spin, so
+#this sits well above it. Only used by the WRAP pass - the gimbal-flip pass
+#has its own test and does not look at this at all
 EULER_JUMP_THRESHOLD_DEG = 300.0
 
 
@@ -1296,9 +1296,9 @@ def _unflip_quaternions(fcs):
                 _negate_key(kp)
             curr = [-v for v in curr]
             flipped += 1
-            #  How far the interpolation was travelling that it now will not.
-            #  2*acos(|dot|) is the angle between the two orientations; the
-            #  wrong-signed path is 360 minus that.
+            # how far the interpolation was travelling that it now will not
+            # 2*acos(|dot|) is the angle between the two orientations; the
+            # wrong-signed path is 360 minus that.
             ang = 2.0 * math.degrees(math.acos(min(1.0, abs(dot))))
             worst = max(worst, 360.0 - ang)
         prev = curr
@@ -1335,9 +1335,9 @@ def _unflip_eulers(fcs):
     for _frame, kps in rows[1:]:
         curr = tuple(kp.co[1] for kp in kps)
         alt = _euler_alternative(*curr)
-        #  Compare AFTER unwrapping each candidate to the previous frame, or
-        #  the winner is decided by an arbitrary multiple of 360 rather than
-        #  by which pose is actually nearer.
+        # Compare after unwrapping each candidate to the previous frame, or
+        # the winner is decided by an arbitrary multiple of 360 rather than
+        # by which pose is actually nearer
         cur_u = tuple(v - _TAU * round((v - p) / _TAU)
                       for v, p in zip(curr, prev))
         alt_u = tuple(v - _TAU * round((v - p) / _TAU)
@@ -1374,9 +1374,9 @@ def _unwrap_fcurve(fc, threshold):
         raw = kp.co[1]
         delta = (raw + offset) - prev
         if abs(delta) > threshold:
-            #  Round to the NEAREST whole turn rather than adding one. A
-            #  double wrap shows up on bakes of fast spins, and a single-step
-            #  fix would leave half of it behind.
+            # Round to the NEAREST whole turn rather than adding one. A
+            # double wrap shows up on bakes of fast spins, and a single-step
+            # fix would leave half of it behind
             turns = round(delta / _TAU)
             if turns:
                 offset -= turns * _TAU
@@ -1532,7 +1532,7 @@ def _rebuild_baked_spins(action, obj, path, fcs, kind, frame_range=None,
                     if all(abs(x - _TAU * round(x / _TAU)) < 1e-4 for x in d):
                         carry = [_TAU * round(x / _TAU) for x in d]
                     else:
-                        carry = "convert"        # landed on the gimbal twin
+                        carry = "convert"        #landed on the gimbal twin
                 if carry == "convert":
                     e = quats[i].to_euler(order, prev)
                     new = [e[c] for c in range(3)]
@@ -1609,8 +1609,8 @@ def delete_euler_spins(only_selected=False, include_objects=True,
     objs = (list(bpy.context.selected_objects) if only_selected
             else list(bpy.context.scene.objects))
     if only_selected and selected_bones_only:
-        #  The armature you are posing is the active object even when its
-        #  object is not selected (Pose Mode lets you tab in that way).
+        # the armature you are posing is the active object even when its
+        # object isn't selected (Pose Mode lets you tab in that way)
         act = bpy.context.view_layer.objects.active
         if act is not None and act.mode == 'POSE' and act not in objs:
             objs.append(act)
@@ -1620,9 +1620,9 @@ def delete_euler_spins(only_selected=False, include_objects=True,
                 "camera_flips": 0, "baked_spins": 0, "baked_keys": 0,
                 "worst": 0.0, "names": [], "spins": [], "left": []}
 
-    #  One action can be shared by several objects. Unwrapping it twice is
-    #  harmless - the second pass finds nothing - but it would double-count in
-    #  the report, and a report that overstates is one nobody trusts next time.
+    #one action can be shared by several objects. Unwrapping it twice is
+    #harmless - the second pass finds nothing - but it would double-count in
+    #the report, and a report that overstates is one nobody trusts next time
     seen = set()
     touched_objs = curves = keys = 0
     quats = gimbals = wraps = cam_flips = baked = baked_keys = 0
@@ -1977,15 +1977,15 @@ In Pose Mode the button works on the selected bones only. Undoable"""
 
 
 
-#  The experimental keyword table. FIRST MATCH WINS, and the order is the
-#  precedence: skin before metal, because "hand_rail" should read as a rail,
-#  but a character's "metal_hand" glove reading as skin is the safer miss.
-#  Values are taste, not physics - tuned to read right in EEVEE at a glance.
+# the experimental keyword table. FIRST MATCH WINS, and the order is the
+# precedence: skin before metal, bc "hand_rail" should read as a rail,
+# but a character's "metal_hand" glove reading as skin is the safer miss
+# Values are taste, not physics - tuned to read right in EEVEE at a glance.
 _VLG_RULES = (
-    #  key         needles                                           settings
-    #  NO "arm" OR "leg" NEEDLES: "arm" is inside armor, farm and alarm, and
-    #  the very first test scene had "armor_metal_sheet" reading as skin.
-    #  A greedy needle in the FIRST rule poisons every rule after it.
+    # key         needles                                           settings
+    # NO "arm" or "leg" NEEDLES: "arm" is inside armor, farm and alarm, and
+    # the very first test scene had "armor_metal_sheet" reading as skin.
+    # A greedy needle in the FIRST rule poisons every rule after it
     ("skin",   ("skin", "face", "head", "hand", "body", "flesh", "eyeball"),
      {"Roughness": 0.25, "Metallic": 0.125,
       "Subsurface Weight": 0.15,
@@ -2008,7 +2008,7 @@ _VLG_RULES = (
      {"Roughness": 0.9, "Metallic": 0.0}),
 )
 
-#  What everything else gets - and the WHOLE pass in non-experimental mode.
+# what everything else gets - and the WHOLE pass in non-experimental mode
 _VLG_DEFAULT = {"Roughness": 0.25}
 
 
@@ -2120,7 +2120,7 @@ BSDF are counted and skipped, never touched"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  MENU
+# menu
 # ──────────────────────────────────────────────────────────────────────────────
 
 class HT_MT_utils_misc_submenu(bpy.types.Menu):
@@ -2160,7 +2160,7 @@ def draw_utils_misc_entry(layout):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  REGISTER / UNREGISTER
+# register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
 _CLASSES = (

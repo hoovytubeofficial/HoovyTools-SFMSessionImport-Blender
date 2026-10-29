@@ -48,8 +48,8 @@ from bpy.types import Operator
 from . import marks
 
 
-#  Kinds, in the order they are printed. The order is the pipeline's, so the
-#  manifest reads the way the import ran.
+# kinds, in the order they are printed. The order is the pipeline's, so the
+# manifest reads the way the import ran
 KINDS = ("session", "model", "particle", "sound", "camera")
 
 _KIND_LABEL = {
@@ -106,16 +106,16 @@ def lines(width=96):
             continue
         out.append(f"{dot}{_KIND_LABEL[kind]}  ({len(got)})")
         for e in got:
-            #  THE FULL PATH, NOT THE FILE NAME. The whole point is being able
-            #  to go and open it, and three `scout.mdl` under three different
-            #  mods is the normal case.
+            # the FULL PATH, not the FILE NAME. The whole point is being able
+            # to go and open it, and three `scout.mdl` under three different
+            # mods is the normal case
             path = e["path"]
             if len(path) > width:
                 path = "..." + path[-(width - 3):]
             head = f"   {e['name']}" if e["name"] else "   "
             out.append(head)
-            #  A file that has since moved is worth saying, because "check
-            #  this file" is the instruction and it would fail silently.
+            # A file that has since moved is worth saying, bc "check
+            # this file" is the instruction and it would fail silently
             out.append(f"      {path}" + ("" if _exists(e["path"])
                                           else "   [NOT THERE NOW]"))
         out.append("")
