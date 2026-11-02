@@ -49,6 +49,7 @@ CANDIDATES = {
         "HoovyToolsParticleImport",
         "HoovyToolsParticleImport-main",
     ),
+    # 3.0.10: only what this add-on USES - it's public, and nothing here needs the others
 }
 
 

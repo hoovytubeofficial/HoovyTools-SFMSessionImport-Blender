@@ -1,27 +1,30 @@
 # =============================================================================
-# Import VMT (V1)
+# Import VMT (V2)
 # The Text Editor version of  SFM Session Importer > Tools > HoovyTools
-# Importers > 2 Import VMT  (SFM Session Importer 3.0.0).
+# Importers > 2 Import VMT  (SFM Session Importer 3.0.10)
 # =============================================================================
 #
 # what IT does: builds a Blender material from each .vmt - its shader, its
 # textures (found through your SFM install and the folders around the file)
 # and their settings, packed into the .blend - with HoovyTools' own reader:
 # SourceIO doesn't have to be installed. With a mesh active, the materials
-# are added to it
+# are added to it. Each material is put on a preview sphere at the 3D cursor
+# (collection "HT · Material Previews"), so you see it at once
 #
 # HOW: set the values below, press Run Script (Alt+P). What it made, and
 # every texture it could not find, prints to the console (Window > Toggle
 # System Console).
 #
-# Needs the SFM Session Importer add-on (3.0.0 or newer) installed.
+# Needs the SFM Session Importer add-on (3.0.10 or newer) installed
 #
 # this feature was added in version 3.0.0 and is in experimental stage.
+# (V2: SPAWN_PREVIEW_SPHERE - ADDED IN VERSION 3.0.10.)
 # =============================================================================
 
 VMT_FILES = [r""]           #one or more .vmt files: [r"C:\...\a.vmt", r"C:\...\b.vmt"]
 SOURCE_SHADING = True       #True = VertexLitGeneric with the Source look (phong, rim, tint); False = plain Principled
 ADD_TO_ACTIVE_MESH = True   #add every material to the active mesh's material slots
+SPAWN_PREVIEW_SPHERE = True  # put each material on a UV sphere at the 3D cursor, one next to the other
 
 # -----------------------------------------------------------------------------
 
@@ -43,7 +46,7 @@ def session_importer():
             addon_utils.enable(name, default_set=True)
             break
     if "import_vmt" not in dir(bpy.ops.ht):
-        raise RuntimeError("SFM Session Importer 3.0.0+ is not installed - install it, then run this again")
+        raise RuntimeError("SFM Session Importer 3.0.10+ is not installed - install it, then run this again")
 
 
 def main():
@@ -52,7 +55,8 @@ def main():
         raise RuntimeError("Set VMT_FILES at the top of this script to one or more .vmt files")
     session_importer()
     for f in files:
-        result = bpy.ops.ht.import_vmt(filepath=f, use_bvlg=SOURCE_SHADING, assign=ADD_TO_ACTIVE_MESH)
+        result = bpy.ops.ht.import_vmt(filepath=f, use_bvlg=SOURCE_SHADING, assign=ADD_TO_ACTIVE_MESH,
+                                       spawn_sphere=SPAWN_PREVIEW_SPHERE)
         print("[SFM Session Importer]  Import VMT %s: %s" % (sorted(result)[0], f))
 
 

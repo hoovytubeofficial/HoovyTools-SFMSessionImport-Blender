@@ -561,6 +561,15 @@ Source models already stand Z-up; the report says so for a character"""
         except Exception:                                     # noqa: BLE001
             pass
 
+        # 3.0.3: counted in _config/usage.json (your most imported models: Easy Import's Model list), and the rig
+        # stamped with its model so the animations put on it are counted against it
+        try:
+            from ..core import usage
+            armature["ht_mdl_path"] = str(self.filepath)
+            usage.model_imported(self.filepath)
+        except Exception:                                     # noqa: BLE001
+            pass
+
         self._report(context, lines, level)
         return {"FINISHED"}
 

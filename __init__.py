@@ -46,7 +46,7 @@ bl_info = {
     "name":        "SFM Session Importer",
     "description": "SFM sessions, models, animations, cameras, lights, sounds and particles into Blender",
     "author":      "Kajetan (HoovyTube)",
-    "version":     (3, 0, 0),
+    "version":     (3, 0, 10),
     "blender":     (5, 0, 1),
     "location":    "File > Import > Source Engine (SFM Session Importer) + 3D View sidebar (N) > HoovyTools",
     "category":    "Import-Export",
@@ -119,6 +119,18 @@ class HoovyToolsPreferences(AddonPreferences):
         description = "Path to SourceFilmmaker/game/usermod - must contain gameinfo.txt",
         default     = r"C:\Program Files (x86)\Steam\steamapps\common\SourceFilmmaker\game\usermod",
         subtype     = "DIR_PATH",
+    )
+
+    find_sfm_on_all_drives: BoolProperty(
+        name        = "Look for SFM on every drive",
+        description = (
+            "Also search the SFM installs on the other drives (C:, D:, E:, F: ...) "
+            "in the usual Steam folders, after the ones set here. A session made "
+            "with models from an older install on another drive then still finds "
+            "them. The SFM folder a loaded .dmx sits in is picked up by itself "
+            "either way. ADDED IN VERSION 3.0.8"
+        ),
+        default     = True,
     )
 
     scan_game_mounts: BoolProperty(
@@ -220,6 +232,7 @@ class HoovyToolsPreferences(AddonPreferences):
         status.label(text=str(active) if active.exists() else "not found - pick the usermod folder",
                      icon="CHECKMARK" if active.exists() else "ERROR")
         box.prop(self, "scan_game_mounts")
+        box.prop(self, "find_sfm_on_all_drives")
 
         box = layout.box()
         box.label(text="Models", icon="MESH_DATA")

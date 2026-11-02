@@ -853,7 +853,19 @@ def tool_variables(props):
         if prop.type in ("POINTER", "COLLECTION"):
             continue
         out.append(prop.identifier)
+    # 3.0.2 EASY IMPORT: its variables only while it is on (Import With Model's own only while that is on)
+    if "easy_import" in out:
+        if not getattr(props, "easy_import", False):
+            out = [n for n in out if n not in EASY_KEYS]
+        elif not getattr(props, "import_with_model", False):
+            out = [n for n in out if n not in ("model_pick", "model_path", "model_engine")]
+        elif getattr(props, "model_pick", "") != "PATH":
+            out = [n for n in out if n != "model_path"]
     return out
+
+
+EASY_KEYS = ("fix_rest_pose", "make_upright", "root_origin", "bake_root", "import_with_model", "model_pick",
+             "model_path", "model_engine")
 
 
 def ribbon(layout, context, st, key, idname, text, icon_kw, enabled=True, tool=None):
@@ -884,6 +896,11 @@ def ribbon(layout, context, st, key, idname, text, icon_kw, enabled=True, tool=N
     col.use_property_decorate = False
     for n in names:
         col.prop(props, n)
+    # 3.0.3: Import Animation's Easy Import - a model added to the Model list from here (a file browser opens)
+    if "model_pick" in names:
+        row = col.row()
+        row.use_property_split = False
+        row.operator("ht.easy_add_model", text="Add Model...", icon='ADD')
 #5 is the HoovyTools Particle Import add-on's own .pcf importer, drawn as
 #it's - a copy here would be the one that drifts.
 PARTICLE_TOOL = ("htp.choose_particle_system", "5  Import Particles (.pcf)",

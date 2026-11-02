@@ -678,9 +678,8 @@ THE CONVERSION IS VERIFIED - DO NOT "FIX" IT
 THE LENS IS SFM'S FRAMING (1.18.2)
   SFM's field of view is horizontal at 4:3 with the vertical fixed; the
   lens is set so Blender shows the same vertical framing at your render
-  aspect. Export the camera back out to SFM
-  and you get the same file. The old lens (minus a 10 mm fudge)
-  is Lens: Legacy.
+  aspect, so exporting the camera back to SFM gives the same file. The
+  old lens (minus a 10 mm fudge) is Lens: Legacy.
     """
     # BELOW the TOOLTIP CAP. Blender truncates an operator description
     # at 1023 characters, without a warning, mid-word. These paragraphs

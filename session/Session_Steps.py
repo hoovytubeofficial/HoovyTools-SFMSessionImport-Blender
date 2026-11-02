@@ -137,7 +137,9 @@ def import_models(context, session, fix_rigs=False, **_legacy):
     from . import Import_Session
     r = Import_Session.run_session_import(Path(session))
     out = {"imported": r.get("imported", 0), "missing": r.get("missing", 0),
-           "fixed": 0, "no_reference": 0, "rig_errors": 0}
+           "fixed": 0, "no_reference": 0, "rig_errors": 0,
+           "missing_models": r.get("missing_models", []),
+           "elsewhere": r.get("elsewhere", {}), "searched": r.get("searched", 0)}
 
     if fix_rigs:
         rf = Import_Session.run_rig_fixer()
@@ -761,6 +763,9 @@ weighted to it. A static prop is rigid, so full weight is exact.
                  ]
         if r["missing"]:
             lines.append(f"Missing  : {r['missing']} model file(s)")
+            from .Import_Session import missing_lines
+            lines += ["           " + ln for ln in missing_lines(
+                r.get("missing_models", []), r.get("elsewhere", {}), r.get("searched", 0))]
         if self.fix_rigs:
             lines.append(f"Rigs     : {r['fixed']} rest pose(s) fixed")
             if r["no_reference"]:
@@ -1348,6 +1353,9 @@ falls off with the inverse square. Light aim is confirmed correct
                 desaturate_factor=self.desaturate,
                 skip_names=hidden or None)
         except Exception as exc:
+            if "No light elements" in str(exc):           # 3.0.9: nothing to import isn't a failure
+                self.report({"INFO"}, "The session has no lights")
+                return {"FINISHED"}
             self.report({"WARNING"}, f"{type(exc).__name__}: {exc}")
             return {"CANCELLED"}
         lines = [f"Lights   : {r['count']}"

@@ -417,6 +417,14 @@ report its frame rate and warn before a mismatch bends your keys"""
         pr.session_fps = ""
         pr.session_sets = -1
         print(f"[HT_PATHS]  session -> {self.filepath}")
+        # 3.0.8: the SFM this .dmx sits in becomes a searched install
+        try:
+            from .Import_Session import adopt_install
+            adopted = adopt_install(self.filepath)
+            if adopted:
+                self.report({"INFO"}, adopted)
+        except Exception as exc:                              # noqa: BLE001
+            print(f"[HT_PATHS]  adopt install failed: {exc}")
 
         if self.world_black:
             blacked = set_world_black(context.scene)

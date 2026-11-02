@@ -14,7 +14,7 @@ and for the twin, [Import Particles into Blender](https://www.youtube.com/watch?
 
 [![SFM Session to BLENDER Importer - video tutorial](https://img.youtube.com/vi/SGEVbgdZYaY/hqdefault.jpg)](https://www.youtube.com/watch?v=SGEVbgdZYaY)
 
-**[Download 3.0.0](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases/download/v3.0.0/HoovyTools-SFMSessionImport-Blender-3.0.0.zip)** - then drag the zip onto Blender. ([All releases](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases))
+**[Download 3.0.10](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases/download/v3.0.10/HoovyTools-SFMSessionImport-Blender-3.0.10.zip)** - then drag the zip onto Blender. ([All releases](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases))
 
 Source Filmmaker saves a session as a DMX file and has assumed, since 2012, that nothing else will ever open it.
 Valve has not given it much reason to reconsider. This add-on reads the file directly and rebuilds the shot in
@@ -52,7 +52,7 @@ Blender, frame for frame.
 
 ## Install
 
-1. Download `HoovyTools-SFMSessionImport-Blender-3.0.0.zip` from [Releases](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases). Leave it zipped.
+1. Download `HoovyTools-SFMSessionImport-Blender-3.0.10.zip` from [Releases](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases). Leave it zipped.
 2. Drag the zip onto any Blender window. Blender offers to install a **Legacy Add-on** - keep *Enable on Install*
    ticked and press OK. (Edit > Preferences > Add-ons > Install from Disk does the same.)
 3. In the 3D Viewport, open the sidebar (`N`) > **HoovyTools** > **SFM Session Importer**.
@@ -102,7 +102,8 @@ The **Tools** tab works on single files, with or without a session loaded.
 - **Main Tools** - 1 Import Model (`.mdl`), 2 Import Animation (`.dmx`), 3 Import Shape Keys (`.dmx`),
   4 Import Camera (`.dmx`), 5 Import Particles (`.pcf`, through Source Particle Import).
 - **HoovyTools Importers** - Import MDL, Import VMT (a material; with a mesh selected it is added to it) and
-  Import VTF (an image, sprite sheets included). None of them needs SourceIO.
+  Import VTF (an image, sprite sheets included), each shown on a preview sphere at the 3D cursor. None of them
+  needs SourceIO.
 - Below them: batch folders, shape-key repairs, rest poses and eyes, camera tools, and cleanup.
 
 How a tool works:
@@ -116,12 +117,23 @@ work or for reading how it is done:
 
 1. **Dev** tab > **DEVELOPER MODE** (the last button).
 2. A folder button appears next to Import VMT and Import VTF. It opens `# tools/Import VMT/`.
-3. In Blender's Text Editor, Text > Open > `Import VMT (V1).py`.
+3. In Blender's Text Editor, Text > Open > `Import VMT (V2).py`.
 4. Fill in the line at the top - `VMT_FILES = [r"C:\path\to\material.vmt"]` - and press **Run Script** (`Alt+P`).
+
+**SFM Detective** (`# tools/SFM Detective/`) is a standalone folder finder: it finds every Source Filmmaker
+install on the computer - Steam's libraries, the usual folders on every drive, renamed copies with `--deep` - and,
+given a session, lists every model it uses and where each one is, or that it is nowhere. It needs nothing else:
+run it in Blender's Text Editor, or `python "SFM Detective (V1).py" "D:\...\my_session.dmx"`. The magnifier
+on Dev > Wiring > Where It Looks opens its folder.
 
 ## Version history
 
-- **3.0.0** - this release: the session's shots by name, the map step, the add-on's own MDL / VMT / VTF importers,
+- **3.0.10** - this release: Import Animation's **Easy Import** (fix the rest pose, stand the take upright,
+  bring its model along, keep the root at the origin or bake it); a failed import names every model it could not
+  find and says when one is in another SFM install; the SFM a session sits in is picked up by itself, and SFM is
+  looked for on every drive; **SFM Detective**; Import VMT / VTF put each file on a preview sphere (a particle
+  material shows its texture); a session without lights no longer reports a failed step.
+- **3.0.0** - the session's shots by name, the map step, the add-on's own MDL / VMT / VTF importers,
   progress bars on every step, a Dev tab with Wiring, PRINT HELP and Configure.
 - **2.0.0** - the version that was on [hoovytube.com](https://hoovytube.com), published there as HoovyTools 1.3.1.
   Kept on [Releases](https://github.com/hoovytubeofficial/HoovyTools-SFMSessionImport-Blender/releases/tag/v2.0.0) for reference. Install one version at a time - they share

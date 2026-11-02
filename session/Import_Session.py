@@ -103,6 +103,173 @@ def usermod_bases() -> list:
     return out
 
 
+def search_bases() -> list:
+    """Every install CONTENT is looked up in (3.0.9): the configured ones - usermod_bases(), which the
+    Wiring counts - then, with Look for SFM on every drive, the installs found on the other drives. Kept
+    apart from usermod_bases() so "1 of 2 connected" still counts only what you set."""
+    import os
+    out = list(usermod_bases())
+    if _find_on_all_drives():
+        seen = {os.path.normcase(os.path.abspath(str(p))) for p in out}
+        for p in discovered_usermods():
+            key = os.path.normcase(os.path.abspath(str(p)))
+            if key not in seen:
+                seen.add(key)
+                out.append(p)
+    return out
+
+
+def _find_on_all_drives() -> bool:
+    prefs = _get_prefs()
+    return bool(getattr(prefs, "find_sfm_on_all_drives", True)) if prefs else True
+
+
+_GAMES_CACHE = None
+
+
+def discovered_games() -> list:
+    """Every `SourceFilmmaker/game` folder in the usual Steam places on every
+    drive letter (3.0.8). Read once per Blender session - drives do not grow
+    SFM installs while you work."""
+    global _GAMES_CACHE
+    if _GAMES_CACHE is None:
+        import os
+        found, seen = [], set()
+
+        def add(game):
+            try:
+                if game.is_dir():
+                    key = os.path.normcase(os.path.abspath(str(game)))
+                    if key not in seen:
+                        seen.add(key)
+                        found.append(game)
+            except (OSError, ValueError):
+                pass
+        for drive in _local_drives():
+            for guess in _SFM_GAME_GUESSES:
+                add(Path(drive) / guess)
+        #3.0.9: and every library Steam lists - any folder on any drive. After the usual folders, so the
+        #same install keeps the disk's spelling (Steam's registry keeps its path in lower case)
+        for lib in _steam_libraries():
+            add(lib / "steamapps" / "common" / "SourceFilmmaker" / "game")
+        _GAMES_CACHE = found
+    return list(_GAMES_CACHE)
+
+
+def _local_drives() -> list:
+    """['C:\\', 'D:\\' ...] - fixed, removable and RAM drives only (3.0.9). A disconnected network drive can
+    hang a folder check for half a minute, an empty CD drive raises; both are left out. Asks Windows for the
+    drive list instead of touching all 26 letters."""
+    import string
+    try:
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        mask = k32.GetLogicalDrives()
+        return [f"{c}:\\" for i, c in enumerate(string.ascii_uppercase)
+                if mask & (1 << i) and k32.GetDriveTypeW(f"{c}:\\") in (2, 3, 6)]
+    except Exception:                                         # noqa: BLE001 - not Windows
+        import os
+        return [f"{c}:\\" for c in string.ascii_uppercase if os.path.isdir(f"{c}:\\")]
+
+
+def _steam_libraries() -> list:
+    """Every Steam library Steam itself lists (registry -> libraryfolders.vdf), 3.0.9."""
+    roots = []
+    try:
+        import winreg
+        for hive, sub, name in ((winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam", "SteamPath"),
+                                (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath"),
+                                (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Valve\Steam", "InstallPath")):
+            try:
+                with winreg.OpenKey(hive, sub) as k:
+                    roots.append(Path(winreg.QueryValueEx(k, name)[0]))
+            except OSError:
+                pass
+    except ImportError:
+        pass
+    libs = []
+    for root in roots:
+        libs.append(root)
+        for vdf in (root / "steamapps" / "libraryfolders.vdf", root / "config" / "libraryfolders.vdf"):
+            try:
+                text = vdf.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            for m in re.finditer(r'"path"\s+"([^"]+)"', text):
+                libs.append(Path(m.group(1).replace("\\\\", "\\")))
+    return libs
+
+
+def discovered_usermods() -> list:
+    """usermod of every discovered SFM install that has a gameinfo.txt."""
+    return [g / "usermod" for g in discovered_games()
+            if (g / "usermod" / "gameinfo.txt").is_file()]
+
+
+def install_of(dmx_path) -> Path | None:
+    """The usermod of the SFM install a .dmx sits inside, or None (3.0.8).
+    Walks up from the file to the first mod folder with a gameinfo.txt whose
+    parent is `game` - `...\\game\\usermod\\elements\\x.dmx` -> usermod."""
+    import os
+    try:
+        if not str(dmx_path).strip():
+            return None
+        p = Path(os.path.abspath(str(dmx_path)))      # 3.0.9: abspath, not resolve (no \\server rewrite)
+    except (OSError, ValueError):
+        return None
+    for parent in p.parents:
+        try:
+            if parent.parent.name.lower() == "game" and (parent / "gameinfo.txt").is_file():
+                um = parent.parent / "usermod"
+                return um if (um / "gameinfo.txt").is_file() else parent
+            # 3.0.9: a .dmx in a mod folder without its own gameinfo (game\tf_movies\...)
+            if parent.name.lower() == "game" and (parent / "usermod" / "gameinfo.txt").is_file():
+                return parent / "usermod"
+        except (OSError, ValueError):
+            return None
+    return None
+
+
+def adopt_install(dmx_path) -> str:
+    """Make the SFM install a session lives in one the add-on searches (3.0.8).
+
+    The session was saved by THAT SFM, so its gameinfo.txt, dmxconvert.exe and
+    models are the right ones. A preference that points nowhere (the default
+    is C:\\Program Files (x86)\\... and plenty of people have SFM on D:) is
+    replaced; a valid one is kept and the session's install goes into the first
+    free extra usermod slot. Returns what it did, '' when nothing was needed."""
+    um = install_of(dmx_path)
+    if um is None:
+        return ""
+    def key(p):
+        try:
+            return Path(p).resolve()
+        except OSError:
+            return Path(p)
+    configured = [p for p in [_pref_usermod()] + _user_paths.folders("usermod")
+                  if p is not None and p.is_dir()]
+    if key(um) in {key(p) for p in configured}:
+        return ""
+    prefs = _get_prefs()
+    pref = _pref_usermod()
+    try:
+        if prefs is not None and (pref is None or not (pref / "gameinfo.txt").is_file()):
+            prefs.sfm_usermod_path = str(um)
+            msg = f"SFM Usermod Path set to {um} (the SFM this session is in)"
+        else:
+            slots = _user_paths.slots("usermod")
+            free = next((i for i in range(1, len(slots)) if not (slots[i] or "").strip()), None)
+            if free is None:
+                return (f"the session is in {um}, which is not one of your SFM paths "
+                        f"and every usermod slot is taken")
+            _user_paths.set_slot("usermod", free, str(um))
+            msg = f"usermod slot {free + 1} set to {um} (the SFM this session is in)"
+    except Exception as exc:                                  # noqa: BLE001
+        return f"could not add the session's SFM install {um}: {exc}"
+    print(f"[SESSION]  {msg}")
+    return msg
+
+
 def _pref_usermod() -> Path:
     """Slot 1: whatever the preference says, valid or not."""
     prefs = _get_prefs()
@@ -251,7 +418,20 @@ def _dmxconvert_folders() -> list:
         if p.is_dir():
             out.append(p)
     out.extend(_user_paths.folders("dmxconvert"))
-    return out
+    return [dmxconvert_dir(p) for p in out]
+
+
+def dmxconvert_dir(p: Path) -> Path:
+    """The folder that really holds dmxconvert.exe for a folder somebody picked (3.0.9): itself, its bin,
+    or - a usermod, game or SFM folder pasted into the slot - that install's game\\bin. Unchanged when
+    none of them has it."""
+    for c in (p, p / "bin", p.parent / "bin", p / "game" / "bin", p.parent.parent / "game" / "bin"):
+        try:
+            if (c / "dmxconvert.exe").is_file():
+                return c
+        except (OSError, ValueError):
+            pass
+    return p
 
 
 def _find_dmxconvert(gameinfo_base: Path = None) -> Path:
@@ -267,9 +447,12 @@ def _find_dmxconvert(gameinfo_base: Path = None) -> Path:
     # is exactly the case where the first one's bin/ is the missing thing, so
     # looking only next to the primary usermod would report "not found" while
     # a working copy sat one slot down the list
-    bases = [gameinfo_base] if gameinfo_base else (usermod_bases()
-                                                   or [_pref_usermod()])
+    # 3.0.9: the given install first, then every other one - the exe is Valve's and identical everywhere,
+    # and a preference pointing at a drive without SFM no longer leaves the import without it
+    bases = ([gameinfo_base] if gameinfo_base else []) + search_bases() + [_pref_usermod()]
     for base in bases:
+        if base is None:
+            continue
         sfm_root = base.parent.parent
         for c in [sfm_root / "game/bin/dmxconvert.exe",
                   sfm_root / "bin/dmxconvert.exe"]:
@@ -502,13 +685,14 @@ def _build_search_paths(gameinfo_base: Path = None) -> list:
         # "just this one" - that's what an override is for, and the session
         # dialog's per-import override depends on it
         out = []
-        for base in (usermod_bases() or [_pref_usermod()]):
+        bases = search_bases()                       # 3.0.9: + the installs on other drives (option)
+        for base in (bases or [_pref_usermod()]):
             for d in _build_search_paths(base):
                 if d not in out:
                     out.append(d)
         if len(out) > 1:
             print(f"[SESSION]  {len(out)} search path(s) across "
-                  f"{len(usermod_bases())} SFM install(s)")
+                  f"{len(bases)} SFM install(s)")
         return out
     paths = [gameinfo_base]
     ginfo = gameinfo_base / "gameinfo.txt"
@@ -535,7 +719,9 @@ def _build_search_paths(gameinfo_base: Path = None) -> list:
             p = root / raw
         if p.exists():
             rp = p.resolve()
-            if rp not in paths:
+            # 3.0.9: compared RESOLVED - on a subst or mapped drive the base came in unresolved (P:\\...)
+            # and the same folder from gameinfo resolved (C:\\...), and was searched twice
+            if rp not in paths and all(rp != Path(x).resolve() for x in paths):
                 paths.append(rp)
         else:
             print(f"[SESSION]  search path not found (skipped): '{p}'")
@@ -796,6 +982,49 @@ def _shot_set_names(session_path: Path, tex: str = None):
         return None
 
 
+# 3.0.8 the LAST IMPORT'S MISSING MODELS, for PRINT HELP. A user's report
+# said "3 missing" and nothing else - the paths were only in the console
+# {"session": str, "imported": int, "models": [rel], "searched": int,
+# "elsewhere": {rel: str}}
+LAST_MISSING = {}
+
+# Where SFM usually sits. A model the session uses but no mounted folder has
+# is most often in ANOTHER install (an old C: Steam, a moved library on D:)
+_SFM_GAME_GUESSES = (
+    r"SteamLibrary\steamapps\common\SourceFilmmaker\game",
+    r"Program Files (x86)\Steam\steamapps\common\SourceFilmmaker\game",
+    r"Program Files\Steam\steamapps\common\SourceFilmmaker\game",
+    r"Steam\steamapps\common\SourceFilmmaker\game",
+    r"Games\Steam\steamapps\common\SourceFilmmaker\game",
+    r"Games\SteamLibrary\steamapps\common\SourceFilmmaker\game",
+)
+
+
+def find_elsewhere(rels, search_dirs) -> dict:
+    """{rel: full path} for each rel found in an SFM install the import did NOT
+    search - any drive letter, the usual Steam folders. Never raises."""
+    import os
+    out = {}
+    try:
+        searched = {os.path.normcase(str(Path(d).resolve())) for d in search_dirs}
+        mods = []
+        for game in discovered_games():
+            try:
+                for m in sorted(game.iterdir()):
+                    if m.is_dir() and os.path.normcase(str(m.resolve())) not in searched:
+                        mods.append(m)
+            except OSError:
+                pass
+        for rel in rels:
+            for m in mods:
+                if (m / rel).is_file():
+                    out[rel] = str(m / rel)
+                    break
+    except Exception:                                         # noqa: BLE001
+        pass
+    return out
+
+
 @Progress.jobbed("HoovyTools - Import Session Models")
 def run_session_import(session_path: Path,
                        gameinfo_base: Path = None, textures: str = None,
@@ -822,8 +1051,11 @@ def run_session_import(session_path: Path,
         "message":   str,
     }
     """
-    if gameinfo_base is None:
-        gameinfo_base = get_gameinfo_base()
+    override = gameinfo_base is not None
+    if not override:
+        adopt_install(session_path)                 # 3.0.8: the SFM the .dmx sits in
+        # 3.0.9: and that install first - SFM saved the session with it
+        gameinfo_base = install_of(session_path) or get_gameinfo_base()
 
     print("\n" + "=" * 56)
     print("  SFM SESSION IMPORT  (HoovyTools)")
@@ -857,10 +1089,17 @@ def run_session_import(session_path: Path,
     from ..tools import Session_Visibility
     hidden = Session_Visibility.hidden_set_names(session_path)
     search_dirs = _build_search_paths(gameinfo_base)
+    if not override:
+        # 3.0.9: then every other install - yours, and with Look for SFM on every drive the ones found
+        # Before this a session import searched one install, whatever else was set.
+        for d in _build_search_paths():
+            if d not in search_dirs:
+                search_dirs.append(d)
     total       = len(import_list)
     print(f"  Total instances: {total}")
 
     ok = missing = skipped = 0
+    missing_models = []
 
     existing = {o.name for o in bpy.data.objects if o.type == "ARMATURE"}
 
@@ -882,6 +1121,8 @@ def run_session_import(session_path: Path,
         if not abs_path:
             print(f"  [{i}/{total}] MISSING  {rel}")
             missing += 1
+            if rel not in missing_models:
+                missing_models.append(rel)
             continue
         print(f"  [{i}/{total}] {name}  <-  {abs_path.name}")
         # Painted before the import call: this is the label that stays on
@@ -909,6 +1150,15 @@ def run_session_import(session_path: Path,
         except Exception as e:
             print(f"  [ERROR] {abs_path.name}: {e}")
 
+    elsewhere = find_elsewhere(missing_models, search_dirs) if missing_models else {}
+    for rel in missing_models:
+        print(f"  MISSING  {rel}" + (f"   (found in another install: {elsewhere[rel]})"
+                                    if rel in elsewhere else ""))
+    LAST_MISSING.clear()
+    LAST_MISSING.update({"session": str(session_path), "imported": ok,
+                         "models": list(missing_models), "searched": len(search_dirs),
+                         "elsewhere": dict(elsewhere)})
+
     if missing == 0 and ok > 0:
         msg = f"All {ok} model(s) imported successfully."
     elif ok == 0 and skipped:
@@ -932,7 +1182,24 @@ def run_session_import(session_path: Path,
     return {"ok": True, "imported": ok, "skipped": skipped,
             "missing": missing, "remaining": 0, "done": True,
             "message": msg, "engine": engine, "textures": textures,
-            "proxied": proxied, "grey": grey, "skipped_hidden": sorted(left_hidden)}
+            "proxied": proxied, "grey": grey, "skipped_hidden": sorted(left_hidden),
+            "missing_models": missing_models, "elsewhere": elsewhere,
+            "searched": len(search_dirs)}
+
+
+def missing_lines(models, elsewhere, searched, limit=12):
+    """Report lines naming each missing .mdl (3.0.8) - shared by step 1,
+    the one-click summary and PRINT HELP."""
+    if not models:
+        return []
+    out = [f"Not found in any of the {searched} game folders searched:"]
+    for rel in models[:limit]:
+        out.append(f"   {rel}")
+        if rel in (elsewhere or {}):
+            out.append(f"      is in another SFM install: {elsewhere[rel]}")
+    if len(models) > limit:
+        out.append(f"   ... and {len(models) - limit} more (the console has them all)")
+    return out
 
 
 # ──────────────────────────────────────────────────────────────────────────────

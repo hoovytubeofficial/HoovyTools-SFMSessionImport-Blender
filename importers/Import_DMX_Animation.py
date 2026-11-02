@@ -1141,6 +1141,50 @@ def resolve_armature(armature, model, rig_mode, fallback_name, collection=None):
     return build_armature_from_dmx(model, fallback_name, collection), True
 
 
+
+def _tallest_axis(armature, posed):
+    """0 / 1 / 2: the world axis the rig's bone heads span most - the way it stands"""
+    import bpy as _bpy
+    _bpy.context.view_layer.update()
+    mw = armature.matrix_world
+    pts = [mw @ (pb.head if posed else pb.bone.head_local) for pb in armature.pose.bones]
+    if not pts:
+        return None
+    sp = [max(p[i] for p in pts) - min(p[i] for p in pts) for i in range(3)]
+    return max(range(3), key=lambda i: sp[i])
+
+
+def _settle_up_axis(armature, action, source_axis, stand_axis, log=print):
+    """3.0.1 (the user, 2026-10-29: "now IMPORT ANIMATION flips the model 90 degrees"): an SFM animation DMX of a
+    Z-up model (astroduchess_titan, written in its engine space) declares upAxis 'Y' like every export, and the +90 X
+    for a Y-up source laid it on its side. Settled by MEASURING, never by the declaration alone: the posed rig must
+    stand along the axis it stood along before the import - if it does not, the other correction is tried on the same
+    axis empty and kept when it stands. Returns the source axis kept"""
+    import bpy as _bpy
+    if stand_axis is None or action is None:
+        return source_axis
+    sc = _bpy.context.scene
+    keep = sc.frame_current
+    f = int(action.frame_range[0])
+    sc.frame_set(min(int(action.frame_range[1]), f + 2))
+    now = _tallest_axis(armature, True)
+    if now == stand_axis:
+        sc.frame_set(keep)
+        return source_axis
+    other = 'Z' if source_axis != 'Z' else 'Y'
+    _get_or_create_axis_empty(armature, other)
+    sc.frame_set(min(int(action.frame_range[1]), f + 2))
+    if _tallest_axis(armature, True) == stand_axis:
+        log(f"[DMX_ANIM]  up axis: the file says {source_axis}-up, but that laid the rig down - "
+            f"its data is {other}-up (measured); corrected as {other}")
+        sc.frame_set(keep)
+        return other
+    _get_or_create_axis_empty(armature, source_axis)          # neither stands: as the file says
+    sc.frame_set(keep)
+    log(f"[DMX_ANIM]  up axis: neither correction stands the rig up - kept the file's {source_axis}")
+    return source_axis
+
+
 def import_dmx_animation(dmx_path, armature, add_root_helpers: bool = True,
                          anim_scale: float = 1.0, up_axis: str = 'FILE',
                          stepped_keys: str = 'AUTO',
@@ -1199,6 +1243,10 @@ def import_dmx_animation(dmx_path, armature, add_root_helpers: bool = True,
     # Anything unstated is treated as an export, which is what every file
     # predating session extraction actually is
     source_axis = 'Z' if resolved_axis == 'Z' else 'Y'
+    try:
+        stand_axis = _tallest_axis(armature, False) if up_axis == 'FILE' and add_root_helpers else None
+    except Exception:                                          # noqa: BLE001
+        stand_axis = None
 
     # Before BST runs: BST cannot add bones during an animation job, so any
     # root-level control the file animates - viewTarget above all - has to
@@ -1295,6 +1343,12 @@ def import_dmx_animation(dmx_path, armature, add_root_helpers: bool = True,
                       f"key(s) negated")
         except Exception as exc:                              # noqa: BLE001
             print(f"[DMX_ANIM]  late quat flip WARNING: {exc}")
+
+    if stand_axis is not None and patch.get("root_empty") is not None:
+        try:
+            source_axis = _settle_up_axis(armature, action, source_axis, stand_axis)
+        except Exception as exc:                              # noqa: BLE001
+            print(f"[DMX_ANIM]  up axis check WARNING: {exc}")
 
     scaled_curves = 0
     if anim_scale != 1.0:
@@ -1493,13 +1547,73 @@ WHAT COMES ACROSS
         default='AUTO',
     )
 
-    # [roadmap #2] standalone defaults to BST-like behaviour
     import_profile: EnumProperty(
-        **Common_Props.profile_prop(default=Common_Props.PROFILE_BST))
+        **Common_Props.profile_prop(default=Common_Props.PROFILE_SESSION))
+
+    easy_import: BoolProperty(  # type: ignore
+        name="Easy Import",
+        description=("Load an animation to fix it, on whichever character you want: the rig's rest pose fixed, the "
+                     "character stood up, and - with Import With Model - the character itself imported first (eye "
+                     "fix on) instead of using the selected armature. Off: the import as before" + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.2 AND IS IN EXPERIMENTAL STAGE"),
+        default=False)
+    fix_rest_pose: BoolProperty(  # type: ignore
+        name="Fix Rest Pose",
+        description=("Easy Import: give the rig the rest pose SFM animates it in (its reference .dmx in the Faulty "
+                     "Rigs folder, the same as Fix Rig) before the animation goes on. A rig with no reference keeps "
+                     "its rest" + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.2 AND IS IN EXPERIMENTAL STAGE"),
+        default=True)
+    make_upright: BoolProperty(  # type: ignore
+        name="Make Upright",
+        description=("Easy Import: stand the character up after the import - pelvis to head along +Z - by a static "
+                     "empty '<armature>_upright' above its hierarchy (the root motion's keys stay as they are). A "
+                     "character already standing is left alone" + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.2 AND IS IN EXPERIMENTAL STAGE"),
+        default=True)
+    import_with_model: BoolProperty(  # type: ignore
+        name="Import With Model",
+        description=("Easy Import: import a character with the animation instead of applying it to the selected "
+                     "armature - the model the .dmx was made for (its own model path; of several, the one whose "
+                     "skeleton matches), or the one you choose in Model. Through Import Model with the eye fix, by "
+                     "the Importer below" + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.2 AND IS IN EXPERIMENTAL STAGE"),
+        default=False)
+    #3.0.3 (the user: "Cannot activate a file selector dialog, one already open" - Model's folder button inside
+    #this operator's own file browser): a list - your 10 most imported models - and a plain path field
+    model_pick: EnumProperty(  # type: ignore
+        name="Model",
+        description=("Import With Model: the character. From the .dmx = the model the file names; then your 10 most "
+                     "imported models (counted in the add-on's _config, +1 each import); Path below = the .mdl in "
+                     "Model Path. Add Model on the Tools ribbon puts any .mdl on this list" + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.3 AND IS IN EXPERIMENTAL STAGE"),
+        items=lambda self, context: __import__(__package__ + ".Easy_Import", fromlist=["x"]).model_items(self, context))
+    model_path: StringProperty(  # type: ignore
+        name="Model Path",
+        description=("Import With Model, Model = Path below: the character's .mdl, typed or pasted (no browse button "
+                     "here - Blender opens one file browser at a time; Add Model on the Tools ribbon has one)"
+                     + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.3 AND IS IN EXPERIMENTAL STAGE"),
+        default="")
+    root_origin: EnumProperty(  # type: ignore
+        name="Root At Origin",
+        description=("Easy Import: the root (SFM's root motion) put at 0,0,0 - by the static empty above the "
+                     "character, its root keys untouched. Off: where the file puts it" + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.3 AND IS IN EXPERIMENTAL STAGE"),
+        items=(("OFF", "Off", "Where the file puts the character"),
+               ("START", "Start At 0,0,0", "The root at 0,0,0 on the first frame; the take travels from there"),
+               ("LOCK", "Lock At 0,0,0", "The root held at X / Y 0 the whole take (in place); its height kept")),
+        default="OFF")
+    bake_root: BoolProperty(  # type: ignore
+        name="Bake Root Transform",
+        description=("Easy Import: the character's whole placement - the file's root transform, the up-axis turn, "
+                     "Make Upright and Root At Origin - baked onto the armature object's own keys, frame by frame, "
+                     "and the _upright / _axis / _root empties removed: one object, no hierarchy. Off: the empties "
+                     "stay, each correction on its own object" + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.4 AND IS IN EXPERIMENTAL STAGE"),
+        default=False)
+    model_engine: EnumProperty(  # type: ignore
+        name="Importer",
+        description="Import With Model: which importer reads the .mdl" + "\nTHIS FEATURE WAS ADDED IN VERSION 3.0.2 AND IS IN EXPERIMENTAL STAGE",
+        items=(("EMBEDDED", "HoovyTools", "The importer inside HoovyTools (no SourceIO needed) - the default"),
+               ("SOURCEIO", "SourceIO", "SourceIO's own MDL importer (must be installed and enabled)")),
+        default="EMBEDDED")
 
     def invoke(self, context, event):
-        # [roadmap #2] Make the panel honest from the first draw: the profile
-        # says BST-like, so the settings under it must already BE BST-like
+        # [roadmap #2] Make the panel honest from the first draw: the settings
+        # under the profile must already BE what the profile says (3.0.5: Session-aware)
         # Without this the enum would advertise one thing and the checkbox
         # below it would show another until the user touched the enum.
         for attr, value in Common_Props.profile_defaults(
@@ -1532,10 +1646,43 @@ WHAT COMES ACROSS
         col.prop(self, "fix_quat_flips")
         col.separator()
         Common_Props.draw_scale(col, self, "anim_scale")
+        # 3.0.2 EASY IMPORT - at the bottom; its variables only when it is on
+        col.separator()
+        box = col.box()
+        box.prop(self, "easy_import")
+        if self.easy_import:
+            sub = box.column()
+            sub.prop(self, "fix_rest_pose")
+            sub.prop(self, "make_upright")
+            sub.prop(self, "root_origin")
+            sub.prop(self, "bake_root")
+            sub.prop(self, "import_with_model")
+            if self.import_with_model:
+                sub.prop(self, "model_pick")
+                if self.model_pick == "PATH":
+                    sub.prop(self, "model_path")
+                sub.prop(self, "model_engine")
 
     def execute(self, context):
         selected = context.active_object
         built = False
+        easy = []                                              #3.0.2: what Easy Import did, for the report
+        # 3.0.3: Easy Import keeps the file's root transform - the BST-like profile dropped it (ROOT MOTION SKIPPED)
+        # and the up-axis turn with it, which left the character lying down
+        helpers = self.add_root_helpers or self.easy_import
+        if self.easy_import and self.import_with_model:
+            from . import Easy_Import
+            mdl, how = Easy_Import.pick_model(self.filepath, Easy_Import.path_of(self.model_pick, self.model_path))
+            if mdl is None:
+                self.report({"ERROR"}, "Import With Model: " + how)
+                return {"CANCELLED"}
+            try:
+                selected = Easy_Import.import_model(mdl, self.model_engine, self.fix_rest_pose)
+            except Exception as exc:                          # noqa: BLE001
+                self.report({"ERROR"}, "Import With Model: %s" % exc)
+                return {"CANCELLED"}
+            easy.append(f"Model  : {Path(mdl).name} - {how} ({self.model_engine.title()}, eye fix"
+                        + (", rest pose fixed)" if self.fix_rest_pose else ")"))
         try:
             model = _get_datamodel().load(str(self.filepath))
             armature, built = resolve_armature(
@@ -1543,7 +1690,15 @@ WHAT COMES ACROSS
         except Exception as exc:
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
-        if built and not self.add_root_helpers:
+        if self.easy_import and self.fix_rest_pose and not built and not self.import_with_model:
+            #the selected rig's rest pose, before the animation goes on (an imported model had it at import)
+            try:
+                from ..session import Import_Session
+                r = Import_Session.fix_one_rig(armature)
+                easy.append(f"Rest   : {r.get('status', '?')}")
+            except Exception as exc:                          # noqa: BLE001
+                easy.append(f"Rest   : not fixed - {exc}")
+        if built and not helpers:
             # no axis empty is coming to carry the up-axis turn, so it goes on
             # the armature itself (BST's own new-armature behaviour). With Add
             # Root Transform on, the axis empty carries it - not twice.
@@ -1555,7 +1710,7 @@ WHAT COMES ACROSS
             axis = None if self.up_axis == 'SCENE' else self.up_axis
             result = import_dmx_animation(
                 self.filepath, armature,
-                add_root_helpers=self.add_root_helpers,
+                add_root_helpers=helpers,
                 anim_scale=self.anim_scale,
                 up_axis=(axis or 'SCENE'),
                 stepped_keys=self.stepped_keys,
@@ -1566,6 +1721,43 @@ WHAT COMES ACROSS
             return {"CANCELLED"}
 
         action = result["action"]
+        try:                                                   # 3.0.3: this animation onto this model, counted
+            from ..core import usage
+            usage.animation_on(self.filepath, armature.get("ht_mdl_path"))
+        except Exception:                                      # noqa: BLE001
+            pass
+        if self.easy_import and self.make_upright:
+            from . import Easy_Import
+            try:
+                up = Easy_Import.make_upright(armature, action.frame_range[0], result.get("root_empty"),
+                                              action.frame_range[1])
+                easy.append(f"Upright: turned {up['turned']:.0f} deg by '{up['empty']}'" if up.get("empty")
+                            else f"Upright: {up.get('why', 'standing')}")
+            except Exception as exc:                          # noqa: BLE001
+                easy.append(f"Upright: not done - {exc}")
+        if self.easy_import and not self.add_root_helpers:
+            easy.append("Root   : kept - Easy Import keeps the file's root transform")
+        if self.easy_import and self.root_origin != "OFF":
+            from . import Easy_Import
+            try:
+                ro = Easy_Import.root_to_origin(armature, result.get("root_empty"), self.root_origin,
+                                                action.frame_range[0], action.frame_range[1])
+                easy.append(f"Root   : {'at 0,0,0 on the first frame' if self.root_origin == 'START' else 'held at 0,0,0 (in place)'}"
+                            f" - '{ro.get('root')}' by '{ro.get('empty')}', {ro.get('moved', 0):.1f} moved")
+            except Exception as exc:                          # noqa: BLE001
+                easy.append(f"Root   : not moved - {exc}")
+        if self.easy_import and self.bake_root:
+            from . import Easy_Import
+            try:
+                bk = Easy_Import.bake_root(armature, action.frame_range[0], action.frame_range[1])
+                if bk.get("removed"):
+                    easy.append("Baked  : " + (f"{bk['keys']} frame(s) of placement" if bk["keys"] else
+                                               "a still placement (no keys needed)")
+                                + f" on '{armature.name}'; removed {', '.join(bk['removed'])}")
+                else:
+                    easy.append(f"Baked  : nothing - {bk.get('why', '?')}")
+            except Exception as exc:                          # noqa: BLE001
+                easy.append(f"Baked  : not done - {exc}")
         lines  = [
             f"File   : {Path(self.filepath).name}",
             (f"Rig    : built from the file's skeleton - '{armature.name}', "
@@ -1600,15 +1792,16 @@ WHAT COMES ACROSS
                          f"the rig)")
         if result.get("root_curves"):
             lines.append(f"Root   : {result['root_curves']} F-curve(s) on {armature.name}_root")
-        elif not self.add_root_helpers:
+        elif not helpers:
             lines.append("Root   : skipped (SMD-clean — bone channels only)")
+        lines.extend(easy)                                     # 3.0.2: Easy Import's own lines
 
         # [roadmap #2] Root motion must never disappear quietly. If the file
         # carried unnamed_p/unnamed_o and the chosen profile dropped it, say
         # so out loud - a silently missing root is exactly the surprise the
         # BST-like default could otherwise spring on someone.
         skipped_root = False
-        if not self.add_root_helpers:
+        if not helpers:
             try:
                 from ..core import DMX_Analyzer
                 tags = DMX_Analyzer.scan_markers(self.filepath)
@@ -1663,7 +1856,9 @@ def draw_menu_item(layout):
 # register / unregister
 # ──────────────────────────────────────────────────────────────────────────────
 
-_CLASSES = (HT_OT_ImportDmxAnimation,)
+from .Easy_Import import HT_OT_EasyAddModel                  # 3.0.3
+
+_CLASSES = (HT_OT_ImportDmxAnimation, HT_OT_EasyAddModel)
 
 
 def register(icon_id_fn=None):

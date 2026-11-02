@@ -745,6 +745,7 @@ and importing animation onto nothing"""
         with Report_UI.quiet():
             steps = []
             fatal = None
+            models_r = {}
 
             def step(label, fn):
                 """Run one stage, record what it said, never let it kill the run."""
@@ -781,6 +782,7 @@ and importing animation onto nothing"""
                 def _models():
                     r = Session_Steps.import_models(
                         context, session, fix_rigs=True)
+                    models_r.update(r)
                     bits = [f"{r['imported']} model(s)"]
                     if r["missing"]:
                         bits.append(f"{r['missing']} missing")
@@ -794,9 +796,27 @@ and importing animation onto nothing"""
 
             arms = [o for o in context.scene.objects if o.type == 'ARMATURE']
             if self.do_animation and not arms and self.do_models:
-                fatal = ("No armatures in the scene after importing models. "
-                         "Animation would have nothing to land on - check that "
-                         "SourceIO is enabled and the .mdl files are findable.")
+                if models_r.get("missing_models") and not models_r.get("imported"):
+                    #3.0.8: the cause, not the symptom - none of the models was on disk
+                    n = len(models_r["missing_models"])
+                    found = len(models_r.get("elsewhere") or {})
+                    if found:
+                        # 3.0.9: they are on this computer - in an install that was not searched
+                        fatal = (f"None of the session's {n} model(s) is in the SFM folders "
+                                 f"searched, but {found} {'is' if found == 1 else 'are'} in "
+                                 f"another SFM install on this computer (listed above). Turn "
+                                 f"on Look for SFM on every drive in the add-on's Preferences, "
+                                 f"or add that install as a usermod slot, and import again.")
+                    else:
+                        fatal = (f"None of the session's {n} model(s) is on this computer, "
+                                 f"so nothing could be animated. SFM had them when the "
+                                 f"session was saved: put each .mdl (with its materials) "
+                                 f"at the same path under usermod, or add the SFM install "
+                                 f"that has them as a usermod slot.")
+                else:
+                    fatal = ("No armatures in the scene after importing models. "
+                             "Animation would have nothing to land on - check that "
+                             "SourceIO is enabled and the .mdl files are findable.")
 
             #3 ── extract ───────────────────────────────────────────────────
             out_dir = None
@@ -1012,6 +1032,12 @@ and importing animation onto nothing"""
             mark = {"ok": "", "FAILED": "FAILED - ",
                     "skipped": "skipped - "}[status]
             lines.append(f"{label}: {mark}{detail or ''}")
+        if models_r.get("missing_models"):
+            from .Import_Session import missing_lines
+            lines.append("")
+            lines += missing_lines(models_r["missing_models"],
+                                   models_r.get("elsewhere", {}),
+                                   models_r.get("searched", 0))
         if fatal:
             lines.append("")
             lines.append(fatal)

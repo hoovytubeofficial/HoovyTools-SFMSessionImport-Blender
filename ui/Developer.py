@@ -2330,6 +2330,11 @@ def draw_search_folders(layout, context, st=None):
                  **_icon_id("print_paths", 'TEXT'))
     head.operator("ht.open_search_folder", text="",
                   icon='FILE_FOLDER').path = str(store.parent)
+    # 3.0.9: SFM Detective - the standalone folder finder (# tools\SFM Detective)
+    # (the Dev tab's own folder operator - suite 4: no Dev operator is also drawn by Panel.py)
+    from .Panel import TOOLS_DIR
+    head.operator("ht.open_search_folder", text="",
+                  icon='VIEWZOOM').path = str(Path(TOOLS_DIR) / "SFM Detective")
     if box is None:
         return
 
@@ -2527,7 +2532,7 @@ def _collect_report(context):
     L += _sec("PREFERENCES")
     try:
         prefs = _ht_paths.addon_prefs()
-        for attr in ("sfm_usermod_path", "scan_game_mounts",
+        for attr in ("sfm_usermod_path", "scan_game_mounts", "find_sfm_on_all_drives",
                      "qc_face_data_path", "faulty_rigs_path",
                      "faulty_rigs_sfm_path"):
             raw = getattr(prefs, attr, "<missing>")
@@ -2583,21 +2588,26 @@ def _collect_report(context):
     # ── add-ons ──────────────────────────────────────────────────────────
     L += _sec("ADD-ONS")
     try:
-        # every NAME EACH one HAS SHIPPED UNDER. This is a readout, so
-        # listing the old names too is correct - it's how somebody with an
-        # older install sees "loaded" instead of "not installed"
         from ..core import siblings
-        _addon_names = (("SourceIO", "SourceIO-master")
-                        + siblings.names("particles")
-                        + ("HoovyTools-SFMSessionImport-Blender-Master",
-                           "HoovyTools",
-                           "io_scene_valvesource"))
-        for name in _addon_names:
-            loaded, enabled = addon_utils.check(name)
-            if loaded or enabled:
-                L.append(_fmt(name, f"loaded={bool(loaded)} enabled={bool(enabled)}"))
+        uses = (("SourceIO", ("SourceIO", "SourceIO-master")),
+                ("Source Particle Import", siblings.names("particles")),
+                ("Blender Source Tools", ("io_scene_valvesource",)),
+                ("SFM Session Importer", (__package__.split(".")[0],)))
+        installed = {m.__name__ for m in addon_utils.modules()}
+        for label, names in uses:
+            for name in names:
+                loaded, enabled = addon_utils.check(name)
+                if loaded or enabled:
+                    L.append(_fmt(label, f"{name}  loaded={bool(loaded)} enabled={bool(enabled)}"))
+                    break
             else:
-                L.append(_fmt(name, "not installed"))
+                off = next((n for n in names if n in installed), None)
+                if off:
+                    L.append(_fmt(label, f"{off}  installed, off"))
+                elif label == "Blender Source Tools" and hasattr(bpy.ops.import_scene, "smd"):
+                    L.append(_fmt(label, "not installed - the copy bundled with this add-on is used"))
+                else:
+                    L.append(_fmt(label, "not installed"))
         L.append(_fmt("import_scene.smd",
                       "registered" if hasattr(bpy.ops.import_scene, "smd")
                       else "MISSING"))
@@ -2888,13 +2898,45 @@ def help_flags(context):
             if item["level"] not in ("ERROR", "WARNING") or item["title"] in seen:
                 continue
             seen.add(item["title"])
-            first = next((ln.strip() for ln in item["lines"] if ln.strip()), "")
+            body = [ln.strip() for ln in item["lines"] if ln.strip()]
+            # 3.0.8: the line that SAYS something - "Session: x.dmx" told nobody anything
+            first = next((ln for ln in body if "FAILED" in ln), "") or \
+                (body[-1] if item["level"] == "ERROR" and body else (body[0] if body else ""))
             if item["level"] == "ERROR":
                 flags.append(("BREAKS", f"'{item['title']}' failed at "
                                         f"{item['t']}" + (f": {first}" if first else "")))
             else:
                 flags.append(("RISKY", f"'{item['title']}' ended with a warning "
                                        f"at {item['t']}" + (f": {first}" if first else "")))
+    except Exception:                                         # noqa: BLE001
+        pass
+
+    # 3.0.8 the MODELS the LAST IMPORT COULD NOT FIND, by name
+    try:
+        from ..session import Import_Session
+        lm = Import_Session.LAST_MISSING
+        if lm.get("models"):
+            names = lm["models"]
+            elsewhere = lm.get("elsewhere", {})
+            where = "; ".join(
+                f"{rel} (it IS in another SFM install: {elsewhere[rel]})" if rel in elsewhere
+                else rel for rel in names[:8])
+            more = f" and {len(names) - 8} more" if len(names) > 8 else ""
+            flags.append(("BREAKS" if not lm.get("imported") else "RISKY",
+                          f"{len(names)} model{_pl(len(names), '', 's')} the session uses "
+                          f"{_pl(len(names), 'is', 'are')} not in any of the "
+                          f"{lm.get('searched', 0)} game folders searched: {where}{more} - "
+                          + ("turn on Look for SFM on every drive in the Preferences, or add "
+                             "that install as a usermod slot" if elsewhere else
+                             "put each .mdl (and its materials) at that path under usermod, "
+                             "or add the SFM install that has them as a usermod slot")))
+    except Exception:                                         # noqa: BLE001
+        pass
+
+    # 3.0.8 PATHS that POINT NOWHERE - most often the wrong drive (C: written,
+    # SFM on D:). Preferences and every user_paths.json slot
+    try:
+        flags += _drive_flags()
     except Exception:                                         # noqa: BLE001
         pass
 
@@ -2912,6 +2954,66 @@ def help_flags(context):
         pass
     order = {k: i for i, k in enumerate(_HELP_LEVELS)}
     return sorted(flags, key=lambda f: order.get(f[0], 9))
+
+
+def _sfm_drive():
+    """The drive of the SFM the add-on actually uses (from the first search
+    path, usermod), e.g. 'D:' - or ''."""
+    try:
+        from ..session import Import_Session
+        dirs = Import_Session._build_search_paths()
+        return Path(str(dirs[0])).drive.upper() if dirs else ""
+    except Exception:                                         # noqa: BLE001
+        return ""
+
+
+def _drive_flags():
+    """[(level, sentence)] for configured paths that do not exist or hold the
+    wrong thing, naming the drive when it differs from SFM's (3.0.8)."""
+    import os
+    out = []
+    sfm = _sfm_drive()
+
+    def gone(label, raw, level):
+        p = Path(os.path.expandvars(str(raw)))
+        if p.exists():
+            return
+        d = p.drive.upper()
+        why = (f" - it is on {d} but your SFM is on {sfm}" if d and sfm and d != sfm
+               else "")
+        out.append((level, f"{label} points at a folder that does not exist "
+                           f"({raw}){why}"))
+
+    from ..session import Import_Session
+    prefs = _ht_paths.addon_prefs()
+    # a dead usermod preference with no other install is the wiring row's job (it is red there already)
+    um_level = "RISKY" if Import_Session.usermod_bases() else None
+    for attr, level in (("sfm_usermod_path", um_level), ("faulty_rigs_path", "NOTE"),
+                        ("faulty_rigs_sfm_path", "NOTE"), ("qc_face_data_path", "NOTE")):
+        raw = (getattr(prefs, attr, "") or "").strip()
+        # 3.0.10: a preference still at the add-on's own default was never set by you - not worth a line
+        # (the SFM-side Faulty Rigs default is a folder most computers do not have)
+        try:
+            default = prefs.bl_rna.properties[attr].default
+        except Exception:                                     # noqa: BLE001
+            default = None
+        if raw and level and raw != default:
+            gone(f"the preference '{attr}'", raw, level)
+
+    for key, _n, _what in user_paths.SLOTS:
+        for i, raw in enumerate(user_paths.slots(key)):
+            raw = (raw or "").strip()
+            if not raw:
+                continue
+            label = f"user_paths.json '{key}' slot {i + 1}"
+            p = Path(os.path.expandvars(raw))
+            if not p.exists():
+                gone(label, raw, "NOTE")
+            elif key == "dmxconvert" and not (Import_Session.dmxconvert_dir(p) / "dmxconvert.exe").is_file() \
+                    and not (p.is_file() and p.name.lower() == "dmxconvert.exe"):
+                out.append(("NOTE", f"{label} holds {raw}, and neither it nor its SFM's "
+                                    f"game\\bin has dmxconvert.exe"))
+    return out
 
 
 def help_paragraph(flags):

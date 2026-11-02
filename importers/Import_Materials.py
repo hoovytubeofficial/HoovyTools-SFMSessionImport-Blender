@@ -34,8 +34,8 @@ def _carried():
 
 def _content_roots():
     try:
-        from ..session.Import_Session import usermod_bases
-        return [str(b) for b in usermod_bases()]
+        from ..session.Import_Session import search_bases       #3.0.9: + other drives (option)
+        return [str(b) for b in search_bases()]
     except Exception:                                         # noqa: BLE001
         return []
 
@@ -103,10 +103,137 @@ def import_vmt(path, use_bvlg=True, assign_to=None):
         shader_cls.load_texture = old_load
         manager.first_import = None
         manager.priority_list = None
+    if not _has_output(mat):
+        basetexture_fallback(mat, path)
     if assign_to is not None and getattr(assign_to, "type", "") == "MESH":
         if mat.name not in [s.material.name for s in assign_to.material_slots if s.material]:
             assign_to.data.materials.append(mat)
     return mat, missing + [w for w in warnings if "texture" in w.lower()]
+
+
+PREVIEW_COLLECTION = "HT · Material Previews"
+PREVIEW_RADIUS = 0.5
+_SPHERE_HELP = ("Put a UV sphere with each imported %s in the scene, in a row from the 3D cursor (collection "
+                "\"HT · Material Previews\"), so you see it at once. THIS FEATURE WAS ADDED IN VERSION 3.0.10 AND "
+                "IS IN EXPERIMENTAL STAGE")
+
+
+def spawn_preview_sphere(context, material, index=None, name=None):
+    """A smooth UV sphere (UVs on) wearing `material`, `index` places to the right of the 3D cursor - by default the
+    next free place in the preview collection, so a second import (or a script importing one file at a time) does
+    not stack on the first. Returns it."""
+    import bmesh
+    scene = context.scene
+    coll = bpy.data.collections.get(PREVIEW_COLLECTION)
+    if coll is None:
+        coll = bpy.data.collections.new(PREVIEW_COLLECTION)
+    if not any(c is coll for c in scene.collection.children_recursive):
+        scene.collection.children.link(coll)
+    label = name or "%s preview" % material.name
+    me = bpy.data.meshes.new(label)
+    bm = bmesh.new()
+    bm.loops.layers.uv.new("UVMap")                          #calc_uvs fills a layer - it doesn't make one
+    bmesh.ops.create_uvsphere(bm, u_segments=48, v_segments=24, radius=PREVIEW_RADIUS, calc_uvs=True)
+    for f in bm.faces:
+        f.smooth = True
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(material)
+    ob = bpy.data.objects.new(label, me)
+    ob.location = scene.cursor.location.copy()
+    ob.location.x += (len(coll.objects) if index is None else index) * PREVIEW_RADIUS * 2.5
+    ob["ht_preview_of"] = material.name
+    coll.objects.link(ob)
+    return ob
+
+
+def texture_material(image):
+    """A material that shows one imported image - colour and alpha - for a VTF's preview sphere. One per image."""
+    for m in bpy.data.materials:
+        if m.get("ht_preview_image") == image.name:
+            return m
+    mat = bpy.data.materials.new("%s vtf" % image.name.rsplit(".vtf", 1)[0])
+    show_image(mat, image)
+    mat["ht_preview_image"] = image.name
+    return mat
+
+
+def show_image(mat, image, additive=False):
+    """(Re)build `mat` as one image: colour and alpha on a Principled BSDF - or, additive, as light (an Emission
+    added over transparency, the way SFM draws an additive sprite)."""
+    if mat.node_tree is None:                                 # Material.use_nodes is deprecated (6.0)
+        mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    out.location = (300, 0)
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = image
+    tex.location = (-420, 0)
+    if additive:
+        em = nt.nodes.new("ShaderNodeEmission")
+        tr = nt.nodes.new("ShaderNodeBsdfTransparent")
+        add = nt.nodes.new("ShaderNodeAddShader")
+        em.location, tr.location, add.location = (-120, -40), (-120, 120), (100, 0)
+        nt.links.new(tex.outputs["Color"], em.inputs["Color"])
+        nt.links.new(tr.outputs[0], add.inputs[0])
+        nt.links.new(em.outputs[0], add.inputs[1])
+        nt.links.new(add.outputs[0], out.inputs["Surface"])
+    else:
+        bsdf = nt.nodes.new("ShaderNodeBsdfPrincipled")
+        bsdf.location = (-80, 0)
+        nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+        nt.links.new(tex.outputs["Alpha"], bsdf.inputs["Alpha"])
+        nt.links.new(bsdf.outputs[0], out.inputs["Surface"])
+    if hasattr(mat, "surface_render_method"):                 # EEVEE Next
+        mat.surface_render_method = "BLENDED" if additive else "DITHERED"
+    elif hasattr(mat, "blend_method"):
+        mat.blend_method = "BLEND" if additive else "HASHED"
+
+
+def _has_output(mat):
+    return mat.node_tree is not None and any(n.type == "OUTPUT_MATERIAL" for n in mat.node_tree.nodes)
+
+
+def basetexture_fallback(mat, vmt_path):
+    """3.0.10: a shader the carried importer cannot build (SpriteCard, UnlitTwoTexture ... - every particle
+    material) left an EMPTY material, so its preview sphere showed nothing. Such a material now shows its
+    $basetexture - as light when the .vmt is $additive. Returns the shader name, or '' when nothing was done."""
+    import re
+    try:
+        text = Path(vmt_path).read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""
+    shader = (re.match(r'\s*"?([\w.]+)"?', text) or [None, "?"])[1]
+    m = re.search(r'"?\$basetexture"?\s+"?([^"\r\n]+?)"?\s*$', text, re.I | re.M)
+    if not m:
+        return ""
+    rel = m.group(1).strip().replace("\\", "/").removesuffix(".vtf") + ".vtf"
+    roots = [p.parent for p in Path(vmt_path).resolve().parents if p.name.lower() == "materials"][:1]
+    try:
+        from ..session.Import_Session import _build_search_paths
+        roots += list(_build_search_paths())
+    except Exception:                                         # noqa: BLE001
+        pass
+    vtf = next((r / "materials" / rel for r in roots if (r / "materials" / rel).is_file()), None)
+    if vtf is None:
+        return ""
+    additive = bool(re.search(r'"?\$(additive|addoverblend)"?\s+"?1', text, re.I))
+    show_image(mat, import_vtf(vtf), additive)
+    mat["ht_basetexture_fallback"] = shader
+    return shader
+
+
+def _select_only(context, objects):
+    """Select the spawned spheres (the last one active) - nothing else."""
+    try:
+        for o in context.selected_objects:
+            o.select_set(False)
+        for o in objects:
+            o.select_set(True)
+        context.view_layer.objects.active = objects[-1]
+    except Exception:                                         # noqa: BLE001 - hidden collection, no view layer
+        pass
 
 
 class _Picker:
@@ -127,8 +254,9 @@ class HT_OT_import_vmt(_Picker, Operator, ImportHelper):
 Builds a Blender material from each .vmt: its shader, its textures (found
 through your SFM install and the folders around the file) and their
 settings, packed into the .blend. With a mesh selected, the materials are
-added to it. The browser opens in usermod/materials and learns the folder
-you use most.
+added to it, and each one gets a preview sphere at the 3D cursor (Spawn
+Preview Sphere, on by default). The browser opens in usermod/materials and
+learns the folder you use most.
 
 THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE"""
     bl_idname = "ht.import_vmt"
@@ -146,6 +274,10 @@ THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE"""
         name="Add To The Selected Mesh",
         description="Add every imported material to the active mesh's material slots",
         default=True)
+    spawn_sphere: BoolProperty(  # type: ignore
+        name="Spawn Preview Sphere",
+        description=_SPHERE_HELP % "material",
+        default=True)
 
     def execute(self, context):
         files = [f for f in self.picked() if f.suffix.lower() == ".vmt"]
@@ -153,12 +285,14 @@ THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE"""
             self.report({"ERROR"}, "Pick one or more .vmt files")
             return {"CANCELLED"}
         target = context.active_object if self.assign else None
-        made, missing, failed = [], [], []
+        made, missing, failed, spheres = [], [], [], []
         for f in files:
             try:
                 mat, miss = import_vmt(f, self.use_bvlg, target)
                 made.append(mat.name)
                 missing += miss
+                if self.spawn_sphere:
+                    spheres.append(spawn_preview_sphere(context, mat))
             except Exception as exc:                          # noqa: BLE001
                 failed.append("%s: %s" % (f.name, exc))
                 print("[MATERIALS]  %s failed - %s: %s  (%s)" % (f.name, type(exc).__name__, exc, f))
@@ -168,6 +302,13 @@ THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE"""
             self.report({"ERROR"}, "No material imported - " + "; ".join(failed[:3]))
             return {"CANCELLED"}
         msg = "%d material(s): %s" % (len(made), ", ".join(made[:4]))
+        plain = [m for m in made if bpy.data.materials.get(m) and bpy.data.materials[m].get("ht_basetexture_fallback")]
+        if plain:
+            msg += " - %d shown by its base texture (%s is not built yet)" % (
+                len(plain), bpy.data.materials[plain[0]]["ht_basetexture_fallback"])
+        if spheres:
+            _select_only(context, spheres)
+            msg += " - on %d preview sphere(s)" % len(spheres)
         if missing:
             msg += " - %d texture(s) not found (console lists them)" % len(missing)
         if failed:
@@ -181,9 +322,10 @@ class HT_OT_import_vtf(_Picker, Operator, ImportHelper):
     """Import Source .vtf textures - without SourceIO
 
 Decodes each .vtf into a Blender image, packed into the .blend (every
-format SFM uses, sprite sheets included). Open it in an Image Editor or
-pick it in any Image Texture node. The browser opens in usermod/materials
-and learns the folder you use most.
+format SFM uses, sprite sheets included), each shown on a preview sphere at
+the 3D cursor (Spawn Preview Sphere, on by default). Open it in an Image
+Editor or pick it in any Image Texture node. The browser opens in
+usermod/materials and learns the folder you use most.
 
 THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE"""
     bl_idname = "ht.import_vtf"
@@ -192,17 +334,23 @@ THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE"""
 
     filename_ext = ".vtf"
     filter_glob: StringProperty(default="*.vtf", options={"HIDDEN"})  # type: ignore
+    spawn_sphere: BoolProperty(  # type: ignore
+        name="Spawn Preview Sphere",
+        description=_SPHERE_HELP % "texture (on a material made for it)",
+        default=True)
 
     def execute(self, context):
         files = [f for f in self.picked() if f.suffix.lower() == ".vtf"]
         if not files:
             self.report({"ERROR"}, "Pick one or more .vtf files")
             return {"CANCELLED"}
-        made, failed = [], []
+        made, failed, spheres = [], [], []
         for f in files:
             try:
                 img = import_vtf(f)
                 made.append("%s (%dx%d)" % (img.name, img.size[0], img.size[1]))
+                if self.spawn_sphere:
+                    spheres.append(spawn_preview_sphere(context, texture_material(img)))
             except Exception as exc:                          # noqa: BLE001
                 failed.append("%s: %s" % (f.name, exc))
                 print("[MATERIALS]  %s failed - %s: %s  (%s)" % (f.name, type(exc).__name__, exc, f))
@@ -218,9 +366,12 @@ THIS FEATURE WAS ADDED IN VERSION 3.0.0 AND IS IN EXPERIMENTAL STAGE"""
                     break
         except Exception:                                     # noqa: BLE001
             pass
+        if spheres:
+            _select_only(context, spheres)
         self.report({"WARNING" if failed else "INFO"},
-                    "%d texture(s): %s%s" % (len(made), ", ".join(made[:3]),
-                                             (" - %d failed" % len(failed)) if failed else ""))
+                    "%d texture(s): %s%s%s" % (len(made), ", ".join(made[:3]),
+                                               (" - on %d preview sphere(s)" % len(spheres)) if spheres else "",
+                                               (" - %d failed" % len(failed)) if failed else ""))
         return {"FINISHED"}
 
 
